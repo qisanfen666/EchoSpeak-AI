@@ -61,30 +61,50 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
-// State
+// EchoSpeak — Real-time conversation (continuous mic + VAD)
 // ═══════════════════════════════════════════════════════════════════
-let ws, ab = null, rec = false;
-let ac, stream, proc, buf = [];
-let silTimer, speaking = false;
-let ttsChunks = [];
-let playing = false;
-let _lastUserRow = null;
-let _pendingAiRow = null;    // track current AI bubble being streamed
 
+// ── DOM refs ──
 const $ = s => document.querySelector(s);
 const chat = $('#chat'), inp = $('#inp'), btn = $('#sendBtn');
 const recBtn = $('#recBtn'), endBtn = $('#endBtn');
 const think = $('#think'), st = $('#status'), dbg = $('#dbg');
 
+// ── State ──
+let ws;
+let ac, stream, proc;
+let micActive = false;
+let speaking = false;
+let audioBuf = [];
+const SR = 16000;
+const CHUNK_MS = 200;
+const VAD_THRESHOLD = 0.02;
+const SILENCE_MS = 1800;
+const MIN_SPEECH_MS = 300;
+const CONSEC_FRAMES = 3;
+const PRE_SPEECH_MS = 1200;
+let silenceStart = null;
+let speechStart = null;
+let lastSendTime = 0;
+let chunkId = 0;
+const MAX_BUF_S = 15;
+
+// ── TTS queue ──
+let ttsChunks = [];
+let ttsPlaying = false;
+let ttsAudioEl = null;
+
+// ── AI reply streaming ──
+let _pendingAiRow = null;
+
 function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
 
-function escapeHTML(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+function escapeHTML(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
 }
 
-// Remove welcome placeholder on first message
 function removeWelcome() {
     const w = chat.querySelector('.chat-welcome');
     if (w) w.remove();
@@ -93,17 +113,17 @@ function removeWelcome() {
 // ═══════════════════════════════════════════════════════════════════
 // Message display
 // ═══════════════════════════════════════════════════════════════════
+let _lastUserRow = null;
+
 function addMsg(who, text) {
     removeWelcome();
     const row = document.createElement('div');
     row.className = 'msg-row msg-' + who;
-
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
 
     if (who === 'user') {
-        bubble.innerHTML =
-            '<span class="msg-text">' + escapeHTML(text) + '</span>';
+        bubble.innerHTML = '<span class="msg-text">' + escapeHTML(text) + '</span>';
         _lastUserRow = row;
         row.dataset.msgRole = 'user';
     } else if (who === 'ai') {
@@ -114,118 +134,99 @@ function addMsg(who, text) {
         bubble.className = 'msg-bubble msg-sys';
         bubble.textContent = text;
     }
-
     row.appendChild(bubble);
     chat.appendChild(row);
     chat.scrollTop = chat.scrollHeight;
-
-    // Remove any stale placeholder
-    const ph = chat.querySelector('.chat-welcome');
-    if (ph) ph.remove();
 }
 
-function upAI(text) {
-    if (_pendingAiRow) {
-        const span = _pendingAiRow.querySelector('.ai-text');
-        if (span) span.textContent = text;
-        chat.scrollTop = chat.scrollHeight;
-        return;
-    }
-    // Fallback: create new bubble
-    addMsg('ai', text);
+function startAIBubble() {
+    removeWelcome();
+    const row = document.createElement('div');
+    row.className = 'msg-row msg-ai';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = '<span class="msg-label">Tutor</span><span class="msg-text ai-text"></span>';
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    _pendingAiRow = row;
 }
+
+function appendAIText(token) {
+    if (!_pendingAiRow) startAIBubble();
+    const span = _pendingAiRow.querySelector('.ai-text');
+    if (span) span.textContent += token;
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function finalizeAI() { _pendingAiRow = null; }
 
 // ═══════════════════════════════════════════════════════════════════
-// Correction Card — "Editorial Marginalia"
+// Correction Card (kept from new UI)
 // ═══════════════════════════════════════════════════════════════════
 function showCorrection(data) {
     if (!_lastUserRow) return;
     if (_lastUserRow.querySelector('.cc-card')) return;
-
     const card = document.createElement('div');
     card.className = 'cc-card';
-
-    // Texture overlay
     const tex = document.createElement('div');
-    tex.className = 'cc-tex';
-    card.appendChild(tex);
-
-    // Header
+    tex.className = 'cc-tex'; card.appendChild(tex);
     const header = document.createElement('div');
     header.className = 'cc-header';
-    header.innerHTML =
-        '<span class="cc-head-label">Nota bene</span>' +
+    header.innerHTML = '<span class="cc-head-label">Nota bene</span>' +
         '<span class="cc-head-divider"></span>' +
         '<span class="cc-head-count">' + data.errors.length + '&nbsp;finding' + (data.errors.length !== 1 ? 's' : '') + '</span>';
     card.appendChild(header);
-
-    // Revised sentence
     if (data.corrected_text && data.corrected_text !== data.original_text) {
         const preview = document.createElement('div');
         preview.className = 'cc-preview';
-        preview.innerHTML =
-            '<span class="cc-preview-label">Revised</span>' +
+        preview.innerHTML = '<span class="cc-preview-label">Revised</span>' +
             '<span class="cc-preview-text">' + escapeHTML(data.corrected_text) + '</span>';
         card.appendChild(preview);
     }
-
-    // Error list
     const list = document.createElement('div');
     list.className = 'cc-list';
-
     const PALETTE = {
-        grammar:      { label:'Grammar',  accent:'#e8906c', bg:'var(--err-bg-grammar)', rule:'#d07858' },
-        tense:        { label:'Tense',    accent:'#e8906c', bg:'var(--err-bg-grammar)', rule:'#d07858' },
-        preposition:  { label:'Prep.',    accent:'#7eb8c9', bg:'var(--err-bg-prep)',    rule:'#5a9aad' },
-        article:      { label:'Article',  accent:'#7eb8c9', bg:'var(--err-bg-prep)',    rule:'#5a9aad' },
-        vocabulary:   { label:'Vocab',    accent:'#b49cc4', bg:'var(--err-bg-vocab)',   rule:'#9078a8' },
-        word_choice:  { label:'Word',     accent:'#b49cc4', bg:'var(--err-bg-vocab)',   rule:'#9078a8' },
-        expression:   { label:'Expr.',    accent:'#8cb89a', bg:'var(--err-bg-expr)',    rule:'#6a9a78' },
+        grammar:{label:'Grammar',accent:'#e8906c',bg:'var(--err-bg-grammar)',rule:'#d07858'},
+        tense:{label:'Tense',accent:'#e8906c',bg:'var(--err-bg-grammar)',rule:'#d07858'},
+        preposition:{label:'Prep.',accent:'#7eb8c9',bg:'var(--err-bg-prep)',rule:'#5a9aad'},
+        article:{label:'Article',accent:'#7eb8c9',bg:'var(--err-bg-prep)',rule:'#5a9aad'},
+        vocabulary:{label:'Vocab',accent:'#b49cc4',bg:'var(--err-bg-vocab)',rule:'#9078a8'},
+        word_choice:{label:'Word',accent:'#b49cc4',bg:'var(--err-bg-vocab)',rule:'#9078a8'},
+        expression:{label:'Expr.',accent:'#8cb89a',bg:'var(--err-bg-expr)',rule:'#6a9a78'},
     };
-
     data.errors.forEach(function(err, i) {
         var pal = PALETTE[err.type] || PALETTE.grammar;
-
         var item = document.createElement('div');
         item.className = 'cc-err';
         item.style.cssText = '--err-accent:' + pal.accent + ';--err-rule:' + pal.rule + ';--err-delay:' + (i * 0.06) + 's';
-
         var line = document.createElement('div');
         line.className = 'cc-err-line';
-
         var badge = document.createElement('span');
         badge.className = 'cc-badge';
         badge.style.cssText = 'color:' + pal.accent + ';border-color:' + pal.accent;
         badge.textContent = pal.label;
         line.appendChild(badge);
-
         var origSpan = document.createElement('span');
         origSpan.className = 'cc-orig';
         origSpan.textContent = err.original;
         line.appendChild(origSpan);
-
         var arrow = document.createElement('span');
         arrow.className = 'cc-arrow';
         arrow.textContent = '→';
         line.appendChild(arrow);
-
         var corrSpan = document.createElement('span');
         corrSpan.className = 'cc-corr';
         corrSpan.textContent = err.corrected;
         line.appendChild(corrSpan);
-
         item.appendChild(line);
-
         if (err.explanation_cn) {
             var expl = document.createElement('div');
             expl.className = 'cc-expl';
             expl.textContent = err.explanation_cn;
             item.appendChild(expl);
         }
-
         list.appendChild(item);
     });
-
     card.appendChild(list);
     _lastUserRow.appendChild(card);
 }
@@ -241,9 +242,7 @@ function connect() {
     ws.onopen = () => {
         st.textContent = '● connected';
         st.className = 'status-badge connected';
-        inp.disabled = false;
-        btn.disabled = false;
-        recBtn.disabled = false;
+        inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
         inp.focus();
         addMsg('sys', '✅ Connected — type or tap Record to speak');
     };
@@ -251,45 +250,50 @@ function connect() {
     ws.onmessage = (e) => {
         if (e.data instanceof ArrayBuffer) {
             ttsChunks.push(new Uint8Array(e.data));
-            if (!playing) playTTS();
+            log('<- audio ' + new Uint8Array(e.data).length + 'B');
+            if (!ttsPlaying) playNextTTS();
             return;
         }
         try {
             const m = JSON.parse(e.data);
             log('<- ' + m.type);
-            if (m.type === 'user_transcript') {
-                addMsg('user', m.data.text);
-            } else if (m.type === 'correction') {
-                showCorrection(m.data);
-            } else if (m.type === 'reply_start') {
-                think.classList.add('active');
-                // Create a fresh AI bubble for this reply
-                removeWelcome();
-                const row = document.createElement('div');
-                row.className = 'msg-row msg-ai';
-                const bubble = document.createElement('div');
-                bubble.className = 'msg-bubble';
-                bubble.innerHTML =
-                    '<span class="msg-label">Tutor</span>' +
-                    '<span class="msg-text ai-text"></span>';
-                row.appendChild(bubble);
-                chat.appendChild(row);
-                _pendingAiRow = row;
-                chat.scrollTop = chat.scrollHeight;
-            } else if (m.type === 'reply_chunk') {
-                think.classList.remove('active');
-                upAI(m.data.text);
-            } else if (m.type === 'reply_end') {
-                think.classList.remove('active');
-                _pendingAiRow = null;
-                st.textContent = '● connected';
-                st.className = 'status-badge connected';
-            } else if (m.type === 'session_report') {
-                addMsg('sys', '📊 Report: ' + m.data.overall_score + 'pts · '
-                    + m.data.utterances + ' utterances · ' + m.data.duration_s + 's');
-                endBtn.style.display = 'none';
-            } else if (m.type === 'error') {
-                addMsg('sys', '⚠ ' + (m.data.message || ''));
+            switch (m.type) {
+                case 'transcript':
+                    addMsg('user', m.data.text);
+                    st.textContent = '● connected';
+                    st.className = 'status-badge connected';
+                    break;
+                case 'processing':
+                    st.textContent = '🔍 ' + m.data.message;
+                    break;
+                case 'correction':
+                    showCorrection(m.data);
+                    break;
+                case 'reply_start':
+                    think.classList.add('active');
+                    startAIBubble();
+                    break;
+                case 'reply_chunk':
+                    think.classList.remove('active');
+                    appendAIText(m.data.text);
+                    break;
+                case 'reply_end':
+                    think.classList.remove('active');
+                    finalizeAI();
+                    st.textContent = '● connected';
+                    st.className = 'status-badge connected';
+                    break;
+                case 'score_update':
+                    log('📊 Score: ' + m.data.score);
+                    break;
+                case 'session_report':
+                    addMsg('sys', '📊 Report: ' + m.data.overall_score + 'pts · '
+                        + m.data.utterances + ' utterances · ' + m.data.duration_s + 's');
+                    endBtn.style.display = 'none';
+                    break;
+                case 'error':
+                    addMsg('sys', '⚠ ' + (m.data.message || ''));
+                    break;
             }
         } catch(e) {}
     };
@@ -297,103 +301,192 @@ function connect() {
     ws.onclose = () => {
         st.textContent = '● disconnected, reconnecting…';
         st.className = 'status-badge disconnected';
-        inp.disabled = true;
-        btn.disabled = true;
-        recBtn.disabled = true;
-        if (rec) stopRec();
+        inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
+        if (micActive) stopMic();
         setTimeout(connect, 2000);
     };
 }
 
-function send(o) {
-    if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
-}
+function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 // ═══════════════════════════════════════════════════════════════════
-// Text send
+// Text send (auto-interrupt before sending)
 // ═══════════════════════════════════════════════════════════════════
 function sendText() {
     const t = inp.value.trim();
     if (!t) return;
     inp.value = '';
+    interruptAI();
     addMsg('user', t);
     send({ type: 'text_message', data: { text: t } });
     log('-> text: ' + t.slice(0, 30));
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Recording (MediaRecorder API)
+// Continuous Mic with VAD + Pre-buffer
 // ═══════════════════════════════════════════════════════════════════
-let mediaRec = null;
-let audioChunks = [];
-
-async function toggleRec() {
-    if (rec) { stopRec(); return; }
-    if (mediaRec && mediaRec.state === 'recording') { stopRec(); return; }
-
+async function toggleMic() {
+    if (micActive) { stopMic(); return; }
     try {
-        log('🎤 Requesting mic…');
-        const str = await navigator.mediaDevices.getUserMedia({ audio: true });
-        ac = new (window.AudioContext || window.webkitAudioContext)();
-        mediaRec = new MediaRecorder(str, { mimeType: 'audio/webm;codecs=opus' });
-        audioChunks = [];
+        log('🎤 Starting continuous mic…');
+        stream = await navigator.mediaDevices.getUserMedia({
+            audio: { sampleRate: { ideal: SR }, channelCount: 1 }
+        });
+        ac = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR });
+        const source = ac.createMediaStreamSource(stream);
+        proc = ac.createScriptProcessor(2048, 1, 1);
+        source.connect(proc);
+        proc.connect(ac.destination);
 
-        mediaRec.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunks.push(e.data);
+        proc.onaudioprocess = (e) => {
+            if (!micActive) return;
+            if (ws.readyState !== WebSocket.OPEN) return;
+            const input = e.inputBuffer.getChannelData(0);
+            const now = Date.now();
+
+            let energy = 0;
+            for (let i = 0; i < input.length; i++) energy += input[i] * input[i];
+            energy = Math.sqrt(energy / input.length);
+            const isVoice = energy > VAD_THRESHOLD;
+
+            // Pre-buffer (ring buffer)
+            const preBufMax = SR * PRE_SPEECH_MS / 1000;
+            if (!window._preBuf) window._preBuf = [];
+            for (let i = 0; i < input.length; i++) window._preBuf.push(input[i]);
+            while (window._preBuf.length > preBufMax) window._preBuf.shift();
+
+            if (!speaking) {
+                if (isVoice) {
+                    if (!window._vadHits) { window._vadHits = 0; window._preBufVoiceStart = window._preBuf.length; }
+                    window._vadHits++;
+                    if (window._vadHits >= CONSEC_FRAMES) {
+                        speaking = true;
+                        speechStart = now;
+                        silenceStart = null;
+                        const startIdx = window._preBufVoiceStart || 0;
+                        audioBuf = window._preBuf.slice(startIdx);
+                        window._preBuf = []; window._preBufVoiceStart = 0; window._vadHits = 0;
+                        log('🗣 Speaking (pre-buf ' + (audioBuf.length/SR*1000).toFixed(0) + 'ms)');
+                        st.textContent = '🎙️ speaking…';
+                        interruptAI();
+                    }
+                } else {
+                    window._vadHits = 0; window._preBufVoiceStart = 0;
+                }
+            } else {
+                if (isVoice) silenceStart = null;
+                for (let i = 0; i < input.length; i++) audioBuf.push(input[i]);
+                if (!isVoice && silenceStart === null) silenceStart = now;
+            }
+
+            // Send chunk periodically
+            if (speaking && (now - lastSendTime) >= CHUNK_MS) {
+                lastSendTime = now;
+                const sendSamples = audioBuf.slice(-(SR * CHUNK_MS / 1000) | 0);
+                if (sendSamples.length > 0) {
+                    const pcm16 = new Int16Array(sendSamples.length);
+                    for (let i = 0; i < sendSamples.length; i++) {
+                        const s = Math.max(-1, Math.min(1, sendSamples[i]));
+                        pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+                    }
+                    const bytes = new Uint8Array(pcm16.buffer);
+                    let bin = '';
+                    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                    send({ type: 'audio_chunk', data: { data: btoa(bin), is_end: false, chunk_id: chunkId++ } });
+                }
+            }
+
+            // Silence → end utterance
+            if (speaking && silenceStart !== null && (now - silenceStart) >= SILENCE_MS) {
+                const dur = (now - (speechStart || now)) / 1000;
+                if (dur * 1000 >= MIN_SPEECH_MS) {
+                    log('🔇 Silence, ending (spoke ' + dur.toFixed(1) + 's)');
+                    st.textContent = '🔍 Recognizing…';
+                    if (audioBuf.length > 0) {
+                        const pcm16 = new Int16Array(audioBuf.length);
+                        for (let i = 0; i < audioBuf.length; i++) {
+                            const s = Math.max(-1, Math.min(1, audioBuf[i]));
+                            pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+                        }
+                        const bytes = new Uint8Array(pcm16.buffer);
+                        let bin = '';
+                        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                        send({ type: 'audio_chunk', data: { data: btoa(bin), is_end: true, chunk_id: chunkId++ } });
+                    }
+                }
+                audioBuf = []; speaking = false; silenceStart = null; speechStart = null;
+            }
+
+            const maxSamples = SR * MAX_BUF_S;
+            if (audioBuf.length > maxSamples) audioBuf = audioBuf.slice(-maxSamples);
         };
 
-        mediaRec.onstop = () => {
-            if (audioChunks.length === 0) return;
-            const blob = new Blob(audioChunks, { type: 'audio/webm' });
-            audioChunks = [];
-            const reader = new FileReader();
-            reader.onload = () => {
-                const b64 = reader.result.split(',')[1];
-                send({ type: 'audio_chunk', data: { data: b64, is_end: true, chunk_id: Date.now() } });
-                log('-> audio ' + (blob.size / 1024).toFixed(0) + 'KB sent');
-            };
-            reader.readAsDataURL(blob);
-            str.getTracks().forEach(t => t.stop());
-        };
-
-        mediaRec.start();
-        rec = true;
+        micActive = true;
         recBtn.classList.add('recording');
         recBtn.querySelector('.btn-label').textContent = 'Stop';
-        log('🎤 Recording… tap Stop to send');
+        log('🎤 Mic live — speak anytime');
+        st.textContent = '🎙️ listening…';
+
     } catch (err) {
         addMsg('sys', '⚠ Mic error: ' + err.message + ' — please type instead');
         log('Mic err: ' + err.message);
     }
 }
 
-function stopRec() {
-    if (mediaRec && mediaRec.state === 'recording') {
-        mediaRec.stop();
-    }
-    rec = false;
+function stopMic() {
+    micActive = false; speaking = false;
+    if (proc) { proc.disconnect(); proc = null; }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    if (ac) { ac.close().catch(()=>{}); ac = null; }
+    audioBuf = []; silenceStart = null; speechStart = null;
     recBtn.classList.remove('recording');
     recBtn.querySelector('.btn-label').textContent = 'Record';
-    log('⏹ Stopped, processing…');
+    st.textContent = '● connected';
+    st.className = 'status-badge connected';
+    log('⏹ Mic stopped');
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// TTS Playback
+// TTS streaming playback
 // ═══════════════════════════════════════════════════════════════════
-let ttsTimer = null;
-
-function playTTS() {
-    if (ttsTimer) clearTimeout(ttsTimer);
-    ttsTimer = setTimeout(() => {
-        if (ttsChunks.length === 0) return;
+function playNextTTS() {
+    if (ttsPlaying) return;
+    if (ttsChunks.length === 0) { ttsPlaying = false; return; }
+    ttsPlaying = true;
+    setTimeout(() => {
+        if (ttsChunks.length === 0) { ttsPlaying = false; return; }
         const blob = new Blob(ttsChunks, { type: 'audio/mpeg' });
         ttsChunks = [];
         const url = URL.createObjectURL(blob);
-        const a = new Audio(url);
-        a.onended = () => { URL.revokeObjectURL(url); };
-        a.play().catch(() => {});
-        log('🔊 TTS ' + (blob.size / 1024).toFixed(0) + 'KB');
-    }, 300);
+        ttsAudioEl = new Audio(url);
+        ttsAudioEl.onended = () => {
+            URL.revokeObjectURL(url);
+            ttsAudioEl = null;
+            ttsPlaying = false;
+            st.textContent = '● connected';
+            st.className = 'status-badge connected';
+            if (ttsChunks.length > 0) playNextTTS();
+        };
+        ttsAudioEl.onplay = () => { st.textContent = '🔊 Tutor speaking…'; };
+        ttsAudioEl.play().catch(() => { ttsPlaying = false; });
+        log('🔊 TTS ' + (blob.size/1024).toFixed(0) + 'KB');
+    }, 250);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Interrupt — stop AI, clear audio, cancel server turn
+// ═══════════════════════════════════════════════════════════════════
+function interruptAI() {
+    if (!ws || ws.readyState !== 1) return;
+    send({ type: 'interrupt', seq: Date.now() });
+    if (ttsAudioEl) { ttsAudioEl.pause(); ttsAudioEl = null; }
+    ttsChunks = [];
+    ttsPlaying = false;
+    think.classList.remove('active');
+    finalizeAI();
+    log('⏹ Interrupted AI');
+    st.textContent = '● connected';
+    st.className = 'status-badge connected';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -401,7 +494,7 @@ function playTTS() {
 // ═══════════════════════════════════════════════════════════════════
 function endSession() {
     if (!ws || ws.readyState !== 1) return;
-    if (rec) stopRec();
+    if (micActive) stopMic();
     send({ type: 'end_session', data: {} });
     addMsg('sys', '⏳ Generating report…');
     endBtn.style.display = 'none';
@@ -414,7 +507,9 @@ inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); sendText(); }
 });
 btn.addEventListener('click', sendText);
-recBtn.addEventListener('click', toggleRec);
+recBtn.addEventListener('click', toggleMic);
+st.addEventListener('dblclick', interruptAI);
+st.title = 'Double-click to interrupt AI';
 
 // ═══════════════════════════════════════════════════════════════════
 // Start

@@ -27,8 +27,10 @@ Rules:
 3. Do NOT flag conversational contractions (gonna, wanna, kinda, gotta) as errors — they are natural in spoken English.
 4. Do NOT flag minor word order variations that are still natural.
 5. For each error, identify the specific fragment (word or short phrase), not the whole sentence.
-6. Explanations MUST be in Chinese (中文), concise (1-2 sentences), and helpful for Chinese English learners.
+6. Each explanation_cn MUST be very short, at most 20 Chinese characters. Be specific and terse.
 7. Order errors by severity: grammar/tense first, then expression/vocabulary.
+8. CRITICAL: keep your ENTIRE response under 400 tokens. Use very short explanations.
+9. Output ONLY raw JSON, no markdown wrapping, no backticks.
 
 JSON schema:
 {
@@ -84,6 +86,47 @@ class CorrectionResult:
 
 
 # ---------------------------------------------------------------------------
+# Truncated JSON repair
+# ---------------------------------------------------------------------------
+def _repair_truncated_json(raw: str) -> str | None:
+    """Attempt to close truncated JSON: unterminated strings + open brackets."""
+    closing = ''
+    stack = []
+    in_string = False
+    escape = False
+
+    for ch in raw:
+        if escape:
+            escape = False
+            continue
+        if ch == '\\':
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in '{[':
+            stack.append('}' if ch == '{' else ']')
+        elif ch in '}]':
+            if stack and stack[-1] == ch:
+                stack.pop()
+            else:
+                return None
+
+    # If still inside a string, close it first
+    if in_string:
+        closing += '"'
+
+    # Close brackets in reverse order
+    while stack:
+        closing += stack.pop()
+
+    return raw + closing
+
+
+# ---------------------------------------------------------------------------
 # Correction Engine
 # ---------------------------------------------------------------------------
 class CorrectionEngine:
@@ -134,7 +177,7 @@ class CorrectionEngine:
                     {"role": "system", "content": CORRECTION_SYSTEM_PROMPT},
                     {"role": "user", "content": original},
                 ],
-                max_tokens=500,
+                max_tokens=800,
                 temperature=0.1,
                 stream=False,
             )
@@ -163,9 +206,18 @@ class CorrectionEngine:
 
         try:
             data = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            logger.warning(f"Correction JSON parse error: {exc} | raw={raw[:200]}")
-            return CorrectionResult.empty(original)
+        except json.JSONDecodeError:
+            # Try to recover truncated JSON by closing open structures
+            repaired = _repair_truncated_json(raw)
+            if repaired:
+                try:
+                    data = json.loads(repaired)
+                except json.JSONDecodeError as exc:
+                    logger.warning(f"Correction JSON parse error: {exc} | raw={raw[:200]}")
+                    return CorrectionResult.empty(original)
+            else:
+                logger.warning(f"Correction JSON unrecoverable | raw={raw[:200]}")
+                return CorrectionResult.empty(original)
 
         # Validate and build result
         corrected_text = data.get("corrected_text", original) or original

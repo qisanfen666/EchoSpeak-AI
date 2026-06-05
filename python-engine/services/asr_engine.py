@@ -96,14 +96,26 @@ class ASREngine:
             # Workaround: Windows SSL cert issues when downloading from HF
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
-            logger.info(f"Loading Whisper model '{config.WHISPER_MODEL_SIZE}' ...")
+
+            model_path = str(config.WHISPER_MODEL_SIZE)
+            # Resolve local path (if it looks like a filesystem path)
+            from pathlib import Path
+            p = Path(model_path)
+            if p.exists():
+                model_path = str(p.resolve())
+                download_root = None
+                logger.info(f"Loading Whisper model from local: {model_path}")
+            else:
+                download_root = str(config.ASR_MODEL_DIR)
+                logger.info(f"Loading Whisper model '{model_path}' ...")
+
             t0 = time.time()
             from faster_whisper import WhisperModel
             self._model = WhisperModel(
-                config.WHISPER_MODEL_SIZE,
+                model_path,
                 device=config.WHISPER_DEVICE,
                 compute_type=config.WHISPER_COMPUTE_TYPE,
-                download_root=str(config.ASR_MODEL_DIR),
+                download_root=download_root,
             )
             logger.info(f"Whisper model loaded in {time.time() - t0:.1f}s")
         return self._model
@@ -211,14 +223,19 @@ class ASREngine:
         }
 
     def _transcribe_wav(self, wav_bytes: bytes, language: str = "en") -> dict:
-        """Transcribe WAV bytes — no VAD filter (for streaming)."""
+        """Transcribe WAV bytes with VAD filtering for clean speech extraction."""
         buf = io.BytesIO(wav_bytes)
         buf.seek(0)
         segments, info = self.model.transcribe(
             buf,
             language=language,
             beam_size=5,
-            vad_filter=False,
+            vad_filter=True,
+            vad_parameters=dict(
+                min_silence_duration_ms=400,
+                threshold=0.5,
+                speech_pad_ms=300,
+            ),
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
