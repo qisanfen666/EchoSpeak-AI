@@ -93,6 +93,9 @@ class ASREngine:
     def model(self):
         """Lazy-load the Whisper model on first use."""
         if self._model is None:
+            # Workaround: Windows SSL cert issues when downloading from HF
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
             logger.info(f"Loading Whisper model '{config.WHISPER_MODEL_SIZE}' ...")
             t0 = time.time()
             from faster_whisper import WhisperModel

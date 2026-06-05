@@ -87,7 +87,7 @@
 
         <!-- 控制按钮 -->
         <div class="controls">
-            <button class="btn accent" onclick="sendTestAudio()">🎤 模拟说一句话</button>
+            <button class="btn accent" id="recordBtn" onclick="toggleRecording()">🎤 开始录音</button>
             <button class="btn" onclick="sendTestInterrupt()">⏹ 模拟打断</button>
             <button class="btn" onclick="sendSceneSwitch()">🔄 切换场景</button>
             <button class="btn danger" id="endBtn" onclick="endSession()">📊 结束会话</button>
@@ -105,14 +105,15 @@
         // ==================== WebSocket ====================
         const SESSION_ID = 'test-' + Date.now();
         let ws = null, connected = false, msgCount = 0;
+        let audioChunks = [];  // accumulate TTS audio binary chunks
 
         function connectWS() {
-            const host = location.host || 'localhost:8080';
-            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const url = `${proto}//${host}/ws?session_id=${SESSION_ID}&scene=ordering`;
+            // Go gateway always runs on 8080
+            const url = `ws://localhost:8080/ws?session_id=${SESSION_ID}&scene=ordering`;
 
             addLog('↗', 'out', `正在连接 ${url} ...`);
             ws = new WebSocket(url);
+            ws.binaryType = 'arraybuffer';  // binary frames as ArrayBuffer (not Blob)
 
             ws.onopen = () => {
                 connected = true;
@@ -121,6 +122,15 @@
             };
 
             ws.onmessage = (evt) => {
+                // Binary message = TTS audio chunk (use ArrayBuffer for sync access)
+                if (evt.data instanceof ArrayBuffer) {
+                    const bytes = new Uint8Array(evt.data);
+                    audioChunks.push(bytes);
+                    addLog('↓', 'in', `[TTS audio chunk: ${bytes.length} bytes, total ${audioChunks.length}]`);
+                    return;
+                }
+
+                // Text message = JSON
                 try {
                     const msg = JSON.parse(evt.data);
                     addLog('↓', 'in', JSON.stringify(msg, null, 0).replace(/\"/g, ''));
@@ -153,7 +163,99 @@
         let scene = 'ordering';
         let chunkSeq = 0;
 
+        // ==================== REAL microphone recording ====================
+        let mediaStream = null, audioCtx = null, processor = null;
+        let pcmBuffer = [];
+        let isRecording = false;
+        const PCM_SAMPLE_RATE = 16000;
+
+        async function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            if (isRecording) {
+                stopRecording();
+                btn.textContent = '🎤 开始录音';
+                btn.classList.remove('active');
+            } else {
+                try {
+                    await startRecording();
+                    btn.textContent = '🔴 停止录音';
+                    btn.classList.add('active');
+                } catch(e) {
+                    addLog('⚠', 'err', 'Microphone access denied: ' + e.message);
+                }
+            }
+        }
+
+        async function startRecording() {
+            audioChunks = [];
+            pcmBuffer = [];
+
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: { sampleRate: PCM_SAMPLE_RATE, channelCount: 1, echoCancellation: true }
+            });
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: PCM_SAMPLE_RATE });
+            const source = audioCtx.createMediaStreamSource(mediaStream);
+
+            // ScriptProcessor to get raw PCM
+            processor = audioCtx.createScriptProcessor(4096, 1, 1);
+            processor.onaudioprocess = (e) => {
+                if (!isRecording) return;
+                const input = e.inputBuffer.getChannelData(0);
+                // Float32 → Int16 PCM
+                const pcm = new Int16Array(input.length);
+                for (let i = 0; i < input.length; i++) {
+                    const s = Math.max(-1, Math.min(1, input[i]));
+                    pcm[i] = s < 0 ? s * 32768 : s * 32767;
+                }
+                pcmBuffer.push(new Uint8Array(pcm.buffer));
+            };
+
+            source.connect(processor);
+            processor.connect(audioCtx.destination);
+            isRecording = true;
+
+            addLog('🎙', 'out', 'Recording started...');
+            addChat('system', '🎙 正在录音，请说英语...');
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            if (processor) { processor.disconnect(); processor = null; }
+            if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+
+            // Merge all PCM chunks
+            let totalLen = pcmBuffer.reduce((s, c) => s + c.length, 0);
+            const merged = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const c of pcmBuffer) { merged.set(c, offset); offset += c.length; }
+
+            addLog('🎙', 'out', `Recording stopped: ${totalLen} bytes PCM`);
+
+            // Send to Go gateway
+            if (connected && totalLen > 0) {
+                // Send as multiple chunks (for streaming feel), last one with is_end=true
+                const chunkSize = 16000; // ~0.5s at 16kHz
+                let seq = 0;
+                for (let i = 0; i < totalLen; i += chunkSize) {
+                    seq++;
+                    const chunk = merged.slice(i, Math.min(i + chunkSize, totalLen));
+                    const b64 = btoa(String.fromCharCode.apply(null, chunk));
+                    const isEnd = (i + chunkSize >= totalLen);
+                    send({
+                        type: 'audio_chunk',
+                        data: { data: b64, is_end: isEnd, chunk_id: seq },
+                        seq: seq
+                    });
+                }
+                addChat('user', '🎤 正在识别...');
+            }
+        }
+
+        // Keep the old mock as fallback
         function sendTestAudio() {
+            audioChunks = [];
             chunkSeq++;
             send({
                 type: 'audio_chunk',
@@ -183,6 +285,11 @@
 
         function handleServerMsg(msg) {
             switch(msg.type) {
+                case 'transcript':
+                    if (msg.data && msg.data.is_final) {
+                        addChat('user', '🧑 ' + (msg.data.text || ''));
+                    }
+                    break;
                 case 'reply_start':
                     addChat('assistant', '🤖 AI 开始回复...');
                     break;
@@ -193,8 +300,10 @@
                 case 'reply_end':
                     if (msg.data && msg.data.interrupted) {
                         addChat('system', '⚠️ 回复被打断');
+                        audioChunks = [];
                     } else {
                         addChat('system', '✅ AI 回复结束');
+                        playAccumulatedAudio();
                     }
                     break;
                 case 'correction':
@@ -266,6 +375,30 @@
                 send({ type: 'scene_select', data: { scene } });
             });
         });
+
+        // ==================== 音频播放 ====================
+        function playAccumulatedAudio() {
+            if (audioChunks.length === 0) {
+                addLog('⚠', 'err', 'No audio chunks to play');
+                return;
+            }
+            const totalLen = audioChunks.reduce((s, c) => s + c.length, 0);
+            const merged = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of audioChunks) {
+                merged.set(chunk, offset);
+                offset += chunk.length;
+            }
+            audioChunks = []; // clear for next round
+
+            const blob = new Blob([merged], { type: 'audio/mpeg' });
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onplay = () => addLog('🔊', 'in', `Playing TTS audio (${totalLen} bytes)`);
+            audio.onended = () => { URL.revokeObjectURL(url); addLog('🔇', 'in', 'TTS playback finished'); };
+            audio.onerror = () => addLog('⚠', 'err', 'Audio playback failed');
+            audio.play().catch(e => addLog('⚠', 'err', 'Autoplay blocked: ' + e.message));
+        }
 
         // ==================== 启动 ====================
         connectWS();

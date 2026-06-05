@@ -35,10 +35,10 @@ def main():
     if result.returncode == 0:
         # Fix import path in generated grpc file
         grpc_file = os.path.join(PROTO_OUT, "aiservice_pb2_grpc.py")
-        with open(grpc_file, "r") as f:
+        with open(grpc_file, "r", encoding="utf-8") as f:
             content = f.read()
         content = content.replace("import aiservice_pb2 as", "from proto import aiservice_pb2 as")
-        with open(grpc_file, "w") as f:
+        with open(grpc_file, "w", encoding="utf-8") as f:
             f.write(content)
 
         print("[OK] Proto generated successfully!")

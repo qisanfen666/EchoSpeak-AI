@@ -1,6 +1,9 @@
 package ws
 
-import "log"
+import (
+	"encoding/base64"
+	"log"
+)
 
 // onAudioChunk processes audio data from the client
 // Fast channel: forwards to Python ASR via gRPC
@@ -10,9 +13,16 @@ func onAudioChunk(c *Client, data *AudioChunkData, seq int64) {
 		return
 	}
 
+	// Decode base64 PCM data
+	pcmData, err := base64.StdEncoding.DecodeString(data.DataB64)
+	if err != nil {
+		log.Printf("[Handler] Base64 decode error: %v", err)
+		return
+	}
+
 	HandleAudioChunk(AudioChunkEvent{
 		SessionID: c.session.ID,
-		Data:      data.Data,
+		Data:      pcmData,
 		IsEnd:     data.IsEnd,
 		ChunkID:   data.ChunkID,
 		Seq:       seq,
