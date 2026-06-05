@@ -32,6 +32,7 @@ from config import config
 from services.asr_engine import get_asr_engine
 from services.tts_engine import get_tts_engine
 from services.llm_engine import get_llm, create_conversation
+from services.correction_engine import get_correction_engine
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -447,7 +448,10 @@ async def echo_speak_ws(websocket: WebSocket):
         # Don't await — let the main loop keep receiving messages
 
     async def send_json(msg: dict):
-        await websocket.send_text(json.dumps(msg))
+        try:
+            await websocket.send_text(json.dumps(msg))
+        except RuntimeError:
+            pass  # client disconnected, ignore
 
     async def process_and_reply(user_text: str):
         """Streaming LLM → TTS pipeline.
@@ -464,6 +468,18 @@ async def echo_speak_ws(websocket: WebSocket):
 
         conversation.add_user_message(user_text.strip())
         logger.info(f"[WS:{session_id}] LLM streaming start")
+
+        # Launch correction in parallel (non-blocking, results sent when ready)
+        async def run_correction():
+            try:
+                corr_engine = get_correction_engine()
+                correction = await asyncio.to_thread(corr_engine.correct, user_text.strip())
+                if correction.has_corrections:
+                    await send_json({"type": "correction", "data": correction.to_dict()})
+                    logger.info(f"[WS:{session_id}] Correction: {len(correction.errors)} error(s)")
+            except Exception as e:
+                logger.warning(f"[WS:{session_id}] Correction failed: {e}")
+        correction_task = asyncio.create_task(run_correction())
 
         await send_json({"type": "reply_start"})
 
@@ -537,7 +553,10 @@ async def echo_speak_ws(websocket: WebSocket):
                     if interrupted:
                         break
                     if chunk["type"] == "audio":
-                        await websocket.send_bytes(chunk["data"])
+                        try:
+                            await websocket.send_bytes(chunk["data"])
+                        except RuntimeError:
+                            break  # client disconnected
                 elapsed = time.time() - t0
                 logger.info(f"[WS:{session_id}] TTS done: {len(full_reply)} chars, {elapsed:.1f}s")
             except asyncio.CancelledError:
