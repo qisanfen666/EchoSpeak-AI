@@ -31,6 +31,7 @@ import edge_tts
 from config import config
 from services.asr_engine import get_asr_engine
 from services.tts_engine import get_tts_engine
+from services.llm_engine import get_llm, create_conversation
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -379,16 +380,219 @@ async def websocket_tts(websocket: WebSocket, client_id: str):
 
 
 # ===================================================================
-# Static frontend (test page)
+# EchoSpeak AI — Full-duplex WebSocket (ASR + LLM + TTS + scoring)
+# ===================================================================
+
+VALID_SCENES = {"ordering", "interview", "meeting", "travel", "default"}
+
+
+@app.websocket("/ws")
+async def echo_speak_ws(websocket: WebSocket):
+    """
+    EchoSpeak AI full-duplex WebSocket endpoint.
+    Full pipeline: ASR -> LLM -> TTS
+
+    Protocol (JSON messages):
+      Client -> Server:
+        {"type":"audio_chunk", "data":{"data":"<base64_audio>","is_end":bool,"chunk_id":N}}
+        {"type":"text_message", "data":{"text":"..."}}
+        {"type":"interrupt", "seq":N}
+        {"type":"scene_select", "data":{"scene":"ordering|interview|meeting|travel"}}
+        {"type":"end_session", "data":{}}
+
+      Server -> Client:
+        {"type":"reply_start"}
+        {"type":"reply_chunk", "data":{"text":"..."}}
+        {"type":"reply_end", "data":{"interrupted":bool}}
+        {"type":"score_update", "data":{"score":N}}
+        {"type":"session_report", "data":{"overall_score":N,...}}
+        {"type":"error", "data":{"message":"..."}}
+        <binary MP3 chunks>  <- TTS audio
+    """
+    session_id = websocket.query_params.get("session_id", "unknown")
+    scene = websocket.query_params.get("scene", "ordering")
+    if scene not in VALID_SCENES:
+        scene = "ordering"
+
+    await websocket.accept()
+    logger.info(f"[WS:{session_id}] EchoSpeak connected, scene={scene}")
+
+    # Session state
+    llm = get_llm()
+    conversation = create_conversation(scene)
+    tts = get_tts_engine()
+    buf = bytearray()
+    utterance_count = 0
+    session_start = time.time()
+    interrupted = False
+
+    async def send_json(msg: dict):
+        await websocket.send_text(json.dumps(msg))
+
+    async def process_and_reply(user_text: str):
+        """Process user text through LLM -> reply -> TTS."""
+        nonlocal interrupted
+        interrupted = False
+
+        if not user_text.strip():
+            return
+
+        conversation.add_user_message(user_text.strip())
+
+        # Get LLM reply (non-streaming)
+        full_reply = llm.reply(conversation)
+
+        await send_json({"type": "reply_start"})
+        if full_reply:
+            await send_json({
+                "type": "reply_chunk",
+                "data": {"text": full_reply}
+            })
+        await send_json({
+            "type": "reply_end",
+            "data": {"interrupted": interrupted}
+        })
+
+        # Score update (placeholder)
+        await send_json({
+            "type": "score_update",
+            "data": {"score": min(95, 60 + utterance_count * 5 + 30)}
+        })
+
+        # TTS
+        if not interrupted and full_reply.strip():
+            try:
+                communicate = edge_tts.Communicate(full_reply.strip(), config.TTS_VOICE)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        await websocket.send_bytes(chunk["data"])
+            except Exception as e:
+                logger.warning(f"[WS:{session_id}] TTS error: {e}")
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            msg = json.loads(raw)
+            msg_type = msg.get("type", "")
+
+            # -- Audio chunk (ASR pipeline) --
+            if msg_type == "audio_chunk":
+                chunk_data = msg.get("data", {}).get("data", "")
+                is_end = msg.get("data", {}).get("is_end", False)
+
+                try:
+                    raw_bytes = base64.b64decode(chunk_data)
+                    buf.extend(raw_bytes)
+                except Exception as e:
+                    logger.warning(f"[WS:{session_id}] base64 decode error: {e}")
+
+                if is_end and len(buf) > 1024:
+                    utterance_count += 1
+                    recognizer = get_asr_engine()
+                    _ = recognizer.model
+                    text = ""
+                    is_webm = len(buf) > 4 and bytes(buf[:4]) == b'\x1a\x45\xdf\xa3'
+
+                    if not is_webm and len(buf) < 500000:
+                        try:
+                            result = recognizer.transcribe_pcm(bytes(buf), 16000)
+                            text = result.get("text", "").strip()
+                            logger.info(f"[WS:{session_id}] ASR(PCM): '{text[:80]}'")
+                        except Exception as e:
+                            logger.info(f"[WS:{session_id}] PCM failed: {e}, trying file...")
+                            text = ""
+
+                    if not text:
+                        try:
+                            ext = "webm" if is_webm else "audio"
+                            tmp = config.AUDIO_DIR / f"upload_{int(time.time()*1000)}.{ext}"
+                            tmp.write_bytes(bytes(buf))
+                            result = recognizer.transcribe_file(str(tmp))
+                            text = result.get("text", "").strip()
+                            logger.info(f"[WS:{session_id}] ASR(file): '{text[:80]}'")
+                            tmp.unlink(missing_ok=True)
+                        except Exception as e2:
+                            logger.warning(f"[WS:{session_id}] ASR fallback error: {e2}")
+
+                    if text:
+                        await process_and_reply(text)
+                    else:
+                        await send_json({
+                            "type": "error",
+                            "data": {"message": "No speech detected"}
+                        })
+                    buf.clear()
+
+            # -- Text message --
+            elif msg_type == "text_message":
+                text = msg.get("data", {}).get("text", "")
+                if text.strip():
+                    utterance_count += 1
+                    logger.info(f"[WS:{session_id}] Text: '{text[:80]}'")
+                    await process_and_reply(text)
+
+            # -- Interrupt --
+            elif msg_type == "interrupt":
+                interrupted = True
+                logger.info(f"[WS:{session_id}] Interrupted")
+                buf.clear()
+
+            # -- Scene switch --
+            elif msg_type == "scene_select":
+                new_scene = msg.get("data", {}).get("scene", "ordering")
+                if new_scene in VALID_SCENES:
+                    scene = new_scene
+                    conversation.set_scene(scene)
+                    logger.info(f"[WS:{session_id}] Scene changed to {scene}")
+                    await send_json({
+                        "type": "reply_chunk",
+                        "data": {"text": f"[Switched to {scene} scene]"}
+                    })
+                else:
+                    await send_json({
+                        "type": "error",
+                        "data": {"message": f"Unknown scene: {new_scene}"}
+                    })
+
+            # -- End session --
+            elif msg_type == "end_session":
+                duration = time.time() - session_start
+                overall = min(95, 60 + utterance_count * 5 + int(30 * (1 if utterance_count > 0 else 0)))
+                logger.info(f"[WS:{session_id}] Session ended: {utterance_count} utterances, {duration:.0f}s")
+                await send_json({
+                    "type": "session_report",
+                    "data": {
+                        "overall_score": overall,
+                        "duration_s": round(duration, 1),
+                        "utterances": utterance_count,
+                    }
+                })
+                break
+
+            elif msg_type == "ping":
+                await send_json({"type": "pong"})
+
+    except WebSocketDisconnect:
+        logger.info(f"[WS:{session_id}] Disconnected ({utterance_count} utterances)")
+    except Exception as e:
+        logger.exception(f"[WS:{session_id}] Error")
+        try:
+            await send_json({"type": "error", "data": {"message": str(e)}})
+        except Exception:
+            pass
+
+
+# ===================================================================
+# Static frontend
 # ===================================================================
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    """EchoSpeak-AI original test page."""
+    """EchoSpeak-AI conversation page."""
     index_path = FRONTEND_DIR / "index.html"
     if index_path.exists():
         return index_path.read_text(encoding="utf-8")
-    return HTMLResponse("<h1>EchoSpeak AI — ASR/TTS Dev Server</h1>")
+    return HTMLResponse("<h1>EchoSpeak AI — English Speaking Practice</h1>")
 
 
 @app.get("/test", response_class=HTMLResponse)
