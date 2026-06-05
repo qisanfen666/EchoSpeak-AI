@@ -1,0 +1,10 @@
+.env
+.env.test
+.env.stage
+
+*.yml
+*.sh
+
+.claude
+__pycache__
+*.exe
