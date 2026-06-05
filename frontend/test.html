@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoSpeak AI — ASR/TTS 测试</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🎤 EchoSpeak AI — 语音核心测试</h1>
+            <p class="subtitle">ASR（语音→文字 + 发音/流利度评分） & TTS（文字→语音）</p>
+        </header>
+
+        <div class="test-grid">
+            <!-- ========================================================= -->
+            <!-- ASR Panel -->
+            <!-- ========================================================= -->
+            <section class="panel asr-panel">
+                <div class="panel-header">
+                    <h2>🎙️ 语音识别 (ASR) <span style="font-size:0.7rem;color:var(--green);font-weight:400">WebSocket 流式</span></h2>
+                    <span class="badge">faster-whisper</span>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Recording controls -->
+                    <div class="control-bar">
+                        <button id="btn-vad-start" class="btn btn-record">
+                            <span class="icon">🎤</span>
+                            <span class="label">开始对话</span>
+                        </button>
+                        <button id="btn-vad-stop" class="btn btn-stop" disabled>
+                            <span class="icon">⏹</span>
+                            <span class="label">结束</span>
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="status-bar">
+                        <div class="status-indicator" id="asr-status">空闲</div>
+                        <div class="timer" id="asr-timer">00:00</div>
+                    </div>
+
+                    <!-- Waveform visualisation -->
+                    <div class="visualizer" id="visualizer">
+                        <canvas id="waveform"></canvas>
+                    </div>
+
+                    <!-- Conversation transcript -->
+                    <div class="transcript-box" id="transcript">
+                        <span class="placeholder">点击「开始对话」后说话，静音自动断句...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- TTS Panel -->
+            <!-- ========================================================= -->
+            <section class="panel tts-panel">
+                <div class="panel-header">
+                    <h2>🔊 语音合成 (TTS)</h2>
+                    <span class="badge">edge-tts</span>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Text input -->
+                    <div class="textarea-group">
+                        <label for="tts-text">输入要合成的文字：</label>
+                        <textarea id="tts-text" rows="4" placeholder="Type some English text here...&#10;例如：Hello! Welcome to your English speaking practice."></textarea>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="control-bar">
+                        <button id="btn-speak" class="btn btn-primary">
+                            <span class="icon">🔊</span>
+                            <span class="label">合成并播放</span>
+                        </button>
+                        <button id="btn-stop-tts" class="btn btn-stop" disabled>
+                            <span class="icon">⏹</span>
+                            <span class="label">停止</span>
+                        </button>
+                    </div>
+
+                    <!-- Voice selector -->
+                    <div class="select-group">
+                        <label for="tts-voice">选择口音：</label>
+                        <select id="tts-voice">
+                            <option value="en-US-JennyNeural">🇺🇸 Jenny (美式女声)</option>
+                            <option value="en-US-GuyNeural">🇺🇸 Guy (美式男声)</option>
+                            <option value="en-GB-SoniaNeural">🇬🇧 Sonia (英式女声)</option>
+                            <option value="en-GB-RyanNeural">🇬🇧 Ryan (英式男声)</option>
+                            <option value="en-AU-NatashaNeural">🇦🇺 Natasha (澳式女声)</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="status-bar">
+                        <div class="status-indicator" id="tts-status">空闲</div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="result-box">
+                        <div class="result-header">
+                            <span>合成日志</span>
+                        </div>
+                        <div class="result-text log-box" id="tts-log">
+                            <span class="placeholder">合成后将显示日志...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- Quick Test Buttons -->
+        <!-- ========================================================= -->
+        <section class="quick-test">
+            <h3>⚡ 快速测试</h3>
+            <div class="quick-buttons">
+                <button class="btn btn-sm" data-text="Hello! My name is Tom. I am a student.">
+                    👋 自我介绍
+                </button>
+                <button class="btn btn-sm" data-text="I would like to order a steak and a glass of red wine, please.">
+                    🍽️ 餐厅点餐
+                </button>
+                <button class="btn btn-sm" data-text="Thank you for this opportunity. I have five years of experience in software development.">
+                    💼 面试
+                </button>
+                <button class="btn btn-sm" data-text="I'd like to propose a new marketing strategy for the next quarter.">
+                    📊 商务会议
+                </button>
+                <button class="btn btn-sm" id="btn-end2end">
+                    🔄 端到端测试（录音→识别→合成→播放）
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/app.js?v=3"></script>
+</body>
+</html>
