@@ -76,6 +76,7 @@ message ChatResponse {
     ReplyChunk reply = 1;      // 对话回复（流式 chunk）
     Correction correction = 2; // 纠错结果（在 reply 完成后统一发送）
     bool done = 3;             // 整个对话轮次结束
+    bytes tts_audio = 4;       // TTS 语音片段（MP3 chunk）
   }
 }
 

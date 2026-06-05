@@ -22,9 +22,9 @@ const (
 
 // AudioChunkData 音频块载荷
 type AudioChunkData struct {
-	Data   []byte `json:"data"`    // base64 编码的 PCM 音频
-	IsEnd  bool   `json:"is_end"`  // 是否为本句最后一个 chunk
-	ChunkID int   `json:"chunk_id"`
+	DataB64 string `json:"data"`   // base64 encoded PCM audio
+	IsEnd   bool   `json:"is_end"`
+	ChunkID int    `json:"chunk_id"`
 }
 
 // SceneSelectData 场景选择

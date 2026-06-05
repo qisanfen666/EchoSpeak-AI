@@ -2,133 +2,150 @@ package grpc_client
 
 import (
 	"context"
+	"io"
 	"log"
 	"sync"
+
+	"go-gateway/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// AIClient 封装对 Python AI 引擎的 gRPC 调用
-// 注意：3天限时赛，先实现核心功能，不做连接池/重试/负载均衡
 type AIClient struct {
 	addr   string
 	conn   *grpc.ClientConn
+	client proto.AIServiceClient
 	mu     sync.Mutex
 }
 
 var defaultClient *AIClient
 
-// Init 初始化 gRPC 客户端
 func Init(addr string) error {
 	conn, err := grpc.Dial(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(10*1024*1024)), // 10MB for audio
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(10*1024*1024)),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(10*1024*1024),
+			grpc.MaxCallSendMsgSize(10*1024*1024),
+		),
 	)
 	if err != nil {
 		return err
 	}
 
 	defaultClient = &AIClient{
-		addr: addr,
-		conn: conn,
+		addr:   addr,
+		conn:   conn,
+		client: proto.NewAIServiceClient(conn),
 	}
 
-	log.Printf("[gRPC] Connected to Python engine at %s", addr)
+	log.Printf("[gRPC] Connected to AI engine at %s", addr)
 	return nil
 }
 
-// GetConn 获取连接（后续 proto 生成后使用）
-func GetConn() *grpc.ClientConn {
-	if defaultClient == nil {
-		log.Fatal("[gRPC] Not initialized")
-	}
-	return defaultClient.conn
-}
-
-// Close 关闭连接
 func Close() {
 	if defaultClient != nil && defaultClient.conn != nil {
 		defaultClient.conn.Close()
 	}
 }
 
-// ============================================
-// 以下为占位接口，Day 1 生成 proto 后替换为实际调用
-// ============================================
+// ChatResult holds the streaming chat response
+type ChatResult struct {
+	ReplyChunks chan string
+	Correction  chan *proto.Correction
+	AudioChunks chan []byte // TTS MP3 chunks
+	Done        chan struct{}
+	Err         chan error
+}
 
-// StreamASR 流式 ASR（占位）
-func StreamASR(ctx context.Context, sessionID string, audioChunks <-chan []byte) (<-chan string, error) {
-	// TODO Day 1: 实现 client streaming gRPC 调用
-	resultCh := make(chan string, 10)
+// StreamASR sends audio to Python ASR and returns recognized text
+func StreamASR(ctx context.Context, sessionID string, audioData []byte) (string, error) {
+	stream, err := defaultClient.client.StreamASR(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	err = stream.Send(&proto.AudioChunk{
+		AudioData: audioData,
+		SessionId: sessionID,
+		IsEnd:     true,
+	})
+	if err != nil {
+		return "", err
+	}
+	stream.CloseSend()
+
+	resp, err := stream.Recv()
+	if err != nil {
+		return "", err
+	}
+	return resp.Text, nil
+}
+
+// ChatStream calls Python Chat gRPC (server streaming)
+func ChatStream(ctx context.Context, sessionID, scene, userMessage string) *ChatResult {
+	result := &ChatResult{
+		ReplyChunks: make(chan string, 50),
+		Correction:  make(chan *proto.Correction, 1),
+		AudioChunks: make(chan []byte, 20),
+		Done:        make(chan struct{}, 1),
+		Err:         make(chan error, 1),
+	}
+
 	go func() {
-		defer close(resultCh)
-		for chunk := range audioChunks {
-			select {
-			case <-ctx.Done():
+		defer func() {
+			close(result.ReplyChunks)
+			close(result.Correction)
+			close(result.AudioChunks)
+			close(result.Done)
+			close(result.Err)
+		}()
+
+		req := &proto.ChatRequest{
+			SessionId:   sessionID,
+			Scene:       scene,
+			UserMessage: userMessage,
+		}
+
+		stream, err := defaultClient.client.Chat(ctx, req)
+		if err != nil {
+			result.Err <- err
+			return
+		}
+
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				result.Done <- struct{}{}
 				return
-			default:
-				_ = chunk // 实际发送到 gRPC stream
-				log.Printf("[gRPC:ASR] Sending chunk: session=%s size=%d", sessionID, len(chunk))
+			}
+			if err != nil {
+				result.Err <- err
+				return
+			}
+
+			switch payload := resp.Payload.(type) {
+			case *proto.ChatResponse_Reply:
+				result.ReplyChunks <- payload.Reply.Text
+			case *proto.ChatResponse_Correction:
+				result.Correction <- payload.Correction
+			case *proto.ChatResponse_TtsAudio:
+				result.AudioChunks <- payload.TtsAudio
+			case *proto.ChatResponse_Done:
+				result.Done <- struct{}{}
+				return
 			}
 		}
 	}()
-	return resultCh, nil
+
+	return result
 }
 
-// ChatStream 流式 LLM 对话（占位）
-func ChatStream(ctx context.Context, sessionID string, userMessage string, history []map[string]string) (<-chan string, <-chan interface{}, error) {
-	// TODO Day 1: 实现 bidirectional streaming gRPC 调用
-	replyCh := make(chan string, 20)
-	correctionCh := make(chan interface{}, 1)
-
-	go func() {
-		defer close(replyCh)
-		defer close(correctionCh)
-		// 实际 gRPC stream 调用
-		log.Printf("[gRPC:LLM] Chat: session=%s msg=%s", sessionID, userMessage)
-	}()
-
-	return replyCh, correctionCh, nil
-}
-
-// SynthesizeStream 流式 TTS（占位）
-func SynthesizeStream(ctx context.Context, sessionID string, textChunks <-chan string) (<-chan []byte, error) {
-	// TODO Day 1: 实现 server streaming gRPC 调用
-	audioCh := make(chan []byte, 20)
-	go func() {
-		defer close(audioCh)
-		for text := range textChunks {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				_ = text
-				log.Printf("[gRPC:TTS] Synthesizing chunk: session=%s", sessionID)
-			}
-		}
-	}()
-	return audioCh, nil
-}
-
-// EvaluatePronunciation 发音评测（占位，Day 2 异步使用）
-func EvaluatePronunciation(ctx context.Context, sessionID string, audio []byte, referenceText string) (map[string]interface{}, error) {
-	// TODO Day 2: 实现 unary gRPC 调用
-	log.Printf("[gRPC:Eval] Evaluating: session=%s", sessionID)
-	return map[string]interface{}{
-		"overall_score": 0,
-		"accuracy":      0,
-		"fluency":       0,
-	}, nil
-}
-
-// GenerateReport 课后报告（占位，Day 2）
-func GenerateReport(ctx context.Context, sessionID string, history []map[string]string) (map[string]interface{}, error) {
-	// TODO Day 2: 实现 unary gRPC 调用
-	log.Printf("[gRPC:Report] Generating report: session=%s", sessionID)
-	return map[string]interface{}{
-		"overall_score": 0,
-		"summary":       "# 课后报告\n\n会话总结（Demo）",
-	}, nil
+// Health checks Python engine availability
+func Health(ctx context.Context) (bool, string) {
+	resp, err := defaultClient.client.Health(ctx, &proto.HealthRequest{})
+	if err != nil {
+		return false, err.Error()
+	}
+	return resp.Ok, resp.Message
 }
