@@ -425,12 +425,37 @@ async def echo_speak_ws(websocket: WebSocket):
     utterance_count = 0
     session_start = time.time()
     interrupted = False
+    current_turn_task: asyncio.Task | None = None
+
+    async def cancel_current_turn():
+        """Cancel the running LLM/TTS task if any."""
+        nonlocal current_turn_task, interrupted
+        interrupted = True
+        if current_turn_task and not current_turn_task.done():
+            current_turn_task.cancel()
+            try:
+                await current_turn_task
+            except asyncio.CancelledError:
+                pass
+        current_turn_task = None
+
+    async def start_turn(user_text: str):
+        """Launch process_and_reply as a cancellable background task."""
+        nonlocal current_turn_task
+        await cancel_current_turn()
+        current_turn_task = asyncio.create_task(process_and_reply(user_text))
+        # Don't await — let the main loop keep receiving messages
 
     async def send_json(msg: dict):
         await websocket.send_text(json.dumps(msg))
 
     async def process_and_reply(user_text: str):
-        """Process user text through LLM -> reply -> TTS."""
+        """Streaming LLM → TTS pipeline.
+
+        LLM tokens are streamed word-by-word to the frontend for real-time
+        display.  Once the full reply is ready, TTS is streamed as MP3 chunks
+        so the browser can start playback before the entire audio is generated.
+        """
         nonlocal interrupted
         interrupted = False
 
@@ -438,40 +463,98 @@ async def echo_speak_ws(websocket: WebSocket):
             return
 
         conversation.add_user_message(user_text.strip())
-
-        # Get LLM reply (non-streaming)
-        full_reply = llm.reply(conversation)
+        logger.info(f"[WS:{session_id}] LLM streaming start")
 
         await send_json({"type": "reply_start"})
-        if full_reply:
-            await send_json({
-                "type": "reply_chunk",
-                "data": {"text": full_reply}
-            })
-        await send_json({
-            "type": "reply_end",
-            "data": {"interrupted": interrupted}
-        })
 
-        # Score update (placeholder)
+        # ── Phase 1: stream LLM tokens word-by-word ──
+        full_reply: str = ""
+        try:
+            # reply_stream() is sync → run in thread, bridge via Queue
+            queue: asyncio.Queue = asyncio.Queue()
+
+            def _run_llm():
+                try:
+                    for token in llm.reply_stream(conversation):
+                        queue.put_nowait(("token", token))
+                    queue.put_nowait(("done", None))
+                except Exception as exc:
+                    queue.put_nowait(("error", exc))
+
+            loop = asyncio.get_event_loop()
+            loop.run_in_executor(None, _run_llm)
+
+            while True:
+                try:
+                    kind, value = await asyncio.wait_for(queue.get(), timeout=30)
+                except asyncio.TimeoutError:
+                    logger.warning(f"[WS:{session_id}] LLM stream timeout")
+                    break
+
+                if kind == "error":
+                    logger.error(f"[WS:{session_id}] LLM stream error: {value}")
+                    break
+                if kind == "done":
+                    break
+
+                # kind == "token"
+                full_reply += value
+                await send_json({
+                    "type": "reply_chunk",
+                    "data": {"text": value}
+                })
+                if interrupted:
+                    break
+
+        except asyncio.CancelledError:
+            logger.info(f"[WS:{session_id}] Turn cancelled")
+            interrupted = True
+            raise  # re-raise so the task is properly cancelled
+        except Exception as e:
+            logger.exception(f"[WS:{session_id}] LLM pipeline error: {e}")
+
+        if not interrupted:
+            await send_json({
+                "type": "reply_end",
+                "data": {"interrupted": interrupted}
+            })
+
+        if not full_reply.strip():
+            return
+
+        # ── Phase 2: score ──
         await send_json({
             "type": "score_update",
             "data": {"score": min(95, 60 + utterance_count * 5 + 30)}
         })
 
-        # TTS
-        if not interrupted and full_reply.strip():
+        # ── Phase 3: streaming TTS ──
+        if not interrupted:
+            t0 = time.time()
             try:
                 communicate = edge_tts.Communicate(full_reply.strip(), config.TTS_VOICE)
                 async for chunk in communicate.stream():
+                    if interrupted:
+                        break
                     if chunk["type"] == "audio":
                         await websocket.send_bytes(chunk["data"])
+                elapsed = time.time() - t0
+                logger.info(f"[WS:{session_id}] TTS done: {len(full_reply)} chars, {elapsed:.1f}s")
+            except asyncio.CancelledError:
+                logger.info(f"[WS:{session_id}] TTS cancelled")
+                raise
             except Exception as e:
                 logger.warning(f"[WS:{session_id}] TTS error: {e}")
 
     try:
         while True:
-            raw = await websocket.receive_text()
+            try:
+                raw = await websocket.receive_text()
+            except WebSocketDisconnect:
+                break
+            except RuntimeError:
+                # WebSocket already closed (e.g., TTS error)
+                break
             msg = json.loads(raw)
             msg_type = msg.get("type", "")
 
@@ -490,6 +573,10 @@ async def echo_speak_ws(websocket: WebSocket):
                     utterance_count += 1
                     recognizer = get_asr_engine()
                     _ = recognizer.model
+
+                    # Tell frontend we're processing
+                    await send_json({"type": "processing", "data": {"message": "识别中..."}})
+
                     text = ""
                     is_webm = len(buf) > 4 and bytes(buf[:4]) == b'\x1a\x45\xdf\xa3'
 
@@ -515,7 +602,12 @@ async def echo_speak_ws(websocket: WebSocket):
                             logger.warning(f"[WS:{session_id}] ASR fallback error: {e2}")
 
                     if text:
-                        await process_and_reply(text)
+                        # Show user what was recognized
+                        await send_json({
+                            "type": "transcript",
+                            "data": {"text": text, "is_final": True, "is_user": True}
+                        })
+                        await start_turn(text)
                     else:
                         await send_json({
                             "type": "error",
@@ -529,13 +621,17 @@ async def echo_speak_ws(websocket: WebSocket):
                 if text.strip():
                     utterance_count += 1
                     logger.info(f"[WS:{session_id}] Text: '{text[:80]}'")
-                    await process_and_reply(text)
+                    await start_turn(text)
 
             # -- Interrupt --
             elif msg_type == "interrupt":
-                interrupted = True
                 logger.info(f"[WS:{session_id}] Interrupted")
                 buf.clear()
+                await cancel_current_turn()
+                await send_json({
+                    "type": "reply_end",
+                    "data": {"interrupted": True}
+                })
 
             # -- Scene switch --
             elif msg_type == "scene_select":
@@ -610,11 +706,11 @@ async def test_page():
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info(f"Starting EchoSpeak AI dev server on http://0.0.0.0:{config.DEV_PORT}")
+    logger.info(f"Starting EchoSpeak AI dev server on http://127.0.0.1:{config.DEV_PORT}")
     uvicorn.run(
         "fastapi_server:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=config.DEV_PORT,
-        reload=True,
+        reload=False,
         log_level="info",
     )

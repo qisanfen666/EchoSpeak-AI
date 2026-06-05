@@ -7,3 +7,7 @@
 .claude
 __pycache__
 *.exe*
+
+# Generated audio / model files (downloaded at runtime)
+audio/
+!audio/.gitkeep

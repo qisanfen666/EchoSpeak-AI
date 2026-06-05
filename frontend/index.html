@@ -28,67 +28,103 @@
     <div id="dbg" style="font-size:10px;color:#334155;padding-top:4px;display:none"></div>
 
     <script>
-        // ---- State ----
-        let ws, ab = null, rec = false;
-        let ac, stream, proc, buf = [];
-        let silTimer, speaking = false;
-        let ttsChunks = [];
-        let playing = false;
-
+        // ================================================================
+        // EchoSpeak AI — Real-time conversation (continuous mic + VAD)
+        // ================================================================
         const $ = s => document.querySelector(s);
         const chat = $('#chat'), inp = $('#inp'), btn = $('#sendBtn');
         const recBtn = $('#recBtn'), endBtn = $('#endBtn');
         const think = $('#think'), st = $('#status'), dbg = $('#dbg');
 
+        // ── State ──
+        let ws;
+        let ac, stream, proc, analyserNode;
+        let micActive = false;       // mic is on (continuous)
+        let speaking = false;        // VAD: user is speaking right now
+        let audioBuf = [];           // Float32 samples since speech start
+        const SR = 16000;
+        const CHUNK_MS = 200;       // send chunk every 200ms
+        const VAD_THRESHOLD = 0.02;   // loose threshold (Whisper VAD filters noise)
+        const SILENCE_MS = 1800;        // generous silence before ending
+        const MIN_SPEECH_MS = 300;      // minimum speech duration
+        const CONSEC_FRAMES = 3;        // frames to confirm speech
+        const PRE_SPEECH_MS = 1200;     // generous lookback before speech
+        let silenceStart = null;
+        let speechStart = null;
+        let lastSendTime = 0;
+        let chunkId = 0;
+        const MAX_BUF_S = 15;       // max 15 seconds of audio
+
+        // ── TTS queue ──
+        let ttsChunks = [];
+        let ttsPlaying = false;
+        let ttsAudioEl = null;
+
+        // ── AI reply streaming ──
+        let currentAIBubble = null;
+        let aiReplyText = '';
+
         function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
 
-        // ---- Message display ----
-        function addMsg(who, text) {
+        // ── Message display ──
+        function makeBubble(label, labelEmoji, bgStyle) {
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;flex-direction:column';
             const bubble = document.createElement('div');
-            if (who === 'user') {
-                bubble.style.cssText = 'align-self:flex-end;background:#334155;padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%';
-                const label = document.createElement('div');
-                label.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px';
-                label.textContent = '🧑 You';
-                bubble.appendChild(label);
-                const txt = document.createElement('span');
-                txt.textContent = text;
-                bubble.appendChild(txt);
-            } else if (who === 'ai') {
-                bubble.style.cssText = 'align-self:flex-start;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%';
-                const label = document.createElement('div');
-                label.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px';
-                label.textContent = '🤖 AI';
-                bubble.appendChild(label);
-                const txt = document.createElement('span');
-                txt.textContent = text;
-                bubble.appendChild(txt);
-            } else {
-                bubble.style.cssText = 'align-self:center;color:#64748b;font-size:11px';
-                bubble.textContent = text;
-            }
+            bubble.style.cssText = bgStyle;
+            const lbl = document.createElement('div');
+            lbl.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px';
+            lbl.textContent = labelEmoji + ' ' + label;
+            bubble.appendChild(lbl);
+            const txt = document.createElement('span');
+            bubble.appendChild(txt);
             row.appendChild(bubble);
             chat.appendChild(row);
-            chat.scrollTop = chat.scrollHeight;
-            const ph = chat.querySelector('div[style*="align-self: center"]');
-            if (ph && !ph.parentElement.querySelector('span')) ph.remove();
+            return {row, bubble, txt};
         }
 
-        function upAI(text) {
-            const aiBubbles = chat.querySelectorAll('div[style*="rgba(56,189,248,0.08)"]');
-            if (aiBubbles.length > 0) {
-                const last = aiBubbles[aiBubbles.length - 1];
-                const span = last.querySelector('span');
-                if (span) { span.textContent = text; }
-                chat.scrollTop = chat.scrollHeight;
-            } else {
-                addMsg('ai', text);
+        function addMsg(who, text) {
+            if (who === 'user') {
+                const {txt} = makeBubble('You', '🧑',
+                    'align-self:flex-end;background:#334155;padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%');
+                txt.textContent = text;
+            } else if (who === 'sys') {
+                const b = document.createElement('div');
+                b.style.cssText = 'align-self:center;color:#64748b;font-size:11px;margin:2px 0';
+                b.textContent = text;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;flex-direction:column';
+                row.appendChild(b);
+                chat.appendChild(row);
             }
+            chat.scrollTop = chat.scrollHeight;
         }
 
-        // ---- WebSocket ----
+        function startAIBubble() {
+            const {bubble, txt} = makeBubble('AI', '🤖',
+                'align-self:flex-start;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%');
+            currentAIBubble = bubble;
+            aiReplyText = '';
+            return txt;
+        }
+
+        function appendAIText(token) {
+            if (!currentAIBubble) {
+                const txt = startAIBubble();
+                const span = txt;
+            }
+            aiReplyText += token;
+            const span = currentAIBubble.querySelector('span');
+            if (span) span.textContent = aiReplyText;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function finalizeAI() {
+            currentAIBubble = null;
+            aiReplyText = '';
+        }
+
+        // ── WebSocket ──
         function connect() {
             const u = `ws://${location.host}/ws?session_id=c_${Date.now()}&scene=ordering`;
             ws = new WebSocket(u);
@@ -99,31 +135,55 @@
                 st.style.color = '#22c55e';
                 inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
                 inp.focus();
-                addMsg('sys', '✅ 已连接 - 打字或按「录音」说话');
+                addMsg('sys', '✅ 已连接 — 打字或点🎤开始实时对话');
             };
 
             ws.onmessage = (e) => {
                 if (e.data instanceof ArrayBuffer) {
-                    // TTS audio
+                    // TTS audio chunk — queue for playback
                     ttsChunks.push(new Uint8Array(e.data));
-                    if (!playing) playTTS();
+                    log('<- audio ' + new Uint8Array(e.data).length + 'B');
+                    if (!ttsPlaying) playNextTTS();
                     return;
                 }
                 try {
                     const m = JSON.parse(e.data);
                     log('<- ' + m.type);
-                    if (m.type === 'reply_start') { think.style.display = 'block'; }
-                    else if (m.type === 'reply_chunk') {
-                        think.style.display = 'none';
-                        upAI(m.data.text);
-                    } else if (m.type === 'reply_end') {
-                        think.style.display = 'none';
-                        st.textContent = '✅ 已连接';
-                    } else if (m.type === 'session_report') {
-                        addMsg('sys', '📊 报告: ' + m.data.overall_score + '分 / ' + m.data.utterances + '句 / ' + m.data.duration_s + 's');
-                        endBtn.style.display = 'none';
-                    } else if (m.type === 'error') {
-                        addMsg('sys', '⚠️ ' + (m.data.message || ''));
+                    switch (m.type) {
+                        case 'reply_start':
+                            think.style.display = 'block';
+                            think.textContent = '🤖 AI 思考中...';
+                            startAIBubble();
+                            break;
+                        case 'reply_chunk':
+                            think.style.display = 'none';
+                            think.textContent = '🤖 AI 回复中...';
+                            appendAIText(m.data.text);
+                            break;
+                        case 'reply_end':
+                            think.style.display = 'none';
+                            st.textContent = '✅ 已连接';
+                            finalizeAI();
+                            break;
+                        case 'transcript':
+                            addMsg('user', m.data.text);
+                            st.textContent = '✅ 已连接';
+                            break;
+                        case 'processing':
+                            st.textContent = '🔍 ' + m.data.message;
+                            break;
+                        case 'score_update':
+                            log('📊 评分: ' + m.data.score);
+                            break;
+                        case 'session_report':
+                            addMsg('sys', '📊 报告: ' + m.data.overall_score + '分 / ' +
+                                m.data.utterances + '句 / ' + m.data.duration_s + 's');
+                            endBtn.style.display = 'none';
+                            break;
+                        case 'error':
+                            addMsg('sys', '⚠️ ' + (m.data.message || ''));
+                            st.textContent = '✅ 已连接';
+                            break;
                     }
                 } catch(e) {}
             };
@@ -132,120 +192,269 @@
                 st.textContent = '🔴 断开，重连中...';
                 st.style.color = '#ef4444';
                 inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
-                if (rec) stopRec();
+                if (micActive) stopMic();
                 setTimeout(connect, 2000);
             };
         }
 
         function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
-        // ---- Text send ----
+        // ── Text send ──
         function sendText() {
             const t = inp.value.trim();
             if (!t) return;
             inp.value = '';
+            // Interrupt current AI output before sending new message
+            interruptAI();
             addMsg('user', t);
             send({ type: 'text_message', data: { text: t } });
             log('-> text: ' + t.slice(0,30));
         }
 
-        // ---- Recording (MediaRecorder API) ----
-        let mediaRec = null;
-        let audioChunks = [];
-
-        async function toggleRec() {
-            if (rec) { stopRec(); return; }
-            if (mediaRec && mediaRec.state === 'recording') { stopRec(); return; }
+        // ================================================================
+        // Continuous Mic with VAD
+        // ================================================================
+        async function toggleMic() {
+            if (micActive) { stopMic(); return; }
 
             try {
-                log('🎤 请求麦克风...');
-                const str = await navigator.mediaDevices.getUserMedia({ audio: true });
-                ac = new (window.AudioContext || window.webkitAudioContext)();
+                log('🎤 启动实时麦克风...');
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { sampleRate: { ideal: SR }, channelCount: 1 }
+                });
+                ac = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR });
+                const source = ac.createMediaStreamSource(stream);
 
-                mediaRec = new MediaRecorder(str, { mimeType: 'audio/webm;codecs=opus' });
-                audioChunks = [];
+                // Analyser for waveform (optional visual feedback)
+                analyserNode = ac.createAnalyser();
+                analyserNode.fftSize = 256;
+                source.connect(analyserNode);
 
-                mediaRec.ondataavailable = (e) => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
+                // ScriptProcessor — capture raw PCM
+                proc = ac.createScriptProcessor(2048, 1, 1);
+                source.connect(proc);
+                proc.connect(ac.destination);
+
+                proc.onaudioprocess = (e) => {
+                    if (!micActive) return;
+                    if (ws.readyState !== WebSocket.OPEN) return;
+                    const input = e.inputBuffer.getChannelData(0);
+                    const now = Date.now();
+
+                    // Energy-based VAD
+                    let energy = 0;
+                    for (let i = 0; i < input.length; i++) energy += input[i] * input[i];
+                    energy = Math.sqrt(energy / input.length);
+
+                    const isVoice = energy > VAD_THRESHOLD;
+
+                    // ── State machine with confirmation ──
+                    // Always maintain a lookback buffer for pre-speech capture
+                    const preBufMax = SR * PRE_SPEECH_MS / 1000;
+                    if (!window._preBuf) window._preBuf = [];
+                    for (let i = 0; i < input.length; i++) window._preBuf.push(input[i]);
+                    while (window._preBuf.length > preBufMax) window._preBuf.shift();
+
+                    if (!speaking) {
+                        if (isVoice) {
+                            if (!window._vadHits) {
+                                window._vadHits = 0;
+                                // First voice frame — mark position in pre-buffer
+                                // Only keep samples from this point, discard earlier silence
+                                window._preBufVoiceStart = window._preBuf.length;
+                            }
+                            window._vadHits++;
+                            if (window._vadHits >= CONSEC_FRAMES) {
+                                // Confirmed: start speaking, include pre-speech from first voice hit
+                                speaking = true;
+                                speechStart = now;
+                                silenceStart = null;
+                                const startIdx = window._preBufVoiceStart || 0;
+                                audioBuf = window._preBuf.slice(startIdx);
+                                window._preBuf = [];
+                                window._preBufVoiceStart = 0;
+                                window._vadHits = 0;
+                                log('🗣 开始说话 (预录音' + (audioBuf.length/SR*1000).toFixed(0) + 'ms)');
+                                st.textContent = '🎙️ 说话中...';
+                                interruptAI();
+                            }
+                        } else {
+                            window._vadHits = 0;
+                            window._preBufVoiceStart = 0;
+                        }
+                    } else {
+                        // Already speaking — append to audioBuf
+                        if (isVoice) {
+                            silenceStart = null;
+                        }
+                        for (let i = 0; i < input.length; i++) audioBuf.push(input[i]);
+                        if (!isVoice && silenceStart === null) silenceStart = now;
+                    }
+
+                    // Send PCM chunk periodically
+                    if (speaking && (now - lastSendTime) >= CHUNK_MS) {
+                        lastSendTime = now;
+                        // Slice recent audio for this chunk
+                        const sendSamples = audioBuf.slice(-(SR * CHUNK_MS / 1000) | 0);
+                        if (sendSamples.length > 0) {
+                            const pcm16 = new Int16Array(sendSamples.length);
+                            for (let i = 0; i < sendSamples.length; i++) {
+                                const s = Math.max(-1, Math.min(1, sendSamples[i]));
+                                pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+                            }
+                            const bytes = new Uint8Array(pcm16.buffer);
+                            let binary = '';
+                            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                            send({
+                                type: 'audio_chunk',
+                                data: { data: btoa(binary), is_end: false, chunk_id: chunkId++ }
+                            });
+                        }
+                    }
+
+                    // Silence → end of utterance (only if spoke long enough)
+                    if (speaking && silenceStart !== null && (now - silenceStart) >= SILENCE_MS) {
+                        const dur = (now - (speechStart || now)) / 1000;
+                        if (dur * 1000 < MIN_SPEECH_MS) {
+                            // Too short, ignore (probably noise)
+                            audioBuf = [];
+                            speaking = false;
+                            silenceStart = null;
+                            speechStart = null;
+                            // skip sending, keep listening
+                        } else {
+                            log('🔇 静音检测，结束 (说了' + dur.toFixed(1) + 's)');
+                            st.textContent = '🔍 识别中...';
+                        }
+                        // Send final chunk with is_end
+                        if (audioBuf.length > 0) {
+                            const pcm16 = new Int16Array(audioBuf.length);
+                            for (let i = 0; i < audioBuf.length; i++) {
+                                const s = Math.max(-1, Math.min(1, audioBuf[i]));
+                                pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+                            }
+                            const bytes = new Uint8Array(pcm16.buffer);
+                            let binary = '';
+                            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                            send({
+                                type: 'audio_chunk',
+                                data: { data: btoa(binary), is_end: true, chunk_id: chunkId++ }
+                            });
+                        }
+                        audioBuf = [];
+                        speaking = false;
+                        silenceStart = null;
+                        speechStart = null;
+                    }
+
+                    // Limit buffer size
+                    const maxSamples = SR * MAX_BUF_S;
+                    if (audioBuf.length > maxSamples) {
+                        audioBuf = audioBuf.slice(-maxSamples);
+                    }
                 };
 
-                mediaRec.onstop = () => {
-                    if (audioChunks.length === 0) return;
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    audioChunks = [];
-                    // Send as base64 audio_chunk
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const b64 = reader.result.split(',')[1];
-                        send({ type: 'audio_chunk', data: { data: b64, is_end: true, chunk_id: Date.now() } });
-                        log('-> 音频 ' + (blob.size/1024).toFixed(0) + 'KB 已发送');
-                    };
-                    reader.readAsDataURL(blob);
-                    str.getTracks().forEach(t => t.stop());
-                };
-
-                mediaRec.start();
-                rec = true;
-                recBtn.textContent = '⏹ 点击停止';
-                recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;white-space:nowrap';
+                micActive = true;
+                recBtn.textContent = '⏹ 停止';
+                recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #22c55e;background:#22c55e;color:#fff;cursor:pointer;font-size:13px;white-space:nowrap;animation: pulse2 1.5s infinite';
                 addPulseStyle();
-                log('🎤 录音中，点击停止后发送');
+                log('🎤 实时麦克风已启动，直接说话即可');
+                st.textContent = '🎙️ 等待说话...';
+
             } catch (err) {
                 addMsg('sys', '⚠️ 麦克风错误: ' + err.message + '，请用文字输入');
                 log('Mic err: ' + err.message);
             }
         }
 
+        function stopMic() {
+            micActive = false;
+            speaking = false;
+            if (proc) { proc.disconnect(); proc = null; }
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            if (ac) { ac.close().catch(() => {}); ac = null; }
+            audioBuf = [];
+            silenceStart = null;
+            speechStart = null;
+            recBtn.textContent = '🎤 实时对话';
+            recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:13px;white-space:nowrap;animation:none';
+            st.textContent = '✅ 已连接';
+            log('⏹ 麦克风已停止');
+        }
+
         function addPulseStyle() {
             if (document.getElementById('pulseStyle')) return;
             const s = document.createElement('style');
             s.id = 'pulseStyle';
-            s.textContent = '@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }';
+            s.textContent = `
+                @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }
+                @keyframes pulse2 { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); } 50% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } }
+            `;
             document.head.appendChild(s);
         }
 
-        function stopRec() {
-            if (mediaRec && mediaRec.state === 'recording') {
-                mediaRec.stop();
-            }
-            rec = false;
-            recBtn.textContent = '🎤 录音';
-            recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:13px;white-space:nowrap';
-            log('⏹ 录音停止，处理中...');
-        }
+        // ═══ TTS streaming playback ═══
+        function playNextTTS() {
+            if (ttsPlaying) return;
+            if (ttsChunks.length === 0) { ttsPlaying = false; return; }
+            ttsPlaying = true;
 
-        // ---- TTS Playback ----
-        let ttsTimer = null;
-
-        function playTTS() {
-            if (ttsTimer) clearTimeout(ttsTimer);
-            ttsTimer = setTimeout(() => {
-                if (ttsChunks.length === 0) return;
+            // Collect available chunks (with a small buffer delay for streaming)
+            setTimeout(() => {
+                if (ttsChunks.length === 0) { ttsPlaying = false; return; }
                 const blob = new Blob(ttsChunks, { type: 'audio/mpeg' });
                 ttsChunks = [];
                 const url = URL.createObjectURL(blob);
-                const a = new Audio(url);
-                a.onended = () => { URL.revokeObjectURL(url); };
-                a.play().catch(() => {});
+                ttsAudioEl = new Audio(url);
+                ttsAudioEl.onended = () => {
+                    URL.revokeObjectURL(url);
+                    ttsAudioEl = null;
+                    ttsPlaying = false;
+                    st.textContent = '✅ 已连接';
+                    // Check if more chunks arrived during playback
+                    if (ttsChunks.length > 0) playNextTTS();
+                };
+                ttsAudioEl.onplay = () => { st.textContent = '🔊 AI 说话中...'; };
+                ttsAudioEl.play().catch(() => { ttsPlaying = false; });
                 log('🔊 TTS 播放 ' + (blob.size/1024).toFixed(0) + 'KB');
-            }, 300);
+            }, 250);
         }
 
-        // ---- Session ----
+        // ═══ Interrupt ═══
+        function interruptAI() {
+            if (!ws || ws.readyState !== 1) return;
+            send({ type: 'interrupt', seq: Date.now() });
+            // Stop TTS
+            if (ttsAudioEl) { ttsAudioEl.pause(); ttsAudioEl = null; }
+            ttsChunks = [];
+            ttsPlaying = false;
+            think.style.display = 'none';
+            finalizeAI();
+            log('⏹ 打断 AI');
+            st.textContent = '✅ 已连接';
+        }
+
+        // ═══ Session ═══
         function endSession() {
             if (!ws || ws.readyState !== 1) return;
-            if (rec) stopRec();
+            if (micActive) stopMic();
             send({ type: 'end_session', data: {} });
             addMsg('sys', '⏳ 生成报告...');
             endBtn.style.display = 'none';
         }
 
-        // ---- Events ----
-        inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendText(); } });
+        // ═══ Events ═══
+        inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); sendText(); }
+        });
         btn.addEventListener('click', sendText);
-        recBtn.addEventListener('click', toggleRec);
+        recBtn.addEventListener('click', toggleMic);
 
-        // ---- Start ----
+        // Double-click status to interrupt
+        st.addEventListener('dblclick', interruptAI);
+        st.title = '双击打断 AI';
+
+        // ═══ Start ═══
         connect();
     </script>
 </body>
