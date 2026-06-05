@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package aiservice;
+
+option go_package = "./;proto";
+
+// ============================================
+// AI 英语口语陪练 — Go ↔ Python gRPC 协议
+// ============================================
+
+service AIService {
+  // 流式 ASR：Go 推送音频流，Python 返回识别结果（partial + final）
+  rpc StreamASR(stream AudioChunk) returns (stream ASRResult);
+
+  // LLM 对话：Go 发送对话上下文，Python 流式返回对话回复 + 同步纠错
+  // 一次 LLM 调用同时产出 reply 和 correction，避免两次推理
+  rpc Chat(ChatRequest) returns (stream ChatResponse);
+
+  // 流式 TTS：Go 发送文本，Python 流式返回合成音频
+  rpc Synthesize(SynthesizeRequest) returns (stream AudioChunk);
+
+  // 发音评测（非流式，异步处理）：音频 + 参考文本 → 评分
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);
+
+  // 课后报告生成：聚合对话历史 → 结构化报告
+  rpc GenerateReport(ReportRequest) returns (ReportResponse);
+
+  // 健康检查
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// ============================================
+// 公共消息
+// ============================================
+
+message HealthRequest {}
+message HealthResponse {
+  bool ok = 1;
+  string message = 2;
+}
+
+// ============================================
+// ASR 相关
+// ============================================
+
+message AudioChunk {
+  bytes audio_data = 1;       // PCM 16kHz 16bit mono
+  string session_id = 2;       // 会话标识
+  bool is_end = 3;             // 是否为最后一个 chunk（用户说完）
+}
+
+message ASRResult {
+  string text = 1;             // 识别文本（partial 或 final）
+  bool is_final = 2;           // 是否是最终结果
+  string session_id = 3;
+}
+
+// ============================================
+// LLM 对话相关
+// ============================================
+
+message ChatRequest {
+  string session_id = 1;
+  string scene = 2;            // 场景: interview / ordering / meeting
+  string user_message = 3;     // 用户刚说的（ASR 最终结果）
+  repeated ChatMessage history = 4; // 对话历史（服务端也可从 Redis 获取）
+}
+
+message ChatMessage {
+  string role = 1;             // user / assistant
+  string content = 2;
+}
+
+message ChatResponse {
+  oneof payload {
+    ReplyChunk reply = 1;      // 对话回复（流式 chunk）
+    Correction correction = 2; // 纠错结果（在 reply 完成后统一发送）
+    bool done = 3;             // 整个对话轮次结束
+  }
+}
+
+message ReplyChunk {
+  string text = 1;             // LLM 生成的回复片段
+  bool is_first = 2;           // 第一个 chunk（前端标记开始播放）
+}
+
+message Correction {
+  string original = 1;         // 用户原句
+  string corrected = 2;        // 纠正后句子
+  string error_type = 3;       // grammar / vocabulary / pronunciation_hint
+  repeated WordFix highlights = 4; // 逐词标记，用于前端高亮
+}
+
+message WordFix {
+  int32 start_idx = 1;         // 原句中该词的起始字符位置
+  int32 end_idx = 2;           // 结束位置
+  string suggestion = 3;       // 修改建议
+}
+
+// ============================================
+// TTS 相关
+// ============================================
+
+message SynthesizeRequest {
+  string text = 1;             // 待合成的文本
+  string session_id = 2;
+  int32 chunk_id = 3;          // 文本片段序号（用于排序）
+}
+
+message TTSAudioChunk {
+  bytes audio_data = 1;        // 合成音频 PCM/WAV
+  int32 chunk_id = 2;
+  bool is_final = 3;
+}
+
+// ============================================
+// 发音评测相关
+// ============================================
+
+message EvaluateRequest {
+  string session_id = 1;
+  bytes audio_data = 2;        // 用户原始音频
+  string reference_text = 3;   // 参考文本（用户说的话）
+  string transcript = 4;       // ASR 转录结果
+}
+
+message EvaluateResponse {
+  float overall_score = 1;     // 总分 0-100
+  float accuracy = 2;          // 准确度
+  float fluency = 3;           // 流利度
+  float completeness = 4;      // 完整度
+  repeated WordScore word_scores = 5; // 逐词发音评分
+}
+
+message WordScore {
+  string word = 1;
+  float score = 2;
+  string phoneme_detail = 3;   // 音素细节（可选）
+}
+
+// ============================================
+// 课后报告相关
+// ============================================
+
+message ReportRequest {
+  string session_id = 1;
+  string scene = 2;
+  repeated ChatMessage history = 3;
+  repeated Correction corrections = 4;     // 会话中所有纠错记录
+  repeated EvaluateResponse evaluations = 5; // 发音评测记录
+}
+
+message ReportResponse {
+  float overall_score = 1;     // 综合分
+  string summary = 2;          // 总结（Markdown 格式）
+  repeated WeakPoint weak_points = 3;
+  repeated string suggestions = 4;
+}
+
+message WeakPoint {
+  string category = 1;         // grammar / pronunciation / vocabulary / fluency
+  string detail = 2;
+  int32 frequency = 3;         // 出现次数
+}
