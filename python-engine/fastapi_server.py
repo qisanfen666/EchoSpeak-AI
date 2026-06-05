@@ -1,0 +1,416 @@
+"""
+FastAPI development server for ASR (speech-to-text + scoring) & TTS (text-to-speech).
+
+Provides REST and WebSocket endpoints for testing ASR/TTS functionality
+independently of the Go gateway. In production, the Go gateway proxies
+requests to the gRPC server (main.py) instead.
+
+Usage:
+    cd python-engine
+    pip install -r requirements.txt
+    python fastapi_server.py
+    # Open http://localhost:8000
+"""
+
+import asyncio
+import json
+import time
+import logging
+import base64
+import struct
+from pathlib import Path
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Query
+from fastapi.responses import Response, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
+import edge_tts
+
+from config import config
+from services.asr_engine import get_asr_engine
+from services.tts_engine import get_tts_engine
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger("fastapi")
+
+
+# ---------------------------------------------------------------------------
+# Lifespan — preload ASR model on startup
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("=== EchoSpeak AI — FastAPI Dev Server Starting ===")
+    asyncio.create_task(_preload_asr())
+    yield
+    logger.info("=== Server Shutdown ===")
+
+
+async def _preload_asr():
+    """Pre-load Whisper model in background."""
+    logger.info("Pre-loading ASR model ...")
+    t0 = time.time()
+    try:
+        get_asr_engine().model
+        logger.info(f"ASR model loaded in {time.time() - t0:.1f}s")
+    except Exception as e:
+        logger.warning(f"ASR preload failed (will lazy-load later): {e}")
+
+
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="EchoSpeak AI — ASR/TTS Dev Server",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Static files (frontend test page)
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="frontend")
+
+
+# ===================================================================
+# REST — ASR: Speech-to-Text with Scoring
+# ===================================================================
+
+@app.post("/api/asr/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    language: str = Query("en", description="Language code"),
+):
+    """
+    Upload an audio file (WAV, MP3, M4A) and get transcription with
+    pronunciation (0-100) and fluency (0-100) scores.
+    """
+    t0 = time.time()
+    audio_bytes = await file.read()
+    logger.info(f"ASR request: {file.filename} ({len(audio_bytes)} bytes)")
+
+    # Save temp file (faster-whisper reads from disk)
+    tmp_path = config.AUDIO_DIR / f"upload_{int(t0 * 1000)}_{file.filename}"
+    tmp_path.write_bytes(audio_bytes)
+
+    try:
+        engine = get_asr_engine()
+        result = engine.transcribe_file(str(tmp_path), language=language)
+        elapsed = time.time() - t0
+        return {
+            "success": True,
+            "text": result["text"],
+            "language": result["language"],
+            "duration_s": round(result["duration_s"], 2),
+            "processing_s": round(elapsed, 2),
+            "segments": result["segments"],
+            "pronunciation": result.get("pronunciation", 0),
+            "fluency": result.get("fluency", 0),
+        }
+    except Exception as e:
+        logger.exception("ASR transcription failed")
+        return {"success": False, "error": str(e)}
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+
+
+# ===================================================================
+# REST — TTS: Text-to-Speech
+# ===================================================================
+
+@app.get("/api/tts/speak")
+async def speak_text(
+    text: str = Query(..., description="Text to synthesise"),
+    voice: str = Query("en-US-JennyNeural", description="TTS voice name"),
+    rate: str = Query("+0%", description="Speaking rate"),
+):
+    """Synthesise text to MP3 speech audio."""
+    t0 = time.time()
+    try:
+        tts = get_tts_engine()
+        tts.voice = voice
+        audio_bytes = await tts.stream_speak(text)
+        elapsed = time.time() - t0
+        logger.info(f"TTS: {len(text)} chars -> {len(audio_bytes)} bytes in {elapsed:.2f}s")
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "X-Processing-Time": str(round(elapsed, 2)),
+                "X-Text-Length": str(len(text)),
+            },
+        )
+    except Exception as e:
+        logger.exception("TTS failed")
+        return Response(
+            content=json.dumps({"success": False, "error": str(e)}),
+            media_type="application/json",
+            status_code=500,
+        )
+
+
+@app.get("/api/tts/voices")
+async def list_voices():
+    """List all available English TTS voices."""
+    tts = get_tts_engine()
+    voices = await tts.list_voices()
+    return {"voices": voices}
+
+
+# ===================================================================
+# WebSocket — Streaming ASR (real-time voice-to-text)
+# ===================================================================
+
+@app.websocket("/ws/stream/{client_id}")
+async def websocket_stream(websocket: WebSocket, client_id: str):
+    """
+    Real-time streaming ASR over WebSocket.
+
+    Client sends:    {"type":"audio", "data":"<base64 PCM16 16kHz>"}
+    Server replies:
+        {"type":"partial","text":"...","stable":true,"pronunciation":N,"fluency":N}
+        {"type":"final","text":"...","pronunciation":72,"fluency":68,"processing_s":0.5}
+        {"type":"reset"}
+        {"type":"end"}
+    """
+    await websocket.accept()
+    logger.info(f"[{client_id}] Stream connected")
+
+    recognizer = get_asr_engine()
+    _ = recognizer.model  # ensure loaded
+
+    buf = bytearray()
+    last_time = time.time()
+    last_text = ""
+    has_sent_partial = False
+
+    # Constants
+    SR = 16000
+    TRANS_INTERVAL = 1.2
+    MIN_BYTES = 48000          # ~1.5s at 16kHz
+    MAX_SECONDS = 8.0
+    VAD_SILENCE = 1.2
+    VAD_THRESHOLD = 0.015
+
+    is_speaking = False
+    silence_start = None
+    speech_start = None
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            msg = json.loads(raw)
+
+            if msg.get("type") == "audio":
+                pcm = base64.b64decode(msg["data"])
+                buf.extend(pcm)
+                now = time.time()
+
+                # VAD on this chunk
+                eng = 0.0
+                cnt = 0
+                for i in range(0, len(pcm), 2):
+                    if i + 1 < len(pcm):
+                        v = abs(struct.unpack_from("<h", pcm, i)[0]) / 32768.0
+                        eng += v
+                        cnt += 1
+                energy = eng / cnt if cnt else 0
+
+                if energy > VAD_THRESHOLD:
+                    if not is_speaking:
+                        is_speaking = True
+                        speech_start = now
+                    silence_start = None
+                else:
+                    if is_speaking and silence_start is None:
+                        silence_start = now
+
+                # --- Partial transcription ---
+                min_ok = MIN_BYTES * 2 if not has_sent_partial else MIN_BYTES
+                if is_speaking and len(buf) >= min_ok and (now - last_time) >= TRANS_INTERVAL:
+                    last_time = now
+                    has_sent_partial = True
+                    try:
+                        result = recognizer.transcribe_pcm(bytes(buf), SR)
+                        text = result.get("text", "").strip()
+                        logger.info(
+                            f"[{client_id}] partial: {len(buf)}B "
+                            f"({len(buf)/SR/2:.1f}s) text='{text[:60]}'"
+                        )
+                        if text and text != last_text:
+                            last_text = text
+                            # Trim buffer to last 3s
+                            trim = int(3.0 * SR * 2)
+                            if len(buf) > trim:
+                                buf = buf[-trim:]
+                            await websocket.send_text(json.dumps({
+                                "type": "partial", "text": text, "stable": True,
+                                "pronunciation": result.get("pronunciation", 0),
+                                "fluency": result.get("fluency", 0),
+                            }))
+                    except Exception as e:
+                        logger.warning(f"[{client_id}] partial err: {e}")
+
+                # --- Finalize on silence ---
+                if is_speaking and silence_start is not None:
+                    if (now - silence_start) >= VAD_SILENCE:
+                        dur = (now - speech_start) if speech_start else 0
+                        if dur > 0.5 and len(buf) >= MIN_BYTES:
+                            try:
+                                t0 = time.time()
+                                result = recognizer.transcribe_pcm(bytes(buf), SR)
+                                el = time.time() - t0
+                                txt = result.get("text", "").strip()
+                                logger.info(
+                                    f"[{client_id}] final: {len(buf)}B "
+                                    f"({len(buf)/SR/2:.1f}s) text='{txt[:60]}'"
+                                )
+                                if txt:
+                                    await websocket.send_text(json.dumps({
+                                        "type": "final", "text": txt,
+                                        "pronunciation": result.get("pronunciation", 0),
+                                        "fluency": result.get("fluency", 0),
+                                        "processing_s": round(el, 2),
+                                        "duration_s": round(dur, 1),
+                                    }))
+                                    logger.info(
+                                        f"[{client_id}] final '{txt[:40]}' "
+                                        f"P{result.get('pronunciation',0)} "
+                                        f"F{result.get('fluency',0)} ({el:.1f}s)"
+                                    )
+                            except Exception as e:
+                                logger.warning(f"[{client_id}] final err: {e}")
+
+                        buf.clear()
+                        last_text = ""
+                        is_speaking = False
+                        silence_start = None
+                        speech_start = None
+                        await websocket.send_text(json.dumps({"type": "reset"}))
+
+                # Trim to max
+                maxb = int(MAX_SECONDS * SR * 2)
+                if len(buf) > maxb:
+                    buf = buf[-maxb:]
+
+            elif msg.get("type") == "ping":
+                await websocket.send_text(json.dumps({"type": "pong"}))
+
+            elif msg.get("type") == "stop":
+                if len(buf) >= MIN_BYTES:
+                    try:
+                        result = recognizer.transcribe_pcm(bytes(buf), SR)
+                        txt = result.get("text", "").strip()
+                        if txt:
+                            await websocket.send_text(json.dumps({
+                                "type": "final", "text": txt,
+                                "pronunciation": result.get("pronunciation", 0),
+                                "fluency": result.get("fluency", 0),
+                                "processing_s": 0,
+                            }))
+                    except Exception:
+                        pass
+                await websocket.send_text(json.dumps({"type": "end"}))
+                break
+
+    except WebSocketDisconnect:
+        logger.info(f"[{client_id}] Stream disconnected")
+    except Exception as e:
+        logger.exception(f"[{client_id}] Stream error")
+        try:
+            await websocket.send_text(json.dumps({"type": "error", "message": str(e)}))
+        except Exception:
+            pass
+
+
+# ===================================================================
+# WebSocket — Streaming TTS (text-to-speech playback)
+# ===================================================================
+
+@app.websocket("/ws/tts/{client_id}")
+async def websocket_tts(websocket: WebSocket, client_id: str):
+    """
+    WebSocket for text-to-speech.
+
+    Client sends: {"text": "...", "voice": "en-US-JennyNeural"}
+    Server replies: binary MP3 chunks, then {"type":"end"}
+    """
+    await websocket.accept()
+    logger.info(f"[{client_id}] TTS WebSocket connected")
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            data = json.loads(raw)
+            text = data.get("text", "")
+            if not text:
+                continue
+
+            logger.info(f"[{client_id}] TTS request: '{text[:50]}...'")
+
+            communicate = edge_tts.Communicate(text, data.get("voice", config.TTS_VOICE))
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    await websocket.send_bytes(chunk["data"])
+
+            await websocket.send_text(json.dumps({"type": "end"}))
+
+    except WebSocketDisconnect:
+        logger.info(f"[{client_id}] TTS WebSocket disconnected")
+    except Exception as e:
+        logger.exception(f"[{client_id}] TTS WebSocket error")
+
+
+# ===================================================================
+# Static frontend (test page)
+# ===================================================================
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    """EchoSpeak-AI original test page."""
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return index_path.read_text(encoding="utf-8")
+    return HTMLResponse("<h1>EchoSpeak AI — ASR/TTS Dev Server</h1>")
+
+
+@app.get("/test", response_class=HTMLResponse)
+async def test_page():
+    """ASR/TTS integrated test page with waveform, scoring, etc."""
+    test_path = FRONTEND_DIR / "test.html"
+    if test_path.exists():
+        return test_path.read_text(encoding="utf-8")
+    return HTMLResponse("<h1>Test page not found</h1>")
+
+
+# ===================================================================
+# Entry point
+# ===================================================================
+
+if __name__ == "__main__":
+    import uvicorn
+    logger.info(f"Starting EchoSpeak AI dev server on http://0.0.0.0:{config.DEV_PORT}")
+    uvicorn.run(
+        "fastapi_server:app",
+        host="0.0.0.0",
+        port=config.DEV_PORT,
+        reload=True,
+        log_level="info",
+    )
