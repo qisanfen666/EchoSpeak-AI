@@ -1,0 +1,36 @@
+# Python AI Engine — Dependencies
+# Day 0-1 核心依赖
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+grpcio>=1.66.0
+grpcio-tools>=1.66.0
+protobuf>=5.28.0
+
+# ASR — 流式语音识别（二选一）
+# funasr (Paraformer streaming，推荐，中文社区活跃)
+funasr>=1.1.0
+# 或者使用 faster-whisper
+# faster-whisper>=1.0.0
+
+# LLM — 对话生成（OpenAI 兼容 SDK）
+openai>=1.50.0
+# 也用 deepseek 的 sdk，openai 兼容
+# httpx>=0.27.0
+
+# TTS — 流式语音合成（推荐 CosyVoice，可选 Edge-TTS/piper）
+# cosyvoice  # 需要单独安装，见官方文档
+# edge-tts>=6.1.0  # 简单替代方案，非流式
+
+# 音频处理
+librosa>=0.10.0
+soundfile>=0.12.0
+numpy>=1.26.0
+
+# 发音评测
+# 使用开源模型如 WeNet 的发音评测，或基于 MFA( Montreal Forced Aligner)
+# textgrid
+
+# 工具
+redis>=5.1.0
+python-dotenv>=1.0.0
+pydantic>=2.9.0
