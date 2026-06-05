@@ -1,252 +1,965 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"><title>EchoSpeak AI — 英语口语陪练</title></head>
-<body style="background:#0f172a;color:#e2e8f0;font-family:sans-serif;height:100vh;margin:0;display:flex;flex-direction:column;padding:12px;max-width:800px;margin:0 auto;width:100%">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <h3 style="margin:0;color:#38bdf8">EchoSpeak AI</h3>
-        <span id="status" style="font-size:12px;color:#64748b">⏳ 连接中...</span>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoSpeak — 英语口语陪练</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Decorative top rule -->
+<div class="top-rule"></div>
+
+<!-- Header -->
+<header class="app-header">
+    <div class="header-left">
+        <h1 class="brand">EchoSpeak</h1>
+        <span class="brand-sub">ai language practice</span>
     </div>
-
-    <!-- Chat area -->
-    <div id="chat" style="flex:1;background:#1e293b;border-radius:8px;padding:12px;overflow-y:auto;margin-bottom:6px;display:flex;flex-direction:column;gap:6px;min-height:0"></div>
-
-    <!-- Thinking indicator -->
-    <div id="think" style="display:none;color:#94a3b8;font-size:12px;padding:4px 0">🤖 AI 回复中...</div>
-
-    <!-- Input area -->
-    <div style="display:flex;gap:6px;align-items:center">
-        <button id="recBtn" disabled
-                style="padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:13px;white-space:nowrap">🎤 录音</button>
-        <input id="inp" type="text" placeholder="输入英文，按 Enter 发送" disabled
-               style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;outline:none">
-        <button id="sendBtn" disabled
-                style="padding:8px 16px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.1);color:#38bdf8;cursor:pointer;font-size:13px">发送</button>
-        <button id="endBtn" style="display:none;padding:8px 12px;border-radius:6px;border:1px solid #64748b;background:transparent;color:#64748b;cursor:pointer;font-size:12px" onclick="endSession()">结束</button>
+    <div class="header-right">
+        <span id="status" class="status-badge">⟳ connecting</span>
+        <button id="endBtn" class="btn-end" onclick="endSession()" style="display:none" title="结束会话">✕</button>
     </div>
+</header>
 
-    <!-- Debug -->
-    <div id="dbg" style="font-size:10px;color:#334155;padding-top:4px;display:none"></div>
+<!-- Chat area -->
+<main id="chat" class="chat-area">
+    <div class="chat-welcome">
+        <div class="welcome-icon">󰙏</div>
+        <p class="welcome-title">Begin your practice</p>
+        <p class="welcome-sub">Speak or type — I'll help refine your English</p>
+    </div>
+</main>
 
-    <script>
-        // ---- State ----
-        let ws, ab = null, rec = false;
-        let ac, stream, proc, buf = [];
-        let silTimer, speaking = false;
-        let ttsChunks = [];
-        let playing = false;
+<!-- Thinking indicator -->
+<div id="think" class="think-indicator">
+    <span class="think-dot"></span>
+    <span class="think-dot"></span>
+    <span class="think-dot"></span>
+    <span class="think-label">listening & responding</span>
+</div>
 
-        const $ = s => document.querySelector(s);
-        const chat = $('#chat'), inp = $('#inp'), btn = $('#sendBtn');
-        const recBtn = $('#recBtn'), endBtn = $('#endBtn');
-        const think = $('#think'), st = $('#status'), dbg = $('#dbg');
+<!-- Input bar -->
+<div class="input-bar">
+    <button id="recBtn" class="btn-record" disabled title="录音">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        <span class="btn-label">Record</span>
+    </button>
+    <div class="input-wrap">
+        <input id="inp" class="text-input" type="text" placeholder="Type in English…" disabled autocomplete="off">
+        <button id="sendBtn" class="btn-send" disabled title="发送">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+    </div>
+</div>
 
-        function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
+<!-- Debug -->
+<div id="dbg" class="debug"></div>
 
-        // ---- Message display ----
-        function addMsg(who, text) {
-            const row = document.createElement('div');
-            row.style.cssText = 'display:flex;flex-direction:column';
-            const bubble = document.createElement('div');
-            if (who === 'user') {
-                bubble.style.cssText = 'align-self:flex-end;background:#334155;padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%';
-                const label = document.createElement('div');
-                label.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px';
-                label.textContent = '🧑 You';
-                bubble.appendChild(label);
-                const txt = document.createElement('span');
-                txt.textContent = text;
-                bubble.appendChild(txt);
-            } else if (who === 'ai') {
-                bubble.style.cssText = 'align-self:flex-start;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);padding:8px 14px;border-radius:10px;font-size:14px;line-height:1.5;max-width:85%';
-                const label = document.createElement('div');
-                label.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px';
-                label.textContent = '🤖 AI';
-                bubble.appendChild(label);
-                const txt = document.createElement('span');
-                txt.textContent = text;
-                bubble.appendChild(txt);
-            } else {
-                bubble.style.cssText = 'align-self:center;color:#64748b;font-size:11px';
-                bubble.textContent = text;
-            }
-            row.appendChild(bubble);
-            chat.appendChild(row);
-            chat.scrollTop = chat.scrollHeight;
-            const ph = chat.querySelector('div[style*="align-self: center"]');
-            if (ph && !ph.parentElement.querySelector('span')) ph.remove();
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════
+let ws, ab = null, rec = false;
+let ac, stream, proc, buf = [];
+let silTimer, speaking = false;
+let ttsChunks = [];
+let playing = false;
+let _lastUserRow = null;
+let _pendingAiRow = null;    // track current AI bubble being streamed
+
+const $ = s => document.querySelector(s);
+const chat = $('#chat'), inp = $('#inp'), btn = $('#sendBtn');
+const recBtn = $('#recBtn'), endBtn = $('#endBtn');
+const think = $('#think'), st = $('#status'), dbg = $('#dbg');
+
+function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
+
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Remove welcome placeholder on first message
+function removeWelcome() {
+    const w = chat.querySelector('.chat-welcome');
+    if (w) w.remove();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Message display
+// ═══════════════════════════════════════════════════════════════════
+function addMsg(who, text) {
+    removeWelcome();
+    const row = document.createElement('div');
+    row.className = 'msg-row msg-' + who;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+
+    if (who === 'user') {
+        bubble.innerHTML =
+            '<span class="msg-text">' + escapeHTML(text) + '</span>';
+        _lastUserRow = row;
+        row.dataset.msgRole = 'user';
+    } else if (who === 'ai') {
+        bubble.innerHTML =
+            '<span class="msg-label">Tutor</span>' +
+            '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>';
+    } else {
+        bubble.className = 'msg-bubble msg-sys';
+        bubble.textContent = text;
+    }
+
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+
+    // Remove any stale placeholder
+    const ph = chat.querySelector('.chat-welcome');
+    if (ph) ph.remove();
+}
+
+function upAI(text) {
+    if (_pendingAiRow) {
+        const span = _pendingAiRow.querySelector('.ai-text');
+        if (span) span.textContent = text;
+        chat.scrollTop = chat.scrollHeight;
+        return;
+    }
+    // Fallback: create new bubble
+    addMsg('ai', text);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Correction Card — "Editorial Marginalia"
+// ═══════════════════════════════════════════════════════════════════
+function showCorrection(data) {
+    if (!_lastUserRow) return;
+    if (_lastUserRow.querySelector('.cc-card')) return;
+
+    const card = document.createElement('div');
+    card.className = 'cc-card';
+
+    // Texture overlay
+    const tex = document.createElement('div');
+    tex.className = 'cc-tex';
+    card.appendChild(tex);
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'cc-header';
+    header.innerHTML =
+        '<span class="cc-head-label">Nota bene</span>' +
+        '<span class="cc-head-divider"></span>' +
+        '<span class="cc-head-count">' + data.errors.length + '&nbsp;finding' + (data.errors.length !== 1 ? 's' : '') + '</span>';
+    card.appendChild(header);
+
+    // Revised sentence
+    if (data.corrected_text && data.corrected_text !== data.original_text) {
+        const preview = document.createElement('div');
+        preview.className = 'cc-preview';
+        preview.innerHTML =
+            '<span class="cc-preview-label">Revised</span>' +
+            '<span class="cc-preview-text">' + escapeHTML(data.corrected_text) + '</span>';
+        card.appendChild(preview);
+    }
+
+    // Error list
+    const list = document.createElement('div');
+    list.className = 'cc-list';
+
+    const PALETTE = {
+        grammar:      { label:'Grammar',  accent:'#e8906c', bg:'var(--err-bg-grammar)', rule:'#d07858' },
+        tense:        { label:'Tense',    accent:'#e8906c', bg:'var(--err-bg-grammar)', rule:'#d07858' },
+        preposition:  { label:'Prep.',    accent:'#7eb8c9', bg:'var(--err-bg-prep)',    rule:'#5a9aad' },
+        article:      { label:'Article',  accent:'#7eb8c9', bg:'var(--err-bg-prep)',    rule:'#5a9aad' },
+        vocabulary:   { label:'Vocab',    accent:'#b49cc4', bg:'var(--err-bg-vocab)',   rule:'#9078a8' },
+        word_choice:  { label:'Word',     accent:'#b49cc4', bg:'var(--err-bg-vocab)',   rule:'#9078a8' },
+        expression:   { label:'Expr.',    accent:'#8cb89a', bg:'var(--err-bg-expr)',    rule:'#6a9a78' },
+    };
+
+    data.errors.forEach(function(err, i) {
+        var pal = PALETTE[err.type] || PALETTE.grammar;
+
+        var item = document.createElement('div');
+        item.className = 'cc-err';
+        item.style.cssText = '--err-accent:' + pal.accent + ';--err-rule:' + pal.rule + ';--err-delay:' + (i * 0.06) + 's';
+
+        var line = document.createElement('div');
+        line.className = 'cc-err-line';
+
+        var badge = document.createElement('span');
+        badge.className = 'cc-badge';
+        badge.style.cssText = 'color:' + pal.accent + ';border-color:' + pal.accent;
+        badge.textContent = pal.label;
+        line.appendChild(badge);
+
+        var origSpan = document.createElement('span');
+        origSpan.className = 'cc-orig';
+        origSpan.textContent = err.original;
+        line.appendChild(origSpan);
+
+        var arrow = document.createElement('span');
+        arrow.className = 'cc-arrow';
+        arrow.textContent = '→';
+        line.appendChild(arrow);
+
+        var corrSpan = document.createElement('span');
+        corrSpan.className = 'cc-corr';
+        corrSpan.textContent = err.corrected;
+        line.appendChild(corrSpan);
+
+        item.appendChild(line);
+
+        if (err.explanation_cn) {
+            var expl = document.createElement('div');
+            expl.className = 'cc-expl';
+            expl.textContent = err.explanation_cn;
+            item.appendChild(expl);
         }
 
-        function upAI(text) {
-            const aiBubbles = chat.querySelectorAll('div[style*="rgba(56,189,248,0.08)"]');
-            if (aiBubbles.length > 0) {
-                const last = aiBubbles[aiBubbles.length - 1];
-                const span = last.querySelector('span');
-                if (span) { span.textContent = text; }
+        list.appendChild(item);
+    });
+
+    card.appendChild(list);
+    _lastUserRow.appendChild(card);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WebSocket
+// ═══════════════════════════════════════════════════════════════════
+function connect() {
+    const u = 'ws://' + location.host + '/ws?session_id=c_' + Date.now() + '&scene=ordering';
+    ws = new WebSocket(u);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+        st.textContent = '● connected';
+        st.className = 'status-badge connected';
+        inp.disabled = false;
+        btn.disabled = false;
+        recBtn.disabled = false;
+        inp.focus();
+        addMsg('sys', '✅ Connected — type or tap Record to speak');
+    };
+
+    ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+            ttsChunks.push(new Uint8Array(e.data));
+            if (!playing) playTTS();
+            return;
+        }
+        try {
+            const m = JSON.parse(e.data);
+            log('<- ' + m.type);
+            if (m.type === 'user_transcript') {
+                addMsg('user', m.data.text);
+            } else if (m.type === 'correction') {
+                showCorrection(m.data);
+            } else if (m.type === 'reply_start') {
+                think.classList.add('active');
+                // Create a fresh AI bubble for this reply
+                removeWelcome();
+                const row = document.createElement('div');
+                row.className = 'msg-row msg-ai';
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                bubble.innerHTML =
+                    '<span class="msg-label">Tutor</span>' +
+                    '<span class="msg-text ai-text"></span>';
+                row.appendChild(bubble);
+                chat.appendChild(row);
+                _pendingAiRow = row;
                 chat.scrollTop = chat.scrollHeight;
-            } else {
-                addMsg('ai', text);
+            } else if (m.type === 'reply_chunk') {
+                think.classList.remove('active');
+                upAI(m.data.text);
+            } else if (m.type === 'reply_end') {
+                think.classList.remove('active');
+                _pendingAiRow = null;
+                st.textContent = '● connected';
+                st.className = 'status-badge connected';
+            } else if (m.type === 'session_report') {
+                addMsg('sys', '📊 Report: ' + m.data.overall_score + 'pts · '
+                    + m.data.utterances + ' utterances · ' + m.data.duration_s + 's');
+                endBtn.style.display = 'none';
+            } else if (m.type === 'error') {
+                addMsg('sys', '⚠ ' + (m.data.message || ''));
             }
-        }
+        } catch(e) {}
+    };
 
-        // ---- WebSocket ----
-        function connect() {
-            const u = `ws://${location.host}/ws?session_id=c_${Date.now()}&scene=ordering`;
-            ws = new WebSocket(u);
-            ws.binaryType = 'arraybuffer';
+    ws.onclose = () => {
+        st.textContent = '● disconnected, reconnecting…';
+        st.className = 'status-badge disconnected';
+        inp.disabled = true;
+        btn.disabled = true;
+        recBtn.disabled = true;
+        if (rec) stopRec();
+        setTimeout(connect, 2000);
+    };
+}
 
-            ws.onopen = () => {
-                st.textContent = '✅ 已连接';
-                st.style.color = '#22c55e';
-                inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
-                inp.focus();
-                addMsg('sys', '✅ 已连接 - 打字或按「录音」说话');
+function send(o) {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Text send
+// ═══════════════════════════════════════════════════════════════════
+function sendText() {
+    const t = inp.value.trim();
+    if (!t) return;
+    inp.value = '';
+    addMsg('user', t);
+    send({ type: 'text_message', data: { text: t } });
+    log('-> text: ' + t.slice(0, 30));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Recording (MediaRecorder API)
+// ═══════════════════════════════════════════════════════════════════
+let mediaRec = null;
+let audioChunks = [];
+
+async function toggleRec() {
+    if (rec) { stopRec(); return; }
+    if (mediaRec && mediaRec.state === 'recording') { stopRec(); return; }
+
+    try {
+        log('🎤 Requesting mic…');
+        const str = await navigator.mediaDevices.getUserMedia({ audio: true });
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        mediaRec = new MediaRecorder(str, { mimeType: 'audio/webm;codecs=opus' });
+        audioChunks = [];
+
+        mediaRec.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRec.onstop = () => {
+            if (audioChunks.length === 0) return;
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            audioChunks = [];
+            const reader = new FileReader();
+            reader.onload = () => {
+                const b64 = reader.result.split(',')[1];
+                send({ type: 'audio_chunk', data: { data: b64, is_end: true, chunk_id: Date.now() } });
+                log('-> audio ' + (blob.size / 1024).toFixed(0) + 'KB sent');
             };
+            reader.readAsDataURL(blob);
+            str.getTracks().forEach(t => t.stop());
+        };
 
-            ws.onmessage = (e) => {
-                if (e.data instanceof ArrayBuffer) {
-                    // TTS audio
-                    ttsChunks.push(new Uint8Array(e.data));
-                    if (!playing) playTTS();
-                    return;
-                }
-                try {
-                    const m = JSON.parse(e.data);
-                    log('<- ' + m.type);
-                    if (m.type === 'reply_start') { think.style.display = 'block'; }
-                    else if (m.type === 'reply_chunk') {
-                        think.style.display = 'none';
-                        upAI(m.data.text);
-                    } else if (m.type === 'reply_end') {
-                        think.style.display = 'none';
-                        st.textContent = '✅ 已连接';
-                    } else if (m.type === 'session_report') {
-                        addMsg('sys', '📊 报告: ' + m.data.overall_score + '分 / ' + m.data.utterances + '句 / ' + m.data.duration_s + 's');
-                        endBtn.style.display = 'none';
-                    } else if (m.type === 'error') {
-                        addMsg('sys', '⚠️ ' + (m.data.message || ''));
-                    }
-                } catch(e) {}
-            };
+        mediaRec.start();
+        rec = true;
+        recBtn.classList.add('recording');
+        recBtn.querySelector('.btn-label').textContent = 'Stop';
+        log('🎤 Recording… tap Stop to send');
+    } catch (err) {
+        addMsg('sys', '⚠ Mic error: ' + err.message + ' — please type instead');
+        log('Mic err: ' + err.message);
+    }
+}
 
-            ws.onclose = () => {
-                st.textContent = '🔴 断开，重连中...';
-                st.style.color = '#ef4444';
-                inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
-                if (rec) stopRec();
-                setTimeout(connect, 2000);
-            };
-        }
+function stopRec() {
+    if (mediaRec && mediaRec.state === 'recording') {
+        mediaRec.stop();
+    }
+    rec = false;
+    recBtn.classList.remove('recording');
+    recBtn.querySelector('.btn-label').textContent = 'Record';
+    log('⏹ Stopped, processing…');
+}
 
-        function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+// ═══════════════════════════════════════════════════════════════════
+// TTS Playback
+// ═══════════════════════════════════════════════════════════════════
+let ttsTimer = null;
 
-        // ---- Text send ----
-        function sendText() {
-            const t = inp.value.trim();
-            if (!t) return;
-            inp.value = '';
-            addMsg('user', t);
-            send({ type: 'text_message', data: { text: t } });
-            log('-> text: ' + t.slice(0,30));
-        }
+function playTTS() {
+    if (ttsTimer) clearTimeout(ttsTimer);
+    ttsTimer = setTimeout(() => {
+        if (ttsChunks.length === 0) return;
+        const blob = new Blob(ttsChunks, { type: 'audio/mpeg' });
+        ttsChunks = [];
+        const url = URL.createObjectURL(blob);
+        const a = new Audio(url);
+        a.onended = () => { URL.revokeObjectURL(url); };
+        a.play().catch(() => {});
+        log('🔊 TTS ' + (blob.size / 1024).toFixed(0) + 'KB');
+    }, 300);
+}
 
-        // ---- Recording (MediaRecorder API) ----
-        let mediaRec = null;
-        let audioChunks = [];
+// ═══════════════════════════════════════════════════════════════════
+// Session
+// ═══════════════════════════════════════════════════════════════════
+function endSession() {
+    if (!ws || ws.readyState !== 1) return;
+    if (rec) stopRec();
+    send({ type: 'end_session', data: {} });
+    addMsg('sys', '⏳ Generating report…');
+    endBtn.style.display = 'none';
+}
 
-        async function toggleRec() {
-            if (rec) { stopRec(); return; }
-            if (mediaRec && mediaRec.state === 'recording') { stopRec(); return; }
+// ═══════════════════════════════════════════════════════════════════
+// Events
+// ═══════════════════════════════════════════════════════════════════
+inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendText(); }
+});
+btn.addEventListener('click', sendText);
+recBtn.addEventListener('click', toggleRec);
 
-            try {
-                log('🎤 请求麦克风...');
-                const str = await navigator.mediaDevices.getUserMedia({ audio: true });
-                ac = new (window.AudioContext || window.webkitAudioContext)();
+// ═══════════════════════════════════════════════════════════════════
+// Start
+// ═══════════════════════════════════════════════════════════════════
+connect();
+</script>
 
-                mediaRec = new MediaRecorder(str, { mimeType: 'audio/webm;codecs=opus' });
-                audioChunks = [];
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   EchoSpeak — "Warm Parchment" Editorial Design
+   Type: Playfair Display + DM Sans + JetBrains Mono
+   ═══════════════════════════════════════════════════════════════════ */
 
-                mediaRec.ondataavailable = (e) => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
-                };
+/* ── Reset & Variables ── */
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
 
-                mediaRec.onstop = () => {
-                    if (audioChunks.length === 0) return;
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    audioChunks = [];
-                    // Send as base64 audio_chunk
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const b64 = reader.result.split(',')[1];
-                        send({ type: 'audio_chunk', data: { data: b64, is_end: true, chunk_id: Date.now() } });
-                        log('-> 音频 ' + (blob.size/1024).toFixed(0) + 'KB 已发送');
-                    };
-                    reader.readAsDataURL(blob);
-                    str.getTracks().forEach(t => t.stop());
-                };
+:root {
+    --bg:          #f6f1e9;
+    --surface:     #fcf9f4;
+    --surface-alt: #f3ede3;
+    --border:      #e2d6c4;
+    --border-dim:  #ede4d6;
+    --text:        #3d3528;
+    --text-dim:    #8a7d6a;
+    --text-muted:  #b5a892;
+    --gold:        #b8842f;
+    --gold-dim:    rgba(184,132,47,0.10);
+    --gold-glow:   rgba(184,132,47,0.05);
+    --terracotta:  #c46a4a;
+    --sage:        #6a9a78;
+    --dusty-blue:  #5a8a9a;
+    --dusty-plum:  #8a7aaa;
+    --rose:        #b85a5a;
+    --radius:      12px;
+    --radius-sm:   8px;
 
-                mediaRec.start();
-                rec = true;
-                recBtn.textContent = '⏹ 点击停止';
-                recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;white-space:nowrap';
-                addPulseStyle();
-                log('🎤 录音中，点击停止后发送');
-            } catch (err) {
-                addMsg('sys', '⚠️ 麦克风错误: ' + err.message + '，请用文字输入');
-                log('Mic err: ' + err.message);
-            }
-        }
+    /* Error card palette */
+    --err-bg-grammar: rgba(196,106,74,0.07);
+    --err-bg-prep:    rgba(90,138,154,0.07);
+    --err-bg-vocab:   rgba(138,122,170,0.07);
+    --err-bg-expr:    rgba(106,154,120,0.07);
 
-        function addPulseStyle() {
-            if (document.getElementById('pulseStyle')) return;
-            const s = document.createElement('style');
-            s.id = 'pulseStyle';
-            s.textContent = '@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }';
-            document.head.appendChild(s);
-        }
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
 
-        function stopRec() {
-            if (mediaRec && mediaRec.state === 'recording') {
-                mediaRec.stop();
-            }
-            rec = false;
-            recBtn.textContent = '🎤 录音';
-            recBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:13px;white-space:nowrap';
-            log('⏹ 录音停止，处理中...');
-        }
+html { font-size:15px }
+body {
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    max-width:720px;
+    margin:0 auto;
+    padding:0 16px 12px;
+    position:relative;
+    background:
+        radial-gradient(ellipse 70% 35% at 50% 0%, rgba(184,132,47,0.05) 0%, transparent 70%),
+        var(--bg);
+}
 
-        // ---- TTS Playback ----
-        let ttsTimer = null;
+/* ── Decorative top rule ── */
+.top-rule {
+    height:2px;
+    background:linear-gradient(90deg, transparent 0%, var(--gold) 15%, var(--gold) 85%, transparent 100%);
+    opacity:0.35;
+    margin:0 -16px 16px;
+    flex-shrink:0;
+}
 
-        function playTTS() {
-            if (ttsTimer) clearTimeout(ttsTimer);
-            ttsTimer = setTimeout(() => {
-                if (ttsChunks.length === 0) return;
-                const blob = new Blob(ttsChunks, { type: 'audio/mpeg' });
-                ttsChunks = [];
-                const url = URL.createObjectURL(blob);
-                const a = new Audio(url);
-                a.onended = () => { URL.revokeObjectURL(url); };
-                a.play().catch(() => {});
-                log('🔊 TTS 播放 ' + (blob.size/1024).toFixed(0) + 'KB');
-            }, 300);
-        }
+/* ── Header ── */
+.app-header {
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:0 2px 12px;
+    flex-shrink:0;
+}
 
-        // ---- Session ----
-        function endSession() {
-            if (!ws || ws.readyState !== 1) return;
-            if (rec) stopRec();
-            send({ type: 'end_session', data: {} });
-            addMsg('sys', '⏳ 生成报告...');
-            endBtn.style.display = 'none';
-        }
+.header-left { display:flex; align-items:baseline; gap:10px }
 
-        // ---- Events ----
-        inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendText(); } });
-        btn.addEventListener('click', sendText);
-        recBtn.addEventListener('click', toggleRec);
+.brand {
+    font-family:'Playfair Display', Georgia, serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:1.7rem;
+    color:var(--gold);
+    letter-spacing:-0.02em;
+    line-height:1;
+}
 
-        // ---- Start ----
-        connect();
-    </script>
+.brand-sub {
+    font-size:0.6rem;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:0.18em;
+    font-weight:500;
+    padding-bottom:0.15em;
+}
+
+.header-right { display:flex; align-items:center; gap:10px }
+
+.status-badge {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.6rem;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    transition:all 0.3s;
+}
+.status-badge.connected {
+    color:var(--sage);
+    border-color:rgba(106,154,120,0.3);
+    background:rgba(106,154,120,0.06);
+}
+.status-badge.disconnected {
+    color:var(--rose);
+    border-color:rgba(184,90,90,0.3);
+    background:rgba(184,90,90,0.06);
+}
+
+.btn-end {
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    width:28px;height:28px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all 0.2s;
+}
+.btn-end:hover {
+    border-color:var(--rose);
+    color:var(--rose);
+    background:rgba(184,90,90,0.06);
+}
+
+/* ── Chat area ── */
+.chat-area {
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-height:0;
+    margin-bottom:8px;
+    box-shadow:inset 0 0 40px rgba(184,132,47,0.02), 0 2px 12px rgba(0,0,0,0.02);
+    scroll-behavior:smooth;
+}
+
+.chat-area::-webkit-scrollbar { width:4px }
+.chat-area::-webkit-scrollbar-track { background:transparent }
+.chat-area::-webkit-scrollbar-thumb { background:var(--border-dim); border-radius:4px }
+
+/* ── Welcome placeholder ── */
+.chat-welcome {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    opacity:0.5;
+    animation:welcomeFade 0.8s ease-out;
+}
+@keyframes welcomeFade {
+    from { opacity:0; transform:translateY(10px) }
+    to   { opacity:0.5; transform:translateY(0) }
+}
+.welcome-icon {
+    font-size:2.4rem;
+    opacity:0.3;
+    filter:grayscale(1);
+}
+.welcome-title {
+    font-family:'Playfair Display', Georgia, serif;
+    font-style:italic;
+    font-size:1.15rem;
+    color:var(--text-dim);
+}
+.welcome-sub {
+    font-size:0.8rem;
+    color:var(--text-muted);
+}
+
+/* ── Messages ── */
+.msg-row { display:flex; flex-direction:column }
+.msg-user { align-items:flex-end }
+.msg-ai   { align-items:flex-start }
+
+.msg-bubble {
+    max-width:86%;
+    padding:10px 16px;
+    border-radius:14px;
+    font-size:0.9rem;
+    line-height:1.6;
+    animation:msgIn 0.25s ease-out;
+}
+@keyframes msgIn {
+    from { opacity:0; transform:translateY(6px) scale(0.98) }
+    to   { opacity:1; transform:translateY(0) scale(1) }
+}
+
+.msg-user .msg-bubble {
+    background:linear-gradient(135deg, rgba(184,132,47,0.06) 0%, rgba(184,132,47,0.03) 100%);
+    border:1px solid rgba(184,132,47,0.15);
+    border-bottom-right-radius:4px;
+    color:var(--text);
+}
+.msg-user .msg-bubble .msg-text { font-weight:400 }
+
+.msg-ai .msg-bubble {
+    background:var(--bg);
+    border:1px solid var(--border-dim);
+    border-bottom-left-radius:4px;
+}
+.msg-label {
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.55rem;
+    color:var(--gold);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin-bottom:4px;
+    opacity:0.7;
+}
+.ai-text {
+    font-family:'DM Sans', sans-serif;
+    color:var(--text);
+    line-height:1.65;
+}
+
+.msg-sys {
+    align-self:center;
+    color:var(--text-muted);
+    font-size:0.7rem;
+    border:none;
+    background:transparent;
+}
+
+/* ── Thinking indicator ── */
+.think-indicator {
+    display:none;
+    align-items:center;
+    gap:4px;
+    padding:4px 12px;
+    margin-bottom:6px;
+    align-self:flex-start;
+}
+.think-indicator.active { display:flex }
+.think-dot {
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+    animation:thinkBounce 1.2s ease-in-out infinite;
+}
+.think-dot:nth-child(2) { animation-delay:0.15s }
+.think-dot:nth-child(3) { animation-delay:0.3s }
+@keyframes thinkBounce {
+    0%,80%,100% { transform:scale(0.6); opacity:0.3 }
+    40% { transform:scale(1); opacity:1 }
+}
+.think-label {
+    font-size:0.55rem;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin-left:6px;
+    font-family:'JetBrains Mono', monospace;
+}
+
+/* ── Input bar ── */
+.input-bar {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-shrink:0;
+}
+
+.btn-record {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    color:var(--text-dim);
+    cursor:pointer;
+    font-family:'DM Sans', sans-serif;
+    font-size:0.8rem;
+    font-weight:500;
+    white-space:nowrap;
+    transition:all 0.25s;
+    flex-shrink:0;
+}
+.btn-record:hover:not(:disabled) {
+    border-color:rgba(184,132,47,0.3);
+    color:var(--gold);
+}
+.btn-record:disabled {
+    opacity:0.35;
+    cursor:not-allowed;
+}
+.btn-record.recording {
+    border-color:var(--rose);
+    color:var(--rose);
+    background:rgba(184,90,90,0.06);
+    animation:recPulse 1.5s ease-in-out infinite;
+}
+@keyframes recPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(184,90,90,0.12) }
+    50% { box-shadow:0 0 0 10px rgba(184,90,90,0) }
+}
+
+.input-wrap {
+    flex:1;
+    display:flex;
+    align-items:center;
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    transition:border-color 0.25s;
+    overflow:hidden;
+}
+.input-wrap:focus-within {
+    border-color:rgba(184,132,47,0.3);
+}
+
+.text-input {
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:'DM Sans', sans-serif;
+    font-size:0.85rem;
+    padding:10px 12px;
+}
+.text-input::placeholder { color:var(--text-muted) }
+.text-input:disabled { opacity:0.35 }
+
+.btn-send {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:36px;height:36px;
+    margin:4px;
+    border-radius:8px;
+    border:none;
+    background:transparent;
+    color:var(--text-muted);
+    cursor:pointer;
+    transition:all 0.2s;
+    flex-shrink:0;
+}
+.btn-send:hover:not(:disabled) {
+    background:var(--gold-dim);
+    color:var(--gold);
+}
+.btn-send:disabled { opacity:0.25; cursor:not-allowed }
+.btn-send svg { display:block }
+
+/* ── Debug ── */
+.debug {
+    font-size:0.6rem;
+    color:var(--text-muted);
+    font-family:'JetBrains Mono', monospace;
+    padding-top:4px;
+    display:none;
+    flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Correction Card — "Editorial Marginalia" (Parchment Edition)
+   ═══════════════════════════════════════════════════════════════════ */
+.cc-card {
+    margin-top:10px;
+    padding:14px 16px 12px;
+    border-radius:0 10px 10px 0;
+    background:linear-gradient(160deg, rgba(184,132,47,0.05) 0%, rgba(160,120,50,0.03) 50%, rgba(140,100,30,0.04) 100%);
+    border:1px solid rgba(180,140,80,0.18);
+    border-left:4px solid var(--gold);
+    font-size:13px;
+    line-height:1.65;
+    max-width:92%;
+    align-self:flex-end;
+    position:relative;
+    overflow:hidden;
+    transition:border-left-color 0.3s, box-shadow 0.3s;
+}
+.cc-card:hover {
+    border-left-color:#d4a030 !important;
+    box-shadow:inset 0 0 0 60px rgba(184,132,47,0.025) !important;
+}
+
+.cc-tex {
+    position:absolute;inset:0;
+    pointer-events:none;
+    opacity:0.03;
+    background-image:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(140,100,50,1) 2px, rgba(140,100,50,1) 3px);
+    z-index:0;
+}
+
+.cc-header {
+    position:relative;z-index:1;
+    display:flex;align-items:baseline;gap:8px;
+    margin-bottom:12px;
+    padding-bottom:8px;
+    border-bottom:1px dashed rgba(184,132,47,0.2);
+}
+.cc-head-label {
+    font-family:'Playfair Display', Georgia, serif;
+    font-style:italic;
+    color:var(--gold);
+    font-size:15px;
+    letter-spacing:0.01em;
+    font-weight:700;
+}
+.cc-head-divider {
+    width:1px;height:14px;
+    background:rgba(184,132,47,0.25);
+    display:inline-block;
+    align-self:center;
+}
+.cc-head-count {
+    font-family:'JetBrains Mono', monospace;
+    color:var(--text-dim);
+    font-size:10px;
+    letter-spacing:0.06em;
+}
+
+.cc-preview {
+    position:relative;z-index:1;
+    margin-bottom:12px;
+    padding:10px 14px;
+    border-radius:4px;
+    background:rgba(184,132,47,0.05);
+    border:1px solid rgba(184,132,47,0.1);
+    border-left:3px solid rgba(180,140,80,0.35);
+}
+.cc-preview-label {
+    display:block;
+    color:var(--text-muted);
+    font-size:9px;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.08em;
+    margin-bottom:4px;
+    text-transform:uppercase;
+}
+.cc-preview-text {
+    font-family:'Playfair Display', Georgia, serif;
+    color:#7a6535;
+    font-size:14px;
+    line-height:1.55;
+    font-style:italic;
+}
+
+.cc-list {
+    position:relative;z-index:1;
+    display:flex;flex-direction:column;
+    gap:8px;
+}
+
+.cc-err {
+    padding:9px 12px;
+    border-radius:6px;
+    background:var(--err-bg);
+    border:1px solid rgba(180,140,80,0.08);
+    border-left:3px solid var(--err-rule);
+    animation:corrItemIn 0.35s var(--err-delay, 0s) cubic-bezier(0.22,0.61,0.36,1) both;
+}
+@keyframes corrItemIn {
+    from { opacity:0; transform:translateX(12px) }
+    to   { opacity:1; transform:translateX(0) }
+}
+
+.cc-err-line {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:5px;
+    font-family:'Playfair Display', Georgia, serif;
+}
+
+.cc-badge {
+    font-size:9px;
+    padding:1px 6px;
+    border-radius:3px;
+    background:transparent;
+    border:1.5px solid;
+    font-weight:700;
+    letter-spacing:0.05em;
+    font-family:'JetBrains Mono', monospace;
+    flex-shrink:0;
+}
+
+.cc-orig {
+    color:var(--rose);
+    text-decoration:line-through;
+    text-decoration-thickness:1.5px;
+    text-decoration-color:rgba(184,90,90,0.4);
+    font-size:13px;
+}
+.cc-arrow {
+    color:#b5a892;
+    font-size:10px;
+    flex-shrink:0;
+    font-weight:700;
+}
+.cc-corr {
+    color:#5a8a5a;
+    font-weight:700;
+    font-size:13px;
+}
+.cc-expl {
+    color:var(--text-dim);
+    font-size:11px;
+    line-height:1.5;
+    padding-left:2px;
+    font-family:'DM Sans', sans-serif;
+}
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+    body { padding:0 10px 10px }
+    .top-rule { margin:0 -10px 12px }
+    .brand { font-size:1.35rem }
+    .brand-sub { font-size:0.5rem }
+    .msg-bubble { max-width:92%; font-size:0.85rem; padding:8px 12px }
+    .cc-card { max-width:96%; padding:12px 12px 10px }
+    .cc-preview-text { font-size:13px }
+    .btn-record { padding:8px 10px }
+    .btn-record .btn-label { display:none }
+}
+</style>
 </body>
 </html>

@@ -32,6 +32,7 @@ from config import config
 from services.asr_engine import get_asr_engine
 from services.tts_engine import get_tts_engine
 from services.llm_engine import get_llm, create_conversation
+from services.correction_engine import get_correction_engine
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -401,6 +402,8 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"end_session", "data":{}}
 
       Server -> Client:
+        {"type":"user_transcript", "data":{"text":"..."}}
+        {"type":"correction", "data":{"original_text":"...","corrected_text":"...","errors":[...],"has_corrections":bool}}
         {"type":"reply_start"}
         {"type":"reply_chunk", "data":{"text":"..."}}
         {"type":"reply_end", "data":{"interrupted":bool}}
@@ -430,44 +433,97 @@ async def echo_speak_ws(websocket: WebSocket):
         await websocket.send_text(json.dumps(msg))
 
     async def process_and_reply(user_text: str):
-        """Process user text through LLM -> reply -> TTS."""
+        """Process user text through LLM + correction (parallel) -> reply -> TTS."""
         nonlocal interrupted
         interrupted = False
 
         if not user_text.strip():
             return
 
-        conversation.add_user_message(user_text.strip())
+        text = user_text.strip()
+        conversation.add_user_message(text)
 
-        # Get LLM reply (non-streaming)
-        full_reply = llm.reply(conversation)
-
-        await send_json({"type": "reply_start"})
-        if full_reply:
-            await send_json({
-                "type": "reply_chunk",
-                "data": {"text": full_reply}
-            })
-        await send_json({
-            "type": "reply_end",
-            "data": {"interrupted": interrupted}
-        })
-
-        # Score update (placeholder)
-        await send_json({
-            "type": "score_update",
-            "data": {"score": min(95, 60 + utterance_count * 5 + 30)}
-        })
-
-        # TTS
-        if not interrupted and full_reply.strip():
+        # ── Parallel: correction + LLM reply ──
+        async def do_correction():
+            """Grammar/expression correction — usually returns first."""
             try:
-                communicate = edge_tts.Communicate(full_reply.strip(), config.TTS_VOICE)
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        await websocket.send_bytes(chunk["data"])
+                correction_engine = get_correction_engine()
+                logger.info(
+                    f"[WS:{session_id}] Correction: calling LLM for '{text[:40]}'..."
+                )
+                # Run sync LLM call in thread to avoid blocking event loop
+                correction = await asyncio.to_thread(
+                    correction_engine.correct, text
+                )
+                logger.info(
+                    f"[WS:{session_id}] Correction result: "
+                    f"has_corrections={correction.has_corrections}, "
+                    f"errors={len(correction.errors)}, "
+                    f"corrected='{correction.corrected_text[:50]}'"
+                )
+                if correction.has_corrections:
+                    await send_json({
+                        "type": "correction",
+                        "data": correction.to_dict()
+                    })
+                    logger.info(
+                        f"[WS:{session_id}] Correction SENT: "
+                        f"{len(correction.errors)} error(s)"
+                    )
+                else:
+                    logger.info(
+                        f"[WS:{session_id}] Correction SKIPPED (no errors found)"
+                    )
+                return correction
             except Exception as e:
-                logger.warning(f"[WS:{session_id}] TTS error: {e}")
+                logger.warning(
+                    f"[WS:{session_id}] Correction FAILED: {e}"
+                )
+                return None
+
+        async def do_reply():
+            """Conversation reply — may take longer."""
+            nonlocal interrupted
+            # Run sync LLM call in thread
+            full_reply = await asyncio.to_thread(llm.reply, conversation)
+
+            if interrupted:
+                return full_reply
+
+            await send_json({"type": "reply_start"})
+            if full_reply:
+                await send_json({
+                    "type": "reply_chunk",
+                    "data": {"text": full_reply}
+                })
+            await send_json({
+                "type": "reply_end",
+                "data": {"interrupted": interrupted}
+            })
+
+            # Score update (placeholder)
+            await send_json({
+                "type": "score_update",
+                "data": {"score": min(95, 60 + utterance_count * 5 + 30)}
+            })
+
+            # TTS
+            if not interrupted and full_reply.strip():
+                try:
+                    communicate = edge_tts.Communicate(
+                        full_reply.strip(), config.TTS_VOICE
+                    )
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            await websocket.send_bytes(chunk["data"])
+                except Exception as e:
+                    logger.warning(f"[WS:{session_id}] TTS error: {e}")
+
+            return full_reply
+
+        # ── Execute correction and reply in parallel ──
+        # Total latency ≈ max(correction_time, reply_time) ≈ reply_time alone
+        await asyncio.gather(do_correction(), do_reply())
 
     try:
         while True:
@@ -515,6 +571,10 @@ async def echo_speak_ws(websocket: WebSocket):
                             logger.warning(f"[WS:{session_id}] ASR fallback error: {e2}")
 
                     if text:
+                        await send_json({
+                            "type": "user_transcript",
+                            "data": {"text": text}
+                        })
                         await process_and_reply(text)
                     else:
                         await send_json({
