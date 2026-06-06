@@ -54,9 +54,11 @@ const (
 
 // TranscriptData ASR 识别结果
 type TranscriptData struct {
-	Text    string `json:"text"`
-	IsFinal bool   `json:"is_final"`
-	IsUser  bool   `json:"is_user"` // true=用户说话, false=AI回复
+	Text          string `json:"text"`
+	IsFinal       bool   `json:"is_final"`
+	IsUser        bool   `json:"is_user"`                  // true=用户说话, false=AI回复
+	Pronunciation int    `json:"pronunciation,omitempty"`  // 发音评分 0-100
+	Fluency       int    `json:"fluency,omitempty"`        // 流利度评分 0-100
 }
 
 // ReplyChunkData AI 回复文本片段
@@ -95,15 +97,20 @@ type ScoreUpdateData struct {
 
 // SessionReportData 课后报告
 type SessionReportData struct {
-	OverallScore float64      `json:"overall_score"`
-	Summary      string       `json:"summary"` // Markdown 格式
-	WeakPoints   []WeakPoint  `json:"weak_points"`
-	Suggestions  []string     `json:"suggestions"`
+	Scene         string      `json:"scene"`           // 场景名称
+	DurationSec   int         `json:"duration_sec"`    // 练习时长（秒）
+	Turns         int         `json:"turns"`           // 对话轮数
+	Grammar       int         `json:"grammar"`         // 语法评分 0-100
+	Vocabulary    int         `json:"vocabulary"`      // 词汇评分 0-100
+	Pronunciation int         `json:"pronunciation"`   // 发音评分 0-100
+	Fluency       int         `json:"fluency"`         // 流利度评分 0-100
+	ErrorStats    []ErrorStat `json:"error_stats"`     // 高频错误统计
+	Suggestions   []string    `json:"suggestions"`     // 学习建议
 }
 
-// WeakPoint 薄弱项
-type WeakPoint struct {
-	Category  string `json:"category"`
-	Detail    string `json:"detail"`
-	Frequency int    `json:"frequency"`
+// ErrorStat 错误统计
+type ErrorStat struct {
+	Type  string `json:"type"`  // 错误类型标识
+	Label string `json:"label"` // 中文标签，如 "冠词遗漏"
+	Count int    `json:"count"` // 出现次数
 }
