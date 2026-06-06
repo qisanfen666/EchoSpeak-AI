@@ -9,6 +9,7 @@ type Config struct {
 	ListenAddr     string // Go 网关监听地址
 	PythonGRPCAddr string // Python gRPC 服务地址
 	RedisAddr      string // Redis 地址
+	FrontendDir    string // 前端静态文件目录
 }
 
 func Load() *Config {
@@ -16,6 +17,7 @@ func Load() *Config {
 		ListenAddr:     getEnv("LISTEN_ADDR", ":8080"),
 		PythonGRPCAddr: getEnv("PYTHON_GRPC_ADDR", "localhost:50051"),
 		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
+		FrontendDir:    getEnv("FRONTEND_DIR", "../frontend"),
 	}
 }
 

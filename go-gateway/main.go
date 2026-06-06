@@ -44,7 +44,14 @@ func main() {
 		w.Write([]byte(`{"status":"ok","service":"go-gateway"}`))
 	})
 
-	// 5. 优雅关闭
+	// 5. 托管前端静态文件
+	if cfg.FrontendDir != "" {
+		fs := http.FileServer(http.Dir(cfg.FrontendDir))
+		mux.Handle("/", fs)
+		log.Printf("[Main] Serving frontend from: %s", cfg.FrontendDir)
+	}
+
+	// 6. 优雅关闭
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 

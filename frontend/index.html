@@ -571,7 +571,7 @@ function showCorrection(data) {
 // ═══════════════════════════════════════════════════════════════════
 function connect(scene) {
     scene = scene || 'ordering';
-    const u = 'ws://localhost:8080/ws?session_id=' + currentSessionId + '&scene=' + scene;
+    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene;
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
