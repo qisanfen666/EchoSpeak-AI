@@ -97,15 +97,25 @@ type ScoreUpdateData struct {
 
 // SessionReportData 课后报告
 type SessionReportData struct {
-	Scene         string      `json:"scene"`           // 场景名称
-	DurationSec   int         `json:"duration_sec"`    // 练习时长（秒）
-	Turns         int         `json:"turns"`           // 对话轮数
-	Grammar       int         `json:"grammar"`         // 语法评分 0-100
-	Vocabulary    int         `json:"vocabulary"`      // 词汇评分 0-100
-	Pronunciation int         `json:"pronunciation"`   // 发音评分 0-100
-	Fluency       int         `json:"fluency"`         // 流利度评分 0-100
-	ErrorStats    []ErrorStat `json:"error_stats"`     // 高频错误统计
-	Suggestions   []string    `json:"suggestions"`     // 学习建议
+	Scene         string      `json:"scene"`               // 场景名称
+	DurationSec   int         `json:"duration_sec"`        // 练习时长（秒）
+	Turns         int         `json:"turns"`               // 对话轮数
+	Grammar       int         `json:"grammar"`             // 语法评分 0-100
+	Vocabulary    int         `json:"vocabulary"`          // 词汇评分 0-100
+	Pronunciation int         `json:"pronunciation"`       // 发音评分 0-100
+	Fluency       int         `json:"fluency"`             // 流利度评分 0-100
+	ErrorStats    []ErrorStat `json:"error_stats"`         // 高频错误统计
+	Suggestions   []string    `json:"suggestions"`         // 学习建议
+	TurnTrends    []TurnTrend `json:"turn_trends,omitempty"` // 逐轮趋势数据
+}
+
+// TurnTrend 单轮趋势数据（用于前端绘制折线图）
+type TurnTrend struct {
+	TurnIndex      int   `json:"turn_index"`       // 轮次序号（从 0 开始）
+	ErrorCount     int   `json:"error_count"`      // 该轮错误总数
+	ResponseTimeMs int64 `json:"response_time_ms"` // 该轮回复耗时（毫秒）
+	GrammarErrors  int   `json:"grammar_errors"`   // 语法类错误数
+	VocabErrors    int   `json:"vocab_errors"`     // 词汇类错误数
 }
 
 // ErrorStat 错误统计

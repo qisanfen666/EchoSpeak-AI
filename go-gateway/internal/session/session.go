@@ -13,6 +13,7 @@ type ConversationTurn struct {
 	AssistantText string           `json:"assistant_text"`
 	Pronunciation int              `json:"pronunciation"`          // 发音评分 0-100
 	Fluency       int              `json:"fluency"`                // 流利度评分 0-100
+	ResponseTimeMs int64           `json:"response_time_ms"`       // 该轮回复耗时（毫秒）
 	Correction    *TurnCorrection  `json:"correction,omitempty"`
 	Timestamp     time.Time        `json:"timestamp"`
 }

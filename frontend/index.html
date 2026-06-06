@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -195,6 +196,40 @@
             </div>
         </div>
 
+        <!-- Cross-Session Comparison -->
+        <div class="report-section" id="rp-history-section" style="display:none">
+            <h3 class="rp-section-title">历史对比</h3>
+            <div class="rp-charts">
+                <div class="rp-chart-wrap">
+                    <h4 class="rp-chart-title">各次练习错误总数</h4>
+                    <canvas id="chart-history-errors"></canvas>
+                </div>
+                <div class="rp-chart-wrap">
+                    <h4 class="rp-chart-title">评分趋势 (语法 / 词汇)</h4>
+                    <canvas id="chart-history-scores"></canvas>
+                </div>
+                <div class="rp-chart-wrap">
+                    <h4 class="rp-chart-title">平均回复耗时变化 (秒)</h4>
+                    <canvas id="chart-history-resptime"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Trends -->
+        <div class="report-section" id="rp-trends-section" style="display:none">
+            <h3 class="rp-section-title">本次趋势</h3>
+            <div class="rp-charts">
+                <div class="rp-chart-wrap">
+                    <h4 class="rp-chart-title">错误次数变化</h4>
+                    <canvas id="chart-errors"></canvas>
+                </div>
+                <div class="rp-chart-wrap">
+                    <h4 class="rp-chart-title">回复耗时变化 (秒)</h4>
+                    <canvas id="chart-response-time"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- All Errors Detail -->
         <div class="report-section" id="rp-all-errors-section" style="display:none">
             <h3 class="rp-section-title">对话中的错误</h3>
@@ -270,6 +305,9 @@ let sessionStats = {
     fluScores: [],
     errors: []
 };
+
+// Cross-session history (in-memory, resets on page reload)
+let sessionHistory = [];
 
 // ── Current session ID ──
 let currentSessionId = null;
@@ -357,6 +395,7 @@ function practiceAgain() {
         '</div>';
 
     // Reset stats
+    destroyCharts();
     sessionStats = {
         scene: 'ordering',
         startTime: null,
@@ -826,6 +865,14 @@ function endSession() {
 // ═══════════════════════════════════════════════════════════════════
 // Report rendering
 // ═══════════════════════════════════════════════════════════════════
+function destroyCharts() {
+    if (window._chartErrors) { window._chartErrors.destroy(); window._chartErrors = null; }
+    if (window._chartRespTime) { window._chartRespTime.destroy(); window._chartRespTime = null; }
+    if (window._chartHistErrors) { window._chartHistErrors.destroy(); window._chartHistErrors = null; }
+    if (window._chartHistScores) { window._chartHistScores.destroy(); window._chartHistScores = null; }
+    if (window._chartHistRespTime) { window._chartHistRespTime.destroy(); window._chartHistRespTime = null; }
+}
+
 function showReport(data) {
     if (micActive) stopMic();
     think.classList.remove('active');
@@ -878,6 +925,191 @@ function showReport(data) {
     setScore('sc-vocabulary', data.vocabulary);
     setScore('sc-pronunciation', data.pronunciation);
     setScore('sc-fluency', data.fluency);
+
+    // ── Cross-session comparison charts ──
+    destroyCharts();
+    if (sessionHistory.length >= 1) {
+        $('#rp-history-section').style.display = '';
+        var histLabels = [];
+        var histErrCounts = [];
+        var histGrammarScores = [];
+        var histVocabScores = [];
+        var histAvgRespTimes = [];
+        // Include previous sessions
+        for (var hi = 0; hi < sessionHistory.length; hi++) {
+            var h = sessionHistory[hi];
+            histLabels.push('#' + (hi + 1));
+            histErrCounts.push(h.totalErrors);
+            histGrammarScores.push(h.grammar);
+            histVocabScores.push(h.vocabulary);
+            histAvgRespTimes.push(h.avgResponseTimeSec);
+        }
+        // Include current session
+        var curTotalErrors = 0;
+        if (data.error_stats) {
+            for (var ei = 0; ei < data.error_stats.length; ei++) {
+                curTotalErrors += data.error_stats[ei].count;
+            }
+        }
+        var curAvgResp = 0;
+        if (data.turn_trends && data.turn_trends.length > 0) {
+            var sumRt = 0;
+            for (var ti = 0; ti < data.turn_trends.length; ti++) {
+                sumRt += data.turn_trends[ti].response_time_ms;
+            }
+            curAvgResp = (sumRt / data.turn_trends.length / 1000).toFixed(1);
+        }
+        histLabels.push('#' + (sessionHistory.length + 1));
+        histErrCounts.push(curTotalErrors);
+        histGrammarScores.push(data.grammar);
+        histVocabScores.push(data.vocabulary);
+        histAvgRespTimes.push(parseFloat(curAvgResp));
+
+        // Bar chart: error count per session
+        var hErrCtx = document.getElementById('chart-history-errors').getContext('2d');
+        window._chartHistErrors = new Chart(hErrCtx, {
+            type: 'bar',
+            data: {
+                labels: histLabels,
+                datasets: [{
+                    label: '错误总数',
+                    data: histErrCounts,
+                    backgroundColor: histLabels.map(function(_, i) { return i === histLabels.length - 1 ? 'rgba(201,169,110,0.6)' : 'rgba(107,107,103,0.35)'; }),
+                    borderColor: histLabels.map(function(_, i) { return i === histLabels.length - 1 ? '#c9a96e' : '#6b6b67'; }),
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#6b6b67' }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
+                }
+            }
+        });
+
+        // Line chart: grammar + vocabulary scores
+        var hScoreCtx = document.getElementById('chart-history-scores').getContext('2d');
+        window._chartHistScores = new Chart(hScoreCtx, {
+            type: 'line',
+            data: {
+                labels: histLabels,
+                datasets: [
+                    { label: '语法', data: histGrammarScores, borderColor: '#e8906c', backgroundColor: 'rgba(232,144,108,0.08)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#e8906c' },
+                    { label: '词汇', data: histVocabScores, borderColor: '#b49cc4', backgroundColor: 'rgba(180,156,196,0.08)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#b49cc4' },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
+                    y: { min: 0, max: 100, ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
+                }
+            }
+        });
+
+        // Line chart: average response time
+        var hRtCtx = document.getElementById('chart-history-resptime').getContext('2d');
+        window._chartHistRespTime = new Chart(hRtCtx, {
+            type: 'line',
+            data: {
+                labels: histLabels,
+                datasets: [
+                    { label: '平均耗时', data: histAvgRespTimes, borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.15)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#c9a96e' },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
+                    y: { beginAtZero: true, title: { display: true, text: '秒', color: '#6b6b67' }, ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
+                }
+            }
+        });
+    } else {
+        $('#rp-history-section').style.display = 'none';
+    }
+
+    // ── Single-session trend charts ──
+    if (data.turn_trends && data.turn_trends.length >= 2) {
+        $('#rp-trends-section').style.display = '';
+        var labels = data.turn_trends.map(function(t) { return '#' + (t.turn_index + 1); });
+
+        // Error trend line chart
+        var errCtx = document.getElementById('chart-errors').getContext('2d');
+        window._chartErrors = new Chart(errCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '语法类',
+                        data: data.turn_trends.map(function(t) { return t.grammar_errors; }),
+                        borderColor: '#e8906c',
+                        backgroundColor: 'rgba(232,144,108,0.08)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#e8906c',
+                    },
+                    {
+                        label: '词汇类',
+                        data: data.turn_trends.map(function(t) { return t.vocab_errors; }),
+                        borderColor: '#b49cc4',
+                        backgroundColor: 'rgba(180,156,196,0.08)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#b49cc4',
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
+                }
+            }
+        });
+
+        // Response time trend line chart
+        var rtCtx = document.getElementById('chart-response-time').getContext('2d');
+        window._chartRespTime = new Chart(rtCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '回复耗时',
+                        data: data.turn_trends.map(function(t) { return (t.response_time_ms / 1000).toFixed(1); }),
+                        borderColor: '#c9a96e',
+                        backgroundColor: 'rgba(201,169,110,0.15)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#c9a96e',
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
+                    y: { beginAtZero: true, title: { display: true, text: '秒', color: '#6b6b67' }, ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
+                }
+            }
+        });
+    } else {
+        $('#rp-trends-section').style.display = 'none';
+    }
 
     // Individual errors
     var allErrDiv = $('#rp-all-errors');
@@ -943,7 +1175,44 @@ function showReport(data) {
         sugDiv.innerHTML = '<div class="rp-suggestion">继续保持练习，你做得很好！</div>';
     }
 
+    // Save summary for cross-session comparison
+    saveSessionSummary(data);
+
     showView('view-report');
+}
+
+// Save current session summary into history for cross-session comparison
+function saveSessionSummary(data) {
+    var turns = data.turns || 0;
+    if (turns === 0) return; // don't save empty sessions
+
+    var totalErrors = 0;
+    if (data.error_stats) {
+        for (var i = 0; i < data.error_stats.length; i++) {
+            totalErrors += data.error_stats[i].count;
+        }
+    }
+
+    var avgRespSec = 0;
+    if (data.turn_trends && data.turn_trends.length > 0) {
+        var sum = 0;
+        for (var i = 0; i < data.turn_trends.length; i++) {
+            sum += data.turn_trends[i].response_time_ms;
+        }
+        avgRespSec = parseFloat((sum / data.turn_trends.length / 1000).toFixed(1));
+    }
+
+    sessionHistory.push({
+        scene: data.scene || sessionStats.scene,
+        turns: turns,
+        durationSec: data.duration_sec || 0,
+        grammar: data.grammar || 0,
+        vocabulary: data.vocabulary || 0,
+        pronunciation: data.pronunciation || 0,
+        fluency: data.fluency || 0,
+        totalErrors: totalErrors,
+        avgResponseTimeSec: avgRespSec,
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1952,6 +2221,29 @@ body {
     margin-bottom: 0.8rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px dashed rgba(184,132,47,0.2);
+}
+
+/* Trend charts */
+.rp-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+.rp-chart-wrap {
+    width: 100%;
+}
+.rp-chart-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 0.4rem 0;
+    font-weight: 500;
+}
+.rp-chart-wrap canvas {
+    width: 100% !important;
+    height: 200px !important;
 }
 
 /* Individual error cards */

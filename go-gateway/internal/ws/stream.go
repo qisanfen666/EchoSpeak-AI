@@ -229,10 +229,11 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 				})
 
 				turn := session.ConversationTurn{
-					UserText:      userText,
-					AssistantText: fullReply,
-					Pronunciation: 0,
-					Fluency:       0,
+					UserText:       userText,
+					AssistantText:  fullReply,
+					Pronunciation:  0,
+					Fluency:        0,
+					ResponseTimeMs: elapsed.Milliseconds(),
 				}
 				if turnCorrection != nil {
 					turn.Correction = turnCorrection
@@ -563,9 +564,78 @@ func generateReport(mgr *session.Manager, sessionID string) SessionReportData {
 		"interview": "工作面试",
 		"meeting":   "商务会议",
 		"travel":    "旅行出行",
-	}
+		}
+		if name, ok := sceneNames[report.Scene]; ok {
+			report.Scene = fmt.Sprintf("%%s (%%s)", name, mgr.Scene)
+		}
+
+		// Build per-turn trend data for frontend charts
+		report.TurnTrends = make([]TurnTrend, 0, len(history))
+		for i, turn := range history {
+			grammarErr := 0
+			vocabErr := 0
+			errCount := 0
+			if turn.Correction != nil {
+				errCount = len(turn.Correction.Errors)
+				for _, e := range turn.Correction.Errors {
+					switch e.Type {
+					case "grammar", "tense", "preposition", "article":
+						grammarErr++
+					case "vocabulary", "word_choice", "expression":
+						vocabErr++
+					default:
+						grammarErr++
+					}
+				}
+				if errCount == 0 && turn.Correction.ErrorType != "" {
+					errCount = 1
+					grammarErr = 1
+				}
+			}
+			report.TurnTrends = append(report.TurnTrends, TurnTrend{
+				TurnIndex:      i,
+				ErrorCount:     errCount,
+				ResponseTimeMs: turn.ResponseTimeMs,
+				GrammarErrors:  grammarErr,
+				VocabErrors:    vocabErr,
+			})
+		}
+
+		return report
 	if name, ok := sceneNames[report.Scene]; ok {
 		report.Scene = fmt.Sprintf("%s (%s)", name, mgr.Scene)
+	}
+
+	// Build per-turn trend data for frontend charts
+	report.TurnTrends = make([]TurnTrend, 0, len(history))
+	for i, turn := range history {
+		grammarErr := 0
+		vocabErr := 0
+		errCount := 0
+		if turn.Correction != nil {
+			errCount = len(turn.Correction.Errors)
+			for _, e := range turn.Correction.Errors {
+				switch e.Type {
+				case "grammar", "tense", "preposition", "article":
+					grammarErr++
+				case "vocabulary", "word_choice", "expression":
+					vocabErr++
+				default:
+					grammarErr++
+				}
+			}
+			if errCount == 0 && turn.Correction.ErrorType != "" {
+				errCount = 1
+				grammarErr = 1
+			}
+		}
+		report.TurnTrends = append(report.TurnTrends, TurnTrend{
+			TurnIndex:      i,
+			ErrorCount:     errCount,
+			ResponseTimeMs: turn.ResponseTimeMs,
+			GrammarErrors:  grammarErr,
+			VocabErrors:    vocabErr,
+		})
 	}
 
 	return report
