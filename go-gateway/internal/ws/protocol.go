@@ -6,9 +6,9 @@ package ws
 
 // WSMessage 通用消息信封
 type WSMessage struct {
-	Type string      `json:"type"`            // 消息类型
-	Data interface{} `json:"data,omitempty"`  // 具体载荷
-	Seq  int64       `json:"seq,omitempty"`   // 消息序号（用于排序和重传）
+	Type string      `json:"type"`           // 消息类型
+	Data interface{} `json:"data,omitempty"` // 具体载荷
+	Seq  int64       `json:"seq,omitempty"`  // 消息序号（用于排序和重传）
 }
 
 // ============ 客户端 → 服务端 ============
@@ -23,7 +23,7 @@ const (
 
 // AudioChunkData 音频块载荷
 type AudioChunkData struct {
-	DataB64 string `json:"data"`   // base64 encoded PCM audio
+	DataB64 string `json:"data"` // base64 encoded PCM audio
 	IsEnd   bool   `json:"is_end"`
 	ChunkID int    `json:"chunk_id"`
 }
@@ -56,9 +56,9 @@ const (
 type TranscriptData struct {
 	Text          string `json:"text"`
 	IsFinal       bool   `json:"is_final"`
-	IsUser        bool   `json:"is_user"`                  // true=用户说话, false=AI回复
-	Pronunciation int    `json:"pronunciation,omitempty"`  // 发音评分 0-100
-	Fluency       int    `json:"fluency,omitempty"`        // 流利度评分 0-100
+	IsUser        bool   `json:"is_user"`                 // true=用户说话, false=AI回复
+	Pronunciation int    `json:"pronunciation,omitempty"` // 发音评分 0-100
+	Fluency       int    `json:"fluency,omitempty"`       // 流利度评分 0-100
 }
 
 // ReplyChunkData AI 回复文本片段
@@ -69,16 +69,16 @@ type ReplyChunkData struct {
 
 // ReplyAudioData TTS 音频
 type ReplyAudioData struct {
-	Data    []byte `json:"data"`     // base64 编码
+	Data    []byte `json:"data"` // base64 编码
 	ChunkID int    `json:"chunk_id"`
 	IsFinal bool   `json:"is_final"`
 }
 
 // CorrectionData 语法纠错 — matches frontend showCorrection format
 type CorrectionData struct {
-	OriginalText string      `json:"original_text"`
-	CorrectedText string     `json:"corrected_text"`
-	Errors       []ErrorItem `json:"errors"`
+	OriginalText  string      `json:"original_text"`
+	CorrectedText string      `json:"corrected_text"`
+	Errors        []ErrorItem `json:"errors"`
 }
 
 // ErrorItem 单个纠错详情 — matches frontend ErrorDetail
@@ -97,15 +97,15 @@ type ScoreUpdateData struct {
 
 // SessionReportData 课后报告
 type SessionReportData struct {
-	Scene         string      `json:"scene"`               // 场景名称
-	DurationSec   int         `json:"duration_sec"`        // 练习时长（秒）
-	Turns         int         `json:"turns"`               // 对话轮数
-	Grammar       int         `json:"grammar"`             // 语法评分 0-100
-	Vocabulary    int         `json:"vocabulary"`          // 词汇评分 0-100
-	Pronunciation int         `json:"pronunciation"`       // 发音评分 0-100
-	Fluency       int         `json:"fluency"`             // 流利度评分 0-100
-	ErrorStats    []ErrorStat `json:"error_stats"`         // 高频错误统计
-	Suggestions   []string    `json:"suggestions"`         // 学习建议
+	Scene         string      `json:"scene"`                 // 场景名称
+	DurationSec   int         `json:"duration_sec"`          // 练习时长（秒）
+	Turns         int         `json:"turns"`                 // 对话轮数
+	Grammar       int         `json:"grammar"`               // 语法评分 0-100
+	Vocabulary    int         `json:"vocabulary"`            // 词汇评分 0-100
+	Pronunciation int         `json:"pronunciation"`         // 发音评分 0-100
+	Fluency       int         `json:"fluency"`               // 流利度评分 0-100
+	ErrorStats    []ErrorStat `json:"error_stats"`           // 高频错误统计
+	Suggestions   []string    `json:"suggestions"`           // 学习建议
 	TurnTrends    []TurnTrend `json:"turn_trends,omitempty"` // 逐轮趋势数据
 }
 

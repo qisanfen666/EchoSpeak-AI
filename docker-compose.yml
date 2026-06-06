@@ -1,6 +1,3 @@
-version: "3.9"
-
-# 仅用于本地开发 — Redis + 可选的 gRPC 测试
 services:
   redis:
     image: redis:7-alpine
