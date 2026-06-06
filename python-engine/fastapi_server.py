@@ -386,6 +386,114 @@ async def websocket_tts(websocket: WebSocket, client_id: str):
 
 VALID_SCENES = {"ordering", "interview", "meeting", "travel", "daily", "business", "custom", "default"}
 
+# Fallback suggestion templates (used when LLM is unavailable)
+_SUGGESTION_FALLBACKS = {
+    "article": "注意冠词（a/an/the）的使用，尤其是定冠词和不定冠词的区分",
+    "tense": "加强时态表达练习，注意过去时和完成时的正确使用",
+    "preposition": "多练习介词的搭配，注意 in/on/at 等介词的准确用法",
+    "grammar": "巩固基础语法知识，注意句子结构的完整性",
+    "vocabulary": "扩充词汇量，尝试使用更丰富的表达方式",
+    "word_choice": "注意用词准确性，选择更地道的英语表达",
+    "expression": "提高英语表达连贯性，多练习地道口语表达",
+}
+
+
+async def _generate_llm_suggestions(
+    llm,
+    scene_display: str,
+    utterance_count: int,
+    duration_sec: int,
+    grammar_score: int,
+    vocab_score: int,
+    avg_pron: int,
+    avg_flu: int,
+    error_counts: dict,
+    all_errors: list,
+    label_map: dict,
+) -> list:
+    """Call LLM to generate personalised learning suggestions."""
+    # Build error summary text
+    error_lines = []
+    for etype, count in sorted(error_counts.items(), key=lambda x: -x[1]):
+        if count > 0:
+            label = label_map.get(etype, etype)
+            error_lines.append(f"  - {label} ({etype}): {count}次")
+    error_summary = "\n".join(error_lines) if error_lines else "  无错误"
+
+    # Pick up to 5 example errors
+    examples = all_errors[:5]
+    example_lines = []
+    for i, err in enumerate(examples, 1):
+        example_lines.append(
+            f"  {i}. {err['original']} → {err['corrected']}"
+            f" ({label_map.get(err['type'], err['type'])})"
+        )
+    error_examples = "\n".join(example_lines) if example_lines else "  无具体错误"
+
+    prompt = f"""You are an expert English teacher reviewing a student's practice session.
+Generate 3-5 specific, actionable learning suggestions in Chinese (中文).
+
+Session data:
+- Scenario: {scene_display}
+- Turns: {utterance_count}
+- Duration: {duration_sec}s
+- Scores: Grammar {grammar_score}/100, Vocabulary {vocab_score}/100, Pronunciation {avg_pron}/100, Fluency {avg_flu}/100
+
+Error statistics:
+{error_summary}
+
+Example mistakes the student made:
+{error_examples}
+
+Requirements for each suggestion:
+1. Reference the specific mistakes above — be concrete, not generic
+2. Give actionable practice methods (e.g. "复习过去式变化规则，特别是..." not just "加强时态练习")
+3. Be encouraging and constructive in tone
+4. Keep each to 1-2 sentences
+
+Return ONLY the suggestions, one per line. No numbering, no bullet points, no other text."""
+
+    try:
+        from services.llm_engine import create_conversation
+
+        conv = create_conversation("default")
+        # Replace system prompt with our specialised one
+        conv.messages[0] = {
+            "role": "system",
+            "content": "You are an expert English teacher. You give specific, actionable learning advice in Chinese. Always reference concrete mistakes. Never give vague generic suggestions.",
+        }
+        conv.add_user_message(prompt)
+
+        import asyncio
+        reply = await asyncio.to_thread(llm.reply, conv)
+        logger.info(f"LLM suggestions generated: '{reply[:120]}...'")
+
+        # Parse: split by newlines, filter empty, clean up numbering/bullets
+        import re
+        suggestions = []
+        for line in reply.strip().split("\n"):
+            line = line.strip()
+            # Remove leading numbers, bullets, dashes
+            line = re.sub(r'^[\d]+[\.\)、]\s*', '', line)
+            line = re.sub(r'^[-\•\*\–]\s*', '', line)
+            line = line.strip()
+            if line and len(line) > 6:  # filter short/noise lines
+                suggestions.append(line)
+        if suggestions:
+            return suggestions[:5]
+    except Exception as e:
+        logger.warning(f"LLM suggestions failed, using fallback: {e}")
+
+    # Fallback: template-based suggestions
+    suggestions = []
+    for etype, _ in sorted(error_counts.items(), key=lambda x: -x[1])[:3]:
+        if etype in _SUGGESTION_FALLBACKS:
+            suggestions.append(_SUGGESTION_FALLBACKS[etype])
+    if not suggestions:
+        suggestions.append("继续保持练习，尝试更多不同场景的对话")
+        suggestions.append("可以挑战更复杂的表达，提高语言丰富度")
+    return suggestions
+
 
 @app.websocket("/ws")
 async def echo_speak_ws(websocket: WebSocket):
@@ -758,24 +866,6 @@ async def echo_speak_ws(websocket: WebSocket):
                             "count": count,
                         })
 
-                # Suggestions from top-3 errors
-                SUGGESTIONS = {
-                    "article": "注意冠词（a/an/the）的使用，尤其是定冠词和不定冠词的区分",
-                    "tense": "加强时态表达练习，注意过去时和完成时的正确使用",
-                    "preposition": "多练习介词的搭配，注意 in/on/at 等介词的准确用法",
-                    "grammar": "巩固基础语法知识，注意句子结构的完整性",
-                    "vocabulary": "扩充词汇量，尝试使用更丰富的表达方式",
-                    "word_choice": "注意用词准确性，选择更地道的英语表达",
-                    "expression": "提高英语表达连贯性，多练习地道口语表达",
-                }
-                suggestions = []
-                for etype, _ in sorted(error_counts.items(), key=lambda x: -x[1])[:3]:
-                    if etype in SUGGESTIONS:
-                        suggestions.append(SUGGESTIONS[etype])
-                if not suggestions:
-                    suggestions.append("继续保持练习，尝试更多不同场景的对话")
-                    suggestions.append("可以挑战更复杂的表达，提高语言丰富度")
-
                 # Scene name
                 SCENE_NAMES = {
                     "ordering": "餐厅点餐", "interview": "工作面试",
@@ -787,7 +877,7 @@ async def echo_speak_ws(websocket: WebSocket):
                 logger.info(f"[WS:{session_id}] Session ended: {utterance_count} utterances, {duration_sec}s, "
                            f"grammar={grammar_score} vocab={vocab_score} pron={avg_pron} flu={avg_flu}")
 
-                # Collect all individual errors
+                # Collect all individual errors (before suggestions so LLM can reference them)
                 all_errors = []
                 for corr in all_corrections:
                     for err in corr.errors:
@@ -800,6 +890,13 @@ async def echo_speak_ws(websocket: WebSocket):
                             "sentence": corr.original_text,
                             "corrected_sentence": corr.corrected_text,
                         })
+
+                # Generate personalised suggestions via LLM (with template fallback)
+                suggestions = await _generate_llm_suggestions(
+                    llm, scene_display, utterance_count, duration_sec,
+                    grammar_score, vocab_score, avg_pron, avg_flu,
+                    error_counts, all_errors, LABEL_MAP,
+                )
 
                 await send_json({
                     "type": "session_report",
