@@ -384,7 +384,7 @@ async def websocket_tts(websocket: WebSocket, client_id: str):
 # EchoSpeak AI — Full-duplex WebSocket (ASR + LLM + TTS + scoring)
 # ===================================================================
 
-VALID_SCENES = {"ordering", "interview", "meeting", "travel", "daily", "business", "default"}
+VALID_SCENES = {"ordering", "interview", "meeting", "travel", "daily", "business", "custom", "default"}
 
 
 @app.websocket("/ws")
@@ -398,7 +398,8 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"audio_chunk", "data":{"data":"<base64_audio>","is_end":bool,"chunk_id":N}}
         {"type":"text_message", "data":{"text":"..."}}
         {"type":"interrupt", "seq":N}
-        {"type":"scene_select", "data":{"scene":"ordering|interview|meeting|travel|daily|business|default"}}
+        {"type":"custom_scene", "data":{"description":"..."}}  // create custom scene
+        {"type":"scene_select", "data":{"scene":"ordering|interview|meeting|travel|daily|business|custom"}}
         {"type":"end_session", "data":{}}
 
       Server -> Client:
@@ -407,6 +408,7 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"reply_end", "data":{"interrupted":bool}}
         {"type":"score_update", "data":{"score":N}}
         {"type":"session_report", "data":{"overall_score":N,...}}
+        {"type":"custom_scene_ready", "data":{"scene":"custom","description":"..."}}  // custom scene acknowledged
         {"type":"error", "data":{"message":"..."}}
         <binary MP3 chunks>  <- TTS audio
     """
@@ -651,6 +653,23 @@ async def echo_speak_ws(websocket: WebSocket):
                     "type": "reply_end",
                     "data": {"interrupted": True}
                 })
+
+            # -- Custom scene --
+            elif msg_type == "custom_scene":
+                description = msg.get("data", {}).get("description", "")
+                if description.strip():
+                    conversation.set_custom_scene(description.strip())
+                    scene = "custom"
+                    logger.info(f"[WS:{session_id}] Custom scene set: '{description[:80]}'")
+                    await send_json({
+                        "type": "custom_scene_ready",
+                        "data": {"scene": "custom", "description": description.strip()}
+                    })
+                else:
+                    await send_json({
+                        "type": "error",
+                        "data": {"message": "Scene description cannot be empty"}
+                    })
 
             # -- Scene switch --
             elif msg_type == "scene_select":
