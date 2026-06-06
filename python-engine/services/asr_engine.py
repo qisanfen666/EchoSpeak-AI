@@ -76,6 +76,74 @@ def calculate_fluency_score(segments: list, duration_s: float) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Repetition dedup — Whisper occasionally hallucinates repeated sentences
+# ---------------------------------------------------------------------------
+
+def _dedupe_repetition(text: str) -> str:
+    """
+    Detect and remove repeated phrases from Whisper output.
+
+    Common pattern: "You give me water, you give me water."
+    Handles case-insensitive repetition at comma and word level.
+    """
+    if not text:
+        return text
+
+    # Normalise: lowercase, strip trailing punctuation for comparison
+    def _norm(s: str) -> str:
+        return s.strip().lower().rstrip(".,;:!?")
+
+    # ── Fuzzy comparison ──
+    def _fuzzy_eq(a: str, b: str) -> bool:
+        """Return True if strings are identical or differ by a short prefix/suffix."""
+        if a == b:
+            return True
+        # One is a substring of the other (e.g. "ou" vs "you" or "water" vs "water")
+        if len(a) >= 3 and len(b) >= 3:
+            if a in b or b in a:
+                return True
+            # Levenshtein distance <= 2 for short truncations
+            if abs(len(a) - len(b)) <= 2:
+                shorter = a if len(a) <= len(b) else b
+                longer = b if len(a) <= len(b) else a
+                if longer.startswith(shorter) or longer.endswith(shorter):
+                    return True
+        return False
+
+    # ── Comma-split dedup ──
+    parts = [p.strip() for p in text.split(",") if p.strip()]
+    if len(parts) >= 2:
+        mid = len(parts) // 2
+        if all(
+            _fuzzy_eq(_norm(parts[i]), _norm(parts[mid + i]))
+            for i in range(mid)
+        ):
+            return ", ".join(parts[:mid])
+
+    # ── Word-level dedup — half ──
+    words = text.split()
+    n = len(words)
+    if n >= 4 and n % 2 == 0:
+        mid = n // 2
+        if all(
+            _fuzzy_eq(_norm(words[i]), _norm(words[mid + i]))
+            for i in range(mid)
+        ):
+            return " ".join(words[:mid])
+
+    # ── Word-level dedup — thirds ──
+    if n >= 6 and n % 3 == 0:
+        third = n // 3
+        if (
+            all(_fuzzy_eq(_norm(words[i]), _norm(words[third + i])) for i in range(third))
+            and all(_fuzzy_eq(_norm(words[i]), _norm(words[2 * third + i])) for i in range(third))
+        ):
+            return " ".join(words[:third])
+
+    return text
+
+
+# ---------------------------------------------------------------------------
 # ASR Engine
 # ---------------------------------------------------------------------------
 
@@ -226,6 +294,7 @@ class ASREngine:
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
+        full_text = _dedupe_repetition(full_text)
         seg_data = [
             {
                 "start": seg.start, "end": seg.end,
@@ -261,6 +330,7 @@ class ASREngine:
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
+        full_text = _dedupe_repetition(full_text)
         seg_data = [
             {
                 "start": seg.start, "end": seg.end,
@@ -299,10 +369,12 @@ class ASREngine:
             no_speech_threshold=0.6,
             compression_ratio_threshold=2.4,
             log_prob_threshold=-1.0,
+            repetition_penalty=1.15,
             initial_prompt="English conversation practice, dialogue, spoken English.",
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
+        full_text = _dedupe_repetition(full_text)
         seg_data = [
             {
                 "start": seg.start, "end": seg.end,
