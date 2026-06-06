@@ -10,111 +10,219 @@
 </head>
 <body>
 
-<!-- Decorative top rule -->
-<div class="top-rule"></div>
-
-<!-- Header -->
-<header class="app-header">
-    <div class="header-left">
-        <h1 class="brand">EchoSpeak</h1>
-        <span class="brand-sub">ai language practice</span>
-    </div>
-    <div class="header-right">
-        <span id="status" class="status-badge">⟳ connecting</span>
-        <button id="endBtn" class="btn-end" onclick="endSession()" style="display:none" title="结束会话">✕</button>
-    </div>
-</header>
-
-<!-- Scene Picker Overlay -->
-<div id="scenePicker" class="scene-picker">
-    <div class="sp-inner">
-        <div class="sp-header">
-            <h2 class="sp-title">Choose Your Scene</h2>
-            <p class="sp-sub">Select a real-life scenario to begin practicing English</p>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- View 1: Scene Selection -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="view-scene" class="view">
+    <div class="top-rule"></div>
+    <div class="scene-container">
+        <div class="scene-header">
+            <h1 class="brand">EchoSpeak</h1>
+            <span class="brand-sub">ai language practice</span>
         </div>
-        <div class="sp-grid">
-            <div class="sp-card" data-scene="interview" tabindex="0" role="button" aria-label="Interview scene">
-                <div class="sp-emoji">🎙️</div>
-                <h3 class="sp-name">Interview</h3>
-                <p class="sp-desc">模拟求职面试，自我介绍与问答</p>
-            </div>
-            <div class="sp-card" data-scene="ordering" tabindex="0" role="button" aria-label="Restaurant ordering scene">
-                <div class="sp-emoji">🍽️</div>
-                <h3 class="sp-name">Restaurant</h3>
-                <p class="sp-desc">餐厅点餐、与服务员对话交流</p>
-            </div>
-            <div class="sp-card" data-scene="daily" tabindex="0" role="button" aria-label="Daily conversation scene">
-                <div class="sp-emoji">💬</div>
-                <h3 class="sp-name">Daily Chat</h3>
-                <p class="sp-desc">日常闲聊，天气、爱好、生活话题</p>
-            </div>
-            <div class="sp-card" data-scene="business" tabindex="0" role="button" aria-label="Business meeting scene">
-                <div class="sp-emoji">📊</div>
-                <h3 class="sp-name">Business</h3>
-                <p class="sp-desc">商务会谈、项目讨论与邮件沟通</p>
-            </div>
-            <div class="sp-card" data-scene="travel" tabindex="0" role="button" aria-label="Travel scene">
-                <div class="sp-emoji">✈️</div>
-                <h3 class="sp-name">Travel</h3>
-                <p class="sp-desc">酒店入住、问路与旅行场景</p>
-            </div>
-            <div class="sp-card sp-card-custom" data-scene="custom" tabindex="0" role="button" aria-label="Custom scene">
-                <div class="sp-emoji">✨</div>
-                <h3 class="sp-name">Custom</h3>
-                <p class="sp-desc">自定义场景，描述你想练习的任意情景</p>
-            </div>
+        <p class="scene-intro">Choose a scenario to begin your practice</p>
+        <div class="scene-cards">
+            <button class="scene-card" data-scene="ordering" onclick="selectScene('ordering')">
+                <span class="scene-icon">🍽️</span>
+                <span class="scene-name">餐厅点餐</span>
+                <span class="scene-desc">Restaurant Ordering</span>
+                <span class="scene-hint">练习点餐、询问菜品和餐桌礼仪</span>
+            </button>
+            <button class="scene-card" data-scene="interview" onclick="selectScene('interview')">
+                <span class="scene-icon">💼</span>
+                <span class="scene-name">工作面试</span>
+                <span class="scene-desc">Job Interview</span>
+                <span class="scene-hint">练习自我介绍、项目经验和职业规划</span>
+            </button>
+            <button class="scene-card" data-scene="meeting" onclick="selectScene('meeting')">
+                <span class="scene-icon">📊</span>
+                <span class="scene-name">商务会议</span>
+                <span class="scene-desc">Business Meeting</span>
+                <span class="scene-hint">练习项目讨论、进度汇报和方案交流</span>
+            </button>
+            <button class="scene-card" data-scene="travel" onclick="selectScene('travel')">
+                <span class="scene-icon">✈️</span>
+                <span class="scene-name">旅行出行</span>
+                <span class="scene-desc">Travel</span>
+                <span class="scene-hint">练习酒店入住、问路和出行安排</span>
+            </button>
+            <button class="scene-card scene-card-custom" data-scene="custom" onclick="selectCustomScene()">
+                <span class="scene-icon">✏️</span>
+                <span class="scene-name">自定义对话</span>
+                <span class="scene-desc">Free Talk</span>
+                <span class="scene-hint">自由选择话题，AI 英语陪练随心聊</span>
+            </button>
         </div>
+    </div>
 
-        <!-- Custom Scene Panel (hidden by default) -->
-        <div id="customPanel" class="sp-custom" style="display:none">
-            <button class="sp-cback" onclick="showSceneGrid()" title="Back">← Back</button>
-            <h3 class="sp-ctitle">Create Your Scene</h3>
-            <p class="sp-csub">Describe any scenario in English or Chinese — I'll play the role</p>
-            <textarea id="customDesc" class="sp-textarea" placeholder="e.g. I'm at a coffee shop in New York ordering a latte and chatting with the barista about the weather..." rows="4"></textarea>
-            <div class="sp-cexamples">
-                <span class="sp-cex-label">Quick ideas:</span>
-                <button class="sp-cex-btn" onclick="fillExample(0)">Buying a phone at an electronics store</button>
-                <button class="sp-cex-btn" onclick="fillExample(1)">Checking in at an airport</button>
-                <button class="sp-cex-btn" onclick="fillExample(2)">在图书馆借书并与管理员交流</button>
+    <!-- Custom scene modal -->
+    <div id="custom-modal" class="modal-overlay" style="display:none">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeCustomModal()">✕</button>
+            <h3 class="modal-title">开始自由对话</h3>
+            <p class="modal-desc">告诉 AI 你想练习的话题或场景</p>
+            <input
+                id="custom-topic"
+                class="modal-input"
+                type="text"
+                placeholder="例如：聊聊今天的天气 / 模拟星巴克点单 / 讨论人工智能…"
+                autocomplete="off"
+            >
+            <div class="modal-suggestions">
+                <span class="modal-sug-label">快速选择：</span>
+                <button class="modal-chip" onclick="startCustomWith('日常聊天')">💬 日常聊天</button>
+                <button class="modal-chip" onclick="startCustomWith('职场沟通')">💼 职场沟通</button>
+                <button class="modal-chip" onclick="startCustomWith('旅游出行')">🌍 旅游出行</button>
+                <button class="modal-chip" onclick="startCustomWith('科技讨论')">🚀 科技讨论</button>
             </div>
-            <button class="sp-start-btn" onclick="startCustomScene()">Start Practice →</button>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">取消</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmCustomTopic()">
+                    开始对话
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Chat area -->
-<main id="chat" class="chat-area">
-    <div class="chat-welcome">
-        <div class="welcome-icon">󰙏</div>
-        <p class="welcome-title">Begin your practice</p>
-        <p class="welcome-sub">Speak or type — I'll help refine your English</p>
-    </div>
-</main>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- View 2: Chat Conversation -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="view-chat" class="view" style="display:none">
+    <div class="top-rule"></div>
 
-<!-- Thinking indicator -->
-<div id="think" class="think-indicator">
-    <span class="think-dot"></span>
-    <span class="think-dot"></span>
-    <span class="think-dot"></span>
-    <span class="think-label">listening & responding</span>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <h1 class="brand">EchoSpeak</h1>
+            <span class="brand-sub">ai language practice</span>
+        </div>
+        <div class="header-right">
+            <span id="status" class="status-badge">⟳ connecting</span>
+            <button id="endBtn" class="btn-end" onclick="endSession()" title="结束会话">✕</button>
+        </div>
+    </header>
+
+    <!-- Chat area -->
+    <main id="chat" class="chat-area">
+        <div class="chat-welcome">
+            <div class="welcome-icon">󰙏</div>
+            <p class="welcome-title">Begin your practice</p>
+            <p class="welcome-sub">Speak or type — I'll help refine your English</p>
+        </div>
+    </main>
+
+    <!-- Thinking indicator -->
+    <div id="think" class="think-indicator">
+        <span class="think-dot"></span>
+        <span class="think-dot"></span>
+        <span class="think-dot"></span>
+        <span class="think-label">listening & responding</span>
+    </div>
+
+    <!-- Input bar -->
+    <div class="input-bar">
+        <button id="recBtn" class="btn-record" disabled title="录音">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            <span class="btn-label">Record</span>
+        </button>
+        <div class="input-wrap">
+            <input id="inp" class="text-input" type="text" placeholder="Type in English…" disabled autocomplete="off">
+            <button id="sendBtn" class="btn-send" disabled title="发送">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Debug -->
+    <div id="dbg" class="debug"></div>
 </div>
 
-<!-- Input bar -->
-<div class="input-bar">
-    <button id="recBtn" class="btn-record" disabled title="录音">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-        <span class="btn-label">Record</span>
-    </button>
-    <div class="input-wrap">
-        <input id="inp" class="text-input" type="text" placeholder="Type in English…" disabled autocomplete="off">
-        <button id="sendBtn" class="btn-send" disabled title="发送">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- View 3: Session Report -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="view-report" class="view" style="display:none">
+    <div class="top-rule"></div>
+    <div class="report-container">
+
+        <!-- Empty state: no conversations -->
+        <div id="report-empty" class="report-empty-state" style="display:none">
+            <span class="report-empty-icon">📭</span>
+            <h2 class="report-empty-title">本次练习没有对话记录</h2>
+            <p class="report-empty-desc">你还没有进行任何对话就结束了练习。<br>下次试着说几句话再结束吧！</p>
+        </div>
+
+        <!-- Report content (shown when turns > 0) -->
+        <div id="report-content">
+            <div class="report-header">
+            <h1 class="brand">EchoSpeak</h1>
+            <span class="brand-sub">session report</span>
+        </div>
+
+        <!-- Basic Info -->
+        <div class="report-meta">
+            <span id="rp-scene" class="rp-meta-item"></span>
+            <span class="rp-meta-divider">·</span>
+            <span id="rp-date" class="rp-meta-item"></span>
+            <span class="rp-meta-divider">·</span>
+            <span id="rp-duration" class="rp-meta-item"></span>
+            <span class="rp-meta-divider">·</span>
+            <span id="rp-turns" class="rp-meta-item"></span>
+        </div>
+
+        <!-- Score Cards -->
+        <div class="report-scores">
+            <div class="score-card" id="sc-grammar">
+                <span class="sc-val">--</span>
+                <span class="sc-label">Grammar</span>
+                <span class="sc-label-cn">语法</span>
+            </div>
+            <div class="score-card" id="sc-vocabulary">
+                <span class="sc-val">--</span>
+                <span class="sc-label">Vocabulary</span>
+                <span class="sc-label-cn">词汇</span>
+            </div>
+            <div class="score-card" id="sc-pronunciation">
+                <span class="sc-val">--</span>
+                <span class="sc-label">Pronunciation</span>
+                <span class="sc-label-cn">发音</span>
+            </div>
+            <div class="score-card" id="sc-fluency">
+                <span class="sc-val">--</span>
+                <span class="sc-label">Fluency</span>
+                <span class="sc-label-cn">流利</span>
+            </div>
+        </div>
+
+        <!-- All Errors Detail -->
+        <div class="report-section" id="rp-all-errors-section" style="display:none">
+            <h3 class="rp-section-title">对话中的错误</h3>
+            <div id="rp-all-errors" class="rp-all-errors-list"></div>
+        </div>
+
+        <!-- Error Statistics -->
+        <div class="report-section" id="rp-errors-section">
+            <h3 class="rp-section-title">高频错误</h3>
+            <div id="rp-errors" class="rp-error-list"></div>
+            <div id="rp-no-errors" class="rp-empty" style="display:none">🎉 没有发现明显错误，表现优秀！</div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="report-section">
+            <h3 class="rp-section-title">学习建议</h3>
+            <div id="rp-suggestions" class="rp-suggestion-list"></div>
+        </div>
+
+        </div><!-- /report-content -->
+
+        <!-- Action (always visible) -->
+        <button class="btn-again" onclick="practiceAgain()">
+            <span>再来一次</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         </button>
     </div>
 </div>
-
-<!-- Debug -->
-<div id="dbg" class="debug"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
@@ -154,12 +262,112 @@ let ttsAudioEl = null;
 // ── AI reply streaming ──
 let _pendingAiRow = null;
 
+// ── Session stats for report ──
+let sessionStats = {
+    scene: 'ordering',
+    startTime: null,
+    pronScores: [],
+    fluScores: [],
+    errors: []
+};
+
+// ── Current session ID ──
+let currentSessionId = null;
+
 function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
 
 function escapeHTML(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// View switching
+// ═══════════════════════════════════════════════════════════════════
+function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+    const target = document.getElementById(viewId);
+    if (target) target.style.display = 'flex';
+}
+
+function selectScene(scene) {
+    sessionStats.scene = scene;
+    currentSessionId = 'c_' + Date.now();
+    showView('view-chat');
+    connect(scene);
+}
+
+function selectCustomScene() {
+    var modal = document.getElementById('custom-modal');
+    var inp = document.getElementById('custom-topic');
+    inp.value = '';
+    modal.style.display = 'flex';
+    setTimeout(function() { inp.focus(); }, 150);
+}
+
+function closeCustomModal() {
+    document.getElementById('custom-modal').style.display = 'none';
+}
+
+function startCustomWith(topic) {
+    document.getElementById('custom-topic').value = topic;
+    confirmCustomTopic();
+}
+
+function confirmCustomTopic() {
+    var topic = document.getElementById('custom-topic').value.trim();
+    if (!topic) topic = 'free conversation';
+    closeCustomModal();
+    sessionStats.scene = 'custom';
+    sessionStats.customTopic = topic;
+    currentSessionId = 'c_' + Date.now();
+    showView('view-chat');
+    connect('custom');
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'custom-modal') closeCustomModal();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCustomModal();
+});
+
+function practiceAgain() {
+    // Disconnect if connected
+    if (ws) {
+        if (micActive) stopMic();
+        ws.onclose = null; // prevent auto-reconnect
+        ws.close();
+        ws = null;
+    }
+    ttsChunks = []; ttsPlaying = false;
+    if (ttsAudioEl) { ttsAudioEl.pause(); ttsAudioEl = null; }
+    think.classList.remove('active');
+    _pendingAiRow = null;
+
+    // Clear chat
+    chat.innerHTML = '<div class="chat-welcome">' +
+        '<div class="welcome-icon">󰙏</div>' +
+        '<p class="welcome-title">Begin your practice</p>' +
+        '<p class="welcome-sub">Speak or type — I\'ll help refine your English</p>' +
+        '</div>';
+
+    // Reset stats
+    sessionStats = {
+        scene: 'ordering',
+        startTime: null,
+        pronScores: [],
+        fluScores: [],
+        errors: []
+    };
+
+    inp.value = '';
+    endBtn.style.display = 'none';
+    showView('view-scene');
 }
 
 function removeWelcome() {
@@ -322,28 +530,20 @@ function showCorrection(data) {
 // ═══════════════════════════════════════════════════════════════════
 // WebSocket
 // ═══════════════════════════════════════════════════════════════════
-let _scene = 'daily';
-
 function connect(scene) {
-    _scene = scene || 'daily';
-    const u = 'ws://' + location.host + '/ws?session_id=c_' + Date.now() + '&scene=' + _scene;
+    scene = scene || 'ordering';
+    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene;
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
         st.textContent = '● connected';
         st.className = 'status-badge connected';
-        endBtn.style.display = 'inline-flex';
-
-        // Custom scene: send description, wait for server
-        if (_scene === 'custom' && window._customDesc) {
-            send({ type: 'custom_scene', data: { description: window._customDesc } });
-            st.textContent = '✨ setting up custom scene…';
-            return;
-        }
-
-        // Dismiss launch card (if any) and enable input
-        enterChat('✅ Connected — type or tap Record to speak');
+        inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
+        endBtn.style.display = 'flex';
+        inp.focus();
+        addMsg('sys', '✅ Connected — type or tap Record to speak');
+        sessionStats.startTime = Date.now();
     };
 
     ws.onmessage = (e) => {
@@ -358,7 +558,20 @@ function connect(scene) {
             log('<- ' + m.type);
             switch (m.type) {
                 case 'transcript':
-                    addMsg('user', m.data.text);
+                    // Deduplicate: skip if last user message is identical
+                    var text = m.data.text;
+                    if (_lastUserRow) {
+                        var lastText = _lastUserRow.querySelector('.msg-text');
+                        if (lastText && lastText.textContent === text) break;
+                    }
+                    addMsg('user', text);
+                    // Track pronunciation & fluency scores
+                    if (m.data.pronunciation !== undefined && m.data.pronunciation > 0) {
+                        sessionStats.pronScores.push(m.data.pronunciation);
+                    }
+                    if (m.data.fluency !== undefined && m.data.fluency > 0) {
+                        sessionStats.fluScores.push(m.data.fluency);
+                    }
                     // Show pronunciation & fluency scores (voice input only)
                     if (m.data.pronunciation !== undefined || m.data.fluency !== undefined) {
                         showScores(m.data.pronunciation || 0, m.data.fluency || 0);
@@ -371,6 +584,14 @@ function connect(scene) {
                     break;
                 case 'correction':
                     showCorrection(m.data);
+                    // Track errors for report
+                    if (m.data.errors && Array.isArray(m.data.errors)) {
+                        for (var ei = 0; ei < m.data.errors.length; ei++) {
+                            sessionStats.errors.push({ type: m.data.errors[ei].type });
+                        }
+                    } else if (m.data.error_type) {
+                        sessionStats.errors.push({ type: m.data.error_type });
+                    }
                     break;
                 case 'reply_start':
                     think.classList.add('active');
@@ -379,14 +600,6 @@ function connect(scene) {
                 case 'reply_chunk':
                     think.classList.remove('active');
                     appendAIText(m.data.text);
-                    break;
-                case 'custom_scene_ready':
-                    st.textContent = '● connected';
-                    st.className = 'status-badge connected';
-                    endBtn.style.display = 'inline-flex';
-                    // Auto-dismiss launch card and enable input
-                    enterChat('✨ Custom scene ready');
-                    window._customDesc = '';
                     break;
                 case 'reply_end':
                     think.classList.remove('active');
@@ -398,9 +611,7 @@ function connect(scene) {
                     log('📊 Score: ' + m.data.score);
                     break;
                 case 'session_report':
-                    addMsg('sys', '📊 Report: ' + m.data.overall_score + 'pts · '
-                        + m.data.utterances + ' utterances · ' + m.data.duration_s + 's');
-                    endBtn.style.display = 'none';
+                    showReport(m.data);
                     break;
                 case 'error':
                     addMsg('sys', '⚠ ' + (m.data.message || ''));
@@ -410,13 +621,11 @@ function connect(scene) {
     };
 
     ws.onclose = () => {
-        st.textContent = '● disconnected, reconnecting…';
+        st.textContent = '● disconnected';
         st.className = 'status-badge disconnected';
         inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
         if (micActive) stopMic();
-        // Don't auto-reconnect if user went back to scene picker
-        if (picker && picker.style.display !== 'none') return;
-        setTimeout(connect, 2000);
+        endBtn.style.display = 'none';
     };
 }
 
@@ -611,6 +820,130 @@ function endSession() {
     send({ type: 'end_session', data: {} });
     addMsg('sys', '⏳ Generating report…');
     endBtn.style.display = 'none';
+    inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Report rendering
+// ═══════════════════════════════════════════════════════════════════
+function showReport(data) {
+    if (micActive) stopMic();
+    think.classList.remove('active');
+
+    // Basic info
+    $('#rp-scene').textContent = data.scene || sessionStats.scene;
+    var now = new Date();
+    $('#rp-date').textContent = now.getFullYear() + '/' +
+        String(now.getMonth() + 1).padStart(2, '0') + '/' +
+        String(now.getDate()).padStart(2, '0');
+
+    var durSec = data.duration_sec || 0;
+    if (durSec === 0 && sessionStats.startTime) {
+        durSec = Math.floor((Date.now() - sessionStats.startTime) / 1000);
+    }
+    var mins = Math.floor(durSec / 60);
+    var secs = durSec % 60;
+    $('#rp-duration').textContent = '练习时长 ' + mins + '分' + secs + '秒';
+
+    var turns = data.turns || 0;
+    $('#rp-turns').textContent = turns + ' 轮对话';
+
+    // If no conversations, show empty state
+    var reportContent = document.getElementById('report-content');
+    var reportEmpty = document.getElementById('report-empty');
+    if (turns === 0) {
+        reportContent.style.display = 'none';
+        reportEmpty.style.display = '';
+        showView('view-report');
+        return;
+    }
+    reportContent.style.display = '';
+    if (reportEmpty) reportEmpty.style.display = 'none';
+
+    // Score helper
+    function scoreClass(s) {
+        if (s >= 80) return 'sc-green';
+        if (s >= 60) return 'sc-yellow';
+        return 'sc-red';
+    }
+
+    function setScore(id, val) {
+        var el = $('#' + id);
+        var v = val !== undefined && val !== null ? val : '--';
+        el.querySelector('.sc-val').textContent = v;
+        el.querySelector('.sc-val').className = 'sc-val ' + scoreClass(typeof v === 'number' ? v : 0);
+    }
+
+    setScore('sc-grammar', data.grammar);
+    setScore('sc-vocabulary', data.vocabulary);
+    setScore('sc-pronunciation', data.pronunciation);
+    setScore('sc-fluency', data.fluency);
+
+    // Individual errors
+    var allErrDiv = $('#rp-all-errors');
+    var allErrSection = $('#rp-all-errors-section');
+    allErrDiv.innerHTML = '';
+    if (data.all_errors && data.all_errors.length > 0) {
+        allErrSection.style.display = '';
+        data.all_errors.forEach(function(err, i) {
+            var card = document.createElement('div');
+            card.className = 'rp-err-card';
+            var typeColor = 'var(--terracotta)';
+            if (err.type === 'preposition' || err.type === 'article') typeColor = 'var(--dusty-blue)';
+            else if (err.type === 'vocabulary' || err.type === 'word_choice') typeColor = 'var(--dusty-plum)';
+            else if (err.type === 'expression') typeColor = 'var(--sage)';
+            card.innerHTML =
+                '<div class="rp-err-head">' +
+                    '<span class="rp-err-badge" style="color:' + typeColor + ';border-color:' + typeColor + '">' + escapeHTML(err.type_label) + '</span>' +
+                    '<span class="rp-err-idx">#' + (i + 1) + '</span>' +
+                '</div>' +
+                '<div class="rp-err-body">' +
+                    '<span class="rp-err-orig">' + escapeHTML(err.original) + '</span>' +
+                    '<span class="rp-err-arrow">→</span>' +
+                    '<span class="rp-err-corr">' + escapeHTML(err.corrected) + '</span>' +
+                '</div>' +
+                (err.explanation_cn ? '<div class="rp-err-expl">' + escapeHTML(err.explanation_cn) + '</div>' : '');
+            allErrDiv.appendChild(card);
+        });
+    } else {
+        allErrSection.style.display = 'none';
+    }
+
+    // Error stats
+    var errDiv = $('#rp-errors');
+    var noErrDiv = $('#rp-no-errors');
+    errDiv.innerHTML = '';
+    if (data.error_stats && data.error_stats.length > 0) {
+        noErrDiv.style.display = 'none';
+        $('#rp-errors-section').style.display = '';
+        data.error_stats.forEach(function(es) {
+            var row = document.createElement('div');
+            row.className = 'rp-error-row';
+            row.innerHTML = '<span class="rp-error-type">' + escapeHTML(es.label) + '</span>' +
+                '<span class="rp-error-bar-wrap"><span class="rp-error-bar" style="width:' + Math.min(100, es.count * 15) + '%"></span></span>' +
+                '<span class="rp-error-count">' + es.count + '次</span>';
+            errDiv.appendChild(row);
+        });
+    } else {
+        noErrDiv.style.display = 'block';
+        $('#rp-errors-section').style.display = 'none';
+    }
+
+    // Suggestions
+    var sugDiv = $('#rp-suggestions');
+    sugDiv.innerHTML = '';
+    if (data.suggestions && data.suggestions.length > 0) {
+        data.suggestions.forEach(function(s) {
+            var div = document.createElement('div');
+            div.className = 'rp-suggestion';
+            div.textContent = s;
+            sugDiv.appendChild(div);
+        });
+    } else {
+        sugDiv.innerHTML = '<div class="rp-suggestion">继续保持练习，你做得很好！</div>';
+    }
+
+    showView('view-report');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -625,105 +958,9 @@ st.addEventListener('dblclick', interruptAI);
 st.title = 'Double-click to interrupt AI';
 
 // ═══════════════════════════════════════════════════════════════════
-// Scene Selection
+// Start — show scene selection first
 // ═══════════════════════════════════════════════════════════════════
-const picker = $('#scenePicker');
-const customPanel = $('#customPanel');
-const customDesc = $('#customDesc');
-const spGrid = document.querySelector('.sp-grid');
-
-const CUSTOM_EXAMPLES = [
-    "Buying a phone at an electronics store — ask about features and prices",
-    "Checking in at the airport counter and asking about the boarding gate",
-    "在图书馆借书，询问借阅规则和开放时间",
-];
-
-function selectScene(scene) {
-    if (scene === 'custom') {
-        spGrid.style.display = 'none';
-        customPanel.style.display = 'block';
-        customDesc.focus();
-        return;
-    }
-    // Hide picker and connect — launch card removed for simplicity
-    picker.style.display = 'none';
-    picker.classList.remove('sp-leaving');
-    connect(scene);
-}
-
-// Enable chat input after WS connects
-function enterChat(msg) {
-    inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
-    inp.focus();
-    addMsg('sys', msg || '✅ Connected — type or tap Record to speak');
-}
-
-function showSceneGrid() {
-    spGrid.style.display = 'grid';
-    customPanel.style.display = 'none';
-    customDesc.style.borderColor = ''; // reset error state
-}
-
-function fillExample(idx) {
-    customDesc.value = CUSTOM_EXAMPLES[idx] || '';
-    customDesc.focus();
-}
-
-function startCustomScene() {
-    const desc = customDesc.value.trim();
-    if (!desc) {
-        customDesc.style.borderColor = 'var(--rose)';
-        customDesc.focus();
-        customDesc.placeholder = 'Please describe your scenario first';
-        return;
-    }
-    window._customDesc = desc;
-    customDesc.style.borderColor = '';
-
-    // Hide picker and connect
-    picker.style.display = 'none';
-    picker.classList.remove('sp-leaving');
-    connect('custom');
-}
-
-// Card click / keyboard
-document.querySelectorAll('.sp-card').forEach(card => {
-    card.addEventListener('click', () => selectScene(card.dataset.scene));
-    card.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            selectScene(card.dataset.scene);
-        }
-    });
-});
-
-// Enter key in custom textarea starts
-customDesc.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        startCustomScene();
-    }
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// Badge click — return to scene picker mid-session
-// ═══════════════════════════════════════════════════════════════════
-function showScenePicker() {
-    if (ws) ws.close();
-    customPanel.style.display = 'none';
-    spGrid.style.display = 'grid';
-    picker.style.display = 'flex';
-    setTimeout(function() { picker.classList.remove('sp-leaving'); }, 10);
-    endBtn.style.display = 'none';
-    window._customDesc = '';
-    customDesc.value = '';
-    customDesc.style.borderColor = '';
-}
-
-// Brand click = back to scene picker
-document.querySelector('.brand').addEventListener('click', showScenePicker);
-document.querySelector('.brand').style.cursor = 'pointer';
-document.querySelector('.brand').title = 'Back to scene selection';
+showView('view-scene');
 </script>
 
 <style>
@@ -766,14 +1003,14 @@ document.querySelector('.brand').title = 'Back to scene selection';
     background: var(--bg);
 }
 
-html { font-size:15px }
+html { font-size:15px; height:100% }
 body {
-    min-height:100vh;
+    height:100%;
     display:flex;
     flex-direction:column;
     max-width:720px;
     margin:0 auto;
-    padding:0 16px 0;
+    padding:0 16px 12px;
     position:relative;
     background:
         radial-gradient(ellipse 70% 35% at 50% 0%, rgba(184,132,47,0.05) 0%, transparent 70%),
@@ -1005,22 +1242,6 @@ body {
     gap:8px;
     align-items:center;
     flex-shrink:0;
-    position:fixed;
-    bottom:0;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:720px;
-    z-index:200;
-    background:var(--bg);
-    padding:8px 16px 12px;
-    border-top:2px solid var(--gold);
-    box-shadow:0 -4px 20px rgba(0,0,0,0.03);
-}
-
-/* Give chat area bottom padding so messages aren't hidden behind fixed bar */
-.chat-area {
-    padding-bottom:60px !important;
 }
 
 .btn-record {
@@ -1084,7 +1305,7 @@ body {
     padding:10px 12px;
 }
 .text-input::placeholder { color:var(--text-muted) }
-.text-input:disabled { opacity:0.5; background:var(--surface-alt); }
+.text-input:disabled { opacity:0.35 }
 
 .btn-send {
     display:flex;
@@ -1104,7 +1325,7 @@ body {
     background:var(--gold-dim);
     color:var(--gold);
 }
-.btn-send:disabled { opacity:0.4; cursor:not-allowed }
+.btn-send:disabled { opacity:0.25; cursor:not-allowed }
 .btn-send svg { display:block }
 
 /* ── Debug ── */
@@ -1313,253 +1534,6 @@ body {
     font-family:'DM Sans', sans-serif;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   Scene Picker — "Warm Parchment" Editorial Selection
-   ═══════════════════════════════════════════════════════════════════ */
-
-.scene-picker {
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-    bottom:70px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    background:
-        radial-gradient(ellipse 70% 30% at 50% 20%, rgba(184,132,47,0.06) 0%, transparent 60%),
-        var(--bg);
-    z-index:100;
-    padding:24px 20px;
-    animation:spIn 0.5s cubic-bezier(0.22,0.61,0.36,1) both;
-    backdrop-filter:blur(2px);
-}
-@keyframes spIn {
-    from { opacity:0; transform:translateY(12px) }
-    to   { opacity:1; transform:translateY(0) }
-}
-.scene-picker.sp-leaving {
-    animation:spOut 0.35s cubic-bezier(0.55,0.06,0.68,0.19) both;
-}
-@keyframes spOut {
-    from { opacity:1; transform:translateY(0) scale(1) }
-    to   { opacity:0; transform:translateY(-8px) scale(0.98) }
-}
-
-.sp-inner {
-    max-width:580px;
-    width:100%;
-}
-
-.sp-header {
-    text-align:center;
-    margin-bottom:28px;
-}
-
-.sp-title {
-    font-family:'Playfair Display', Georgia, serif;
-    font-weight:600;
-    font-style:italic;
-    font-size:1.9rem;
-    color:var(--gold);
-    letter-spacing:-0.02em;
-    line-height:1.2;
-    margin-bottom:6px;
-}
-.sp-sub {
-    font-size:0.8rem;
-    color:var(--text-muted);
-    font-weight:400;
-}
-
-.sp-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px;
-}
-
-.sp-card {
-    background:var(--surface);
-    border:1.5px solid var(--border-dim);
-    border-radius:var(--radius);
-    padding:22px 18px 18px;
-    cursor:pointer;
-    transition:all 0.25s cubic-bezier(0.22,0.61,0.36,1);
-    position:relative;
-    overflow:hidden;
-    outline:none;
-    user-select:none;
-}
-.sp-card::before {
-    content:'';
-    position:absolute;
-    top:0;left:0;right:0;
-    height:2px;
-    background:linear-gradient(90deg, transparent 0%, var(--gold) 30%, transparent 100%);
-    opacity:0;
-    transition:opacity 0.25s;
-}
-.sp-card:hover,
-.sp-card:focus-visible {
-    border-color:rgba(184,132,47,0.3);
-    transform:translateY(-3px);
-    box-shadow:
-        0 6px 24px rgba(184,132,47,0.08),
-        0 2px 8px rgba(0,0,0,0.03);
-}
-.sp-card:hover::before,
-.sp-card:focus-visible::before { opacity:0.5 }
-.sp-card:focus-visible { box-shadow:0 0 0 3px rgba(184,132,47,0.15) }
-.sp-card:active { transform:translateY(-1px) }
-
-.sp-emoji {
-    font-size:1.6rem;
-    margin-bottom:8px;
-    line-height:1;
-    filter:grayscale(0.2);
-}
-.sp-name {
-    font-family:'Playfair Display', Georgia, serif;
-    font-weight:600;
-    font-size:1.05rem;
-    color:var(--text);
-    margin-bottom:4px;
-    letter-spacing:-0.01em;
-}
-.sp-desc {
-    font-size:0.7rem;
-    color:var(--text-muted);
-    line-height:1.5;
-}
-
-/* Last card alone = center via spanning full width */
-.sp-card:last-child:nth-child(odd) {
-    grid-column:1 / -1;
-    max-width:50%;
-    justify-self:center;
-    width:100%;
-}
-
-/* Custom card stands out with dashed border */
-.sp-card-custom {
-    border-style:dashed;
-    border-color:var(--border);
-}
-.sp-card-custom:hover,
-.sp-card-custom:focus-visible {
-    border-style:solid;
-}
-
-/* ── Custom Scene Panel ── */
-.sp-custom {
-    display:none;
-    animation:spIn 0.35s ease-out;
-}
-.sp-cback {
-    background:transparent;
-    border:1px solid var(--border-dim);
-    color:var(--text-muted);
-    padding:4px 12px;
-    border-radius:6px;
-    cursor:pointer;
-    font-family:'DM Sans', sans-serif;
-    font-size:0.75rem;
-    transition:all 0.2s;
-    margin-bottom:16px;
-}
-.sp-cback:hover {
-    border-color:rgba(184,132,47,0.3);
-    color:var(--gold);
-}
-.sp-ctitle {
-    font-family:'Playfair Display', Georgia, serif;
-    font-weight:600;
-    font-size:1.3rem;
-    color:var(--text);
-    margin-bottom:4px;
-}
-.sp-csub {
-    font-size:0.75rem;
-    color:var(--text-muted);
-    margin-bottom:18px;
-}
-.sp-textarea {
-    width:100%;
-    background:var(--surface);
-    border:1.5px solid var(--border);
-    border-radius:10px;
-    color:var(--text);
-    font-family:'DM Sans', sans-serif;
-    font-size:0.85rem;
-    padding:12px 14px;
-    resize:vertical;
-    min-height:80px;
-    line-height:1.6;
-    transition:border-color 0.2s;
-    outline:none;
-}
-.sp-textarea:focus {
-    border-color:rgba(184,132,47,0.35);
-}
-.sp-textarea::placeholder { color:var(--text-muted) }
-
-.sp-cexamples {
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    margin-top:12px;
-    margin-bottom:20px;
-    align-items:center;
-}
-.sp-cex-label {
-    font-size:0.65rem;
-    color:var(--text-muted);
-    font-family:'JetBrains Mono', monospace;
-    letter-spacing:0.04em;
-    margin-right:4px;
-}
-.sp-cex-btn {
-    background:var(--gold-dim);
-    border:1px solid rgba(184,132,47,0.12);
-    border-radius:16px;
-    padding:4px 12px;
-    font-size:0.68rem;
-    color:var(--text-dim);
-    cursor:pointer;
-    font-family:'DM Sans', sans-serif;
-    transition:all 0.2s;
-    white-space:nowrap;
-}
-.sp-cex-btn:hover {
-    background:rgba(184,132,47,0.12);
-    border-color:rgba(184,132,47,0.25);
-    color:var(--gold);
-}
-.sp-start-btn {
-    display:block;
-    width:100%;
-    padding:12px 20px;
-    border-radius:10px;
-    border:none;
-    background:linear-gradient(135deg, rgba(184,132,47,0.12) 0%, rgba(184,132,47,0.08) 100%);
-    color:var(--gold);
-    font-family:'DM Sans', sans-serif;
-    font-size:0.9rem;
-    font-weight:600;
-    cursor:pointer;
-    transition:all 0.25s;
-    letter-spacing:0.03em;
-}
-.sp-start-btn:hover {
-    background:linear-gradient(135deg, rgba(184,132,47,0.18) 0%, rgba(184,132,47,0.12) 100%);
-    transform:translateY(-1px);
-    box-shadow:0 4px 16px rgba(184,132,47,0.12);
-}
-.sp-start-btn:active {
-    transform:translateY(0);
-}
-
 /* ── Responsive ── */
 @media (max-width: 520px) {
     body { padding:0 10px 10px }
@@ -1571,19 +1545,586 @@ body {
     .cc-preview-text { font-size:13px }
     .btn-record { padding:8px 10px }
     .btn-record .btn-label { display:none }
+}
 
-    .scene-picker { padding:20px 14px }
-    .sp-title { font-size:1.5rem }
-    .sp-grid { gap:10px }
-    .sp-card { padding:16px 14px 14px }
-    .sp-emoji { font-size:1.3rem }
-    .sp-name { font-size:0.95rem }
-    .sp-card:last-child:nth-child(odd) { max-width:100% }
+/* ═══════════════════════════════════════════════════════════════════
+   View System
+   ═══════════════════════════════════════════════════════════════════ */
+.view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
 
-    .sp-custom { padding:0 }
-    .sp-ctitle { font-size:1.1rem }
-    .sp-cexamples { gap:4px }
-    .sp-cex-btn { font-size:0.62rem; padding:3px 10px }
+/* ═══════════════════════════════════════════════════════════════════
+   Scene Selection
+   ═══════════════════════════════════════════════════════════════════ */
+.scene-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+}
+
+.scene-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.scene-intro {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+}
+
+.scene-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: 560px;
+    width: 100%;
+}
+
+.scene-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 1.5rem 1rem;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border-dim);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    font-family: inherit;
+}
+.scene-card:hover {
+    border-color: rgba(184,132,47,0.35);
+    background: var(--gold-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(184,132,47,0.08);
+}
+.scene-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+.scene-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text);
+}
+.scene-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.scene-hint {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.scene-card-custom {
+    border-style: dashed;
+    border-color: rgba(184,132,47,0.3);
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(184,132,47,0.03) 100%);
+}
+.scene-card-custom:hover {
+    border-color: var(--gold);
+    background: var(--gold-glow);
+}
+
+@media (max-width: 520px) {
+    .scene-cards {
+        grid-template-columns: 1fr;
+    }
+    .scene-card-custom {
+        grid-column: 1;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Custom Scene Modal
+   ═══════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 14, 10, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.8rem 1.5rem 1.5rem;
+    max-width: 440px;
+    width: calc(100% - 2rem);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+    animation: modalSlide 0.25s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes modalSlide {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    width: 28px; height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.modal-close:hover {
+    color: var(--rose);
+    background: rgba(184,90,90,0.06);
+}
+
+.modal-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+}
+.modal-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.25s;
+}
+.modal-input:focus {
+    border-color: var(--gold);
+}
+.modal-input::placeholder {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.modal-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.8rem;
+}
+.modal-sug-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-right: 2px;
+}
+.modal-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-dim);
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.modal-chip:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-glow);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-dim);
+}
+
+.modal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+.modal-btn-cancel {
+    background: transparent;
+    color: var(--text-dim);
+}
+.modal-btn-cancel:hover {
+    color: var(--text);
+    background: var(--bg);
+}
+.modal-btn-confirm {
+    background: var(--gold);
+    color: #fff;
+}
+.modal-btn-confirm:hover {
+    background: #a07028;
+    box-shadow: 0 2px 8px rgba(184,132,47,0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Session Report
+   ═══════════════════════════════════════════════════════════════════ */
+.report-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    gap: 1.5rem;
+    animation: reportIn 0.5s ease-out;
+}
+@keyframes reportIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Empty state */
+.report-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 2rem 1rem;
+    text-align: center;
+    animation: reportIn 0.5s ease-out;
+}
+.report-empty-icon {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+.report-empty-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--text-dim);
+}
+.report-empty-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.report-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.report-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    padding: 10px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+}
+.rp-meta-item { color: var(--text-dim); }
+.rp-meta-divider { color: var(--border); }
+
+/* Score cards */
+.report-scores {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    width: 100%;
+}
+
+.score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 1.2rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border-dim);
+    border-radius: var(--radius);
+    transition: border-color 0.3s;
+}
+.score-card:hover {
+    border-color: rgba(184,132,47,0.25);
+}
+
+.sc-val {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: color 0.3s;
+}
+.sc-val.sc-green  { color: var(--sage); }
+.sc-val.sc-yellow { color: var(--gold); }
+.sc-val.sc-red    { color: var(--terracotta); }
+
+.sc-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.sc-label-cn {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+}
+
+@media (max-width: 520px) {
+    .report-scores {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Report sections */
+.report-section {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border-dim);
+    border-radius: var(--radius);
+}
+
+.rp-section-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed rgba(184,132,47,0.2);
+}
+
+/* Individual error cards */
+.rp-all-errors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rp-err-card {
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    border-left: 3px solid var(--gold);
+    animation: corrItemIn 0.3s ease-out both;
+}
+@keyframes corrItemIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.rp-err-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.rp-err-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1.5px solid;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rp-err-idx {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.rp-err-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.rp-err-orig {
+    color: var(--terracotta);
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    text-decoration-color: rgba(196,106,74,0.4);
+}
+
+.rp-err-arrow {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+.rp-err-corr {
+    color: var(--sage);
+    font-weight: 600;
+}
+
+.rp-err-expl {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border-dim);
+}
+
+/* Error rows */
+.rp-error-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.82rem;
+}
+.rp-error-row + .rp-error-row {
+    border-top: 1px solid var(--border-dim);
+}
+
+.rp-error-type {
+    min-width: 100px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.rp-error-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.rp-error-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    transition: width 0.6s ease-out;
+    min-width: 4px;
+}
+
+.rp-error-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold);
+    min-width: 36px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.rp-empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+/* Suggestions */
+.rp-suggestion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rp-suggestion {
+    padding: 10px 14px;
+    background: var(--bg);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+/* Again button */
+.btn-again {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 0.5rem;
+}
+.btn-again:hover {
+    background: #a07028;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(184,132,47,0.25);
+}
+.btn-again:active {
+    transform: scale(0.97);
 }
 </style>
 </body>

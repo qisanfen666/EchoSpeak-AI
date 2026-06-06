@@ -408,6 +408,7 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"reply_chunk", "data":{"text":"..."}}
         {"type":"reply_end", "data":{"interrupted":bool}}
         {"type":"correction", "data":{"original_text":"...","corrected_text":"...","errors":[...],"has_corrections":bool}}
+        {"type":"context_usage", "data":{"used":N,"max":20}}  // conversation context usage
         {"type":"score_update", "data":{"score":N}}
         {"type":"session_report", "data":{"overall_score":N,...}}
         {"type":"custom_scene_ready", "data":{"scene":"custom","description":"..."}}  // custom scene acknowledged
@@ -431,6 +432,11 @@ async def echo_speak_ws(websocket: WebSocket):
     session_start = time.time()
     interrupted = False
     current_turn_task: asyncio.Task | None = None
+
+    # Session tracking for report
+    pron_scores = []       # pronunciation scores per utterance
+    flu_scores = []        # fluency scores per utterance
+    all_corrections = []   # correction results
 
     async def cancel_current_turn():
         """Cancel the running LLM/TTS task if any."""
@@ -479,6 +485,7 @@ async def echo_speak_ws(websocket: WebSocket):
                 corr_engine = get_correction_engine()
                 correction = await asyncio.to_thread(corr_engine.correct, user_text.strip())
                 if correction.has_corrections:
+                    all_corrections.append(correction)
                     await send_json({"type": "correction", "data": correction.to_dict()})
                     logger.info(f"[WS:{session_id}] Correction: {len(correction.errors)} error(s)")
             except Exception as e:
@@ -538,6 +545,13 @@ async def echo_speak_ws(websocket: WebSocket):
                 "type": "reply_end",
                 "data": {"interrupted": interrupted}
             })
+
+        # ── Context usage update ──
+        msg_count = len(conversation.messages) - 1  # exclude system prompt
+        await send_json({
+            "type": "context_usage",
+            "data": {"used": msg_count, "max": conversation.max_history}
+        })
 
         if not full_reply.strip():
             return
@@ -625,6 +639,14 @@ async def echo_speak_ws(websocket: WebSocket):
                             logger.warning(f"[WS:{session_id}] ASR fallback error: {e2}")
 
                     if text:
+                        # Track scores for report
+                        pron = result.get("pronunciation", 0)
+                        flu = result.get("fluency", 0)
+                        if pron > 0:
+                            pron_scores.append(pron)
+                        if flu > 0:
+                            flu_scores.append(flu)
+
                         # Show user what was recognized (with pronunciation & fluency scores)
                         await send_json({
                             "type": "transcript",
@@ -632,8 +654,8 @@ async def echo_speak_ws(websocket: WebSocket):
                                 "text": text,
                                 "is_final": True,
                                 "is_user": True,
-                                "pronunciation": result.get("pronunciation", 0),
-                                "fluency": result.get("fluency", 0),
+                                "pronunciation": pron,
+                                "fluency": flu,
                             }
                         })
                         await start_turn(text)
@@ -699,14 +721,99 @@ async def echo_speak_ws(websocket: WebSocket):
             # -- End session --
             elif msg_type == "end_session":
                 duration = time.time() - session_start
-                overall = min(95, 60 + utterance_count * 5 + int(30 * (1 if utterance_count > 0 else 0)))
-                logger.info(f"[WS:{session_id}] Session ended: {utterance_count} utterances, {duration:.0f}s")
+                duration_sec = int(duration)
+
+                # Calculate average pronunciation & fluency
+                avg_pron = sum(pron_scores) // len(pron_scores) if pron_scores else 75
+                avg_flu = sum(flu_scores) // len(flu_scores) if flu_scores else 75
+
+                # Aggregate error stats
+                error_counts = {}
+                for corr in all_corrections:
+                    for err in corr.errors:
+                        etype = err.type
+                        error_counts[etype] = error_counts.get(etype, 0) + 1
+
+                # Grammar score (grammar + tense + preposition + article)
+                grammar_errors = sum(error_counts.get(k, 0) for k in ["grammar", "tense", "preposition", "article"])
+                grammar_score = max(0, 100 - grammar_errors * 10)
+
+                # Vocabulary score (vocabulary + word_choice + expression)
+                vocab_errors = sum(error_counts.get(k, 0) for k in ["vocabulary", "word_choice", "expression"])
+                vocab_score = max(0, 100 - vocab_errors * 10)
+
+                # Error stats with labels
+                LABEL_MAP = {
+                    "grammar": "语法错误", "tense": "时态错误",
+                    "preposition": "介词错误", "article": "冠词遗漏/误用",
+                    "vocabulary": "词汇使用", "word_choice": "用词选择",
+                    "expression": "表达问题",
+                }
+                error_stats = []
+                for etype, count in sorted(error_counts.items(), key=lambda x: -x[1]):
+                    if count > 0:
+                        error_stats.append({
+                            "type": etype,
+                            "label": LABEL_MAP.get(etype, etype),
+                            "count": count,
+                        })
+
+                # Suggestions from top-3 errors
+                SUGGESTIONS = {
+                    "article": "注意冠词（a/an/the）的使用，尤其是定冠词和不定冠词的区分",
+                    "tense": "加强时态表达练习，注意过去时和完成时的正确使用",
+                    "preposition": "多练习介词的搭配，注意 in/on/at 等介词的准确用法",
+                    "grammar": "巩固基础语法知识，注意句子结构的完整性",
+                    "vocabulary": "扩充词汇量，尝试使用更丰富的表达方式",
+                    "word_choice": "注意用词准确性，选择更地道的英语表达",
+                    "expression": "提高英语表达连贯性，多练习地道口语表达",
+                }
+                suggestions = []
+                for etype, _ in sorted(error_counts.items(), key=lambda x: -x[1])[:3]:
+                    if etype in SUGGESTIONS:
+                        suggestions.append(SUGGESTIONS[etype])
+                if not suggestions:
+                    suggestions.append("继续保持练习，尝试更多不同场景的对话")
+                    suggestions.append("可以挑战更复杂的表达，提高语言丰富度")
+
+                # Scene name
+                SCENE_NAMES = {
+                    "ordering": "餐厅点餐", "interview": "工作面试",
+                    "meeting": "商务会议", "travel": "旅行出行",
+                    "custom": "自定义对话",
+                }
+                scene_display = f"{SCENE_NAMES.get(scene, scene)} ({scene})"
+
+                logger.info(f"[WS:{session_id}] Session ended: {utterance_count} utterances, {duration_sec}s, "
+                           f"grammar={grammar_score} vocab={vocab_score} pron={avg_pron} flu={avg_flu}")
+
+                # Collect all individual errors
+                all_errors = []
+                for corr in all_corrections:
+                    for err in corr.errors:
+                        all_errors.append({
+                            "type": err.type,
+                            "type_label": LABEL_MAP.get(err.type, err.type),
+                            "original": err.original,
+                            "corrected": err.corrected,
+                            "explanation_cn": err.explanation_cn,
+                            "sentence": corr.original_text,
+                            "corrected_sentence": corr.corrected_text,
+                        })
+
                 await send_json({
                     "type": "session_report",
                     "data": {
-                        "overall_score": overall,
-                        "duration_s": round(duration, 1),
-                        "utterances": utterance_count,
+                        "scene": scene_display,
+                        "duration_sec": duration_sec,
+                        "turns": utterance_count,
+                        "grammar": grammar_score,
+                        "vocabulary": vocab_score,
+                        "pronunciation": avg_pron,
+                        "fluency": avg_flu,
+                        "error_stats": error_stats,
+                        "all_errors": all_errors,
+                        "suggestions": suggestions,
                     }
                 })
                 break

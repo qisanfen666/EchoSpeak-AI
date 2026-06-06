@@ -8,18 +8,28 @@ import (
 
 // ConversationTurn 一轮对话
 type ConversationTurn struct {
-	Index       int       `json:"index"`
-	UserText    string    `json:"user_text"`
-	AssistantText string  `json:"assistant_text"`
-	Correction  *TurnCorrection `json:"correction,omitempty"`
-	Timestamp   time.Time `json:"timestamp"`
+	Index         int              `json:"index"`
+	UserText      string           `json:"user_text"`
+	AssistantText string           `json:"assistant_text"`
+	Pronunciation int              `json:"pronunciation"`          // 发音评分 0-100
+	Fluency       int              `json:"fluency"`                // 流利度评分 0-100
+	Correction    *TurnCorrection  `json:"correction,omitempty"`
+	Timestamp     time.Time        `json:"timestamp"`
 }
 
 // TurnCorrection 该轮的纠错信息
 type TurnCorrection struct {
-	Original   string `json:"original"`
-	Corrected  string `json:"corrected"`
-	ErrorType  string `json:"error_type"`
+	Original  string      `json:"original"`
+	Corrected string      `json:"corrected"`
+	ErrorType string      `json:"error_type"`
+	Errors    []ErrorItem `json:"errors,omitempty"` // 详细错误列表
+}
+
+// ErrorItem 单个错误详情
+type ErrorItem struct {
+	Type      string `json:"type"`      // grammar/tense/preposition/article/vocabulary/word_choice/expression
+	Original  string `json:"original"`  // 错误片段
+	Corrected string `json:"corrected"` // 纠正后片段
 }
 
 // Manager 单个会话的上下文管理器
