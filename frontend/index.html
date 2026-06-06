@@ -58,6 +58,26 @@
                 <h3 class="sp-name">Travel</h3>
                 <p class="sp-desc">酒店入住、问路与旅行场景</p>
             </div>
+            <div class="sp-card sp-card-custom" data-scene="custom" tabindex="0" role="button" aria-label="Custom scene">
+                <div class="sp-emoji">✨</div>
+                <h3 class="sp-name">Custom</h3>
+                <p class="sp-desc">自定义场景，描述你想练习的任意情景</p>
+            </div>
+        </div>
+
+        <!-- Custom Scene Panel (hidden by default) -->
+        <div id="customPanel" class="sp-custom" style="display:none">
+            <button class="sp-cback" onclick="showSceneGrid()" title="Back">← Back</button>
+            <h3 class="sp-ctitle">Create Your Scene</h3>
+            <p class="sp-csub">Describe any scenario in English or Chinese — I'll play the role</p>
+            <textarea id="customDesc" class="sp-textarea" placeholder="e.g. I'm at a coffee shop in New York ordering a latte and chatting with the barista about the weather..." rows="4"></textarea>
+            <div class="sp-cexamples">
+                <span class="sp-cex-label">Quick ideas:</span>
+                <button class="sp-cex-btn" onclick="fillExample(0)">Buying a phone at an electronics store</button>
+                <button class="sp-cex-btn" onclick="fillExample(1)">Checking in at an airport</button>
+                <button class="sp-cex-btn" onclick="fillExample(2)">在图书馆借书并与管理员交流</button>
+            </div>
+            <button class="sp-start-btn" onclick="startCustomScene()">Start Practice →</button>
         </div>
     </div>
 </div>
@@ -282,9 +302,17 @@ function connect(scene) {
     ws.onopen = () => {
         st.textContent = '● connected';
         st.className = 'status-badge connected';
-        inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
-        inp.focus();
-        addMsg('sys', '✅ Connected — type or tap Record to speak');
+        endBtn.style.display = 'inline-flex';
+
+        // Custom scene: send description, wait for server
+        if (_scene === 'custom' && window._customDesc) {
+            send({ type: 'custom_scene', data: { description: window._customDesc } });
+            st.textContent = '✨ setting up custom scene…';
+            return;
+        }
+
+        // Dismiss launch card (if any) and enable input
+        enterChat('✅ Connected — type or tap Record to speak');
     };
 
     ws.onmessage = (e) => {
@@ -316,6 +344,14 @@ function connect(scene) {
                 case 'reply_chunk':
                     think.classList.remove('active');
                     appendAIText(m.data.text);
+                    break;
+                case 'custom_scene_ready':
+                    st.textContent = '● connected';
+                    st.className = 'status-badge connected';
+                    endBtn.style.display = 'inline-flex';
+                    // Auto-dismiss launch card and enable input
+                    enterChat('✨ Custom scene ready');
+                    window._customDesc = '';
                     break;
                 case 'reply_end':
                     think.classList.remove('active');
@@ -557,14 +593,62 @@ st.title = 'Double-click to interrupt AI';
 // Scene Selection
 // ═══════════════════════════════════════════════════════════════════
 const picker = $('#scenePicker');
+const customPanel = $('#customPanel');
+const customDesc = $('#customDesc');
+const spGrid = document.querySelector('.sp-grid');
+
+const CUSTOM_EXAMPLES = [
+    "Buying a phone at an electronics store — ask about features and prices",
+    "Checking in at the airport counter and asking about the boarding gate",
+    "在图书馆借书，询问借阅规则和开放时间",
+];
 
 function selectScene(scene) {
-    picker.classList.add('sp-leaving');
-    removeWelcome();
-    setTimeout(() => {
-        picker.style.display = 'none';
-        connect(scene);
-    }, 400);
+    if (scene === 'custom') {
+        spGrid.style.display = 'none';
+        customPanel.style.display = 'block';
+        customDesc.focus();
+        return;
+    }
+    // Hide picker and connect — launch card removed for simplicity
+    picker.style.display = 'none';
+    picker.classList.remove('sp-leaving');
+    connect(scene);
+}
+
+// Enable chat input after WS connects
+function enterChat(msg) {
+    inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
+    inp.focus();
+    addMsg('sys', msg || '✅ Connected — type or tap Record to speak');
+}
+
+function showSceneGrid() {
+    spGrid.style.display = 'grid';
+    customPanel.style.display = 'none';
+    customDesc.style.borderColor = ''; // reset error state
+}
+
+function fillExample(idx) {
+    customDesc.value = CUSTOM_EXAMPLES[idx] || '';
+    customDesc.focus();
+}
+
+function startCustomScene() {
+    const desc = customDesc.value.trim();
+    if (!desc) {
+        customDesc.style.borderColor = 'var(--rose)';
+        customDesc.focus();
+        customDesc.placeholder = 'Please describe your scenario first';
+        return;
+    }
+    window._customDesc = desc;
+    customDesc.style.borderColor = '';
+
+    // Hide picker and connect
+    picker.style.display = 'none';
+    picker.classList.remove('sp-leaving');
+    connect('custom');
 }
 
 // Card click / keyboard
@@ -578,14 +662,27 @@ document.querySelectorAll('.sp-card').forEach(card => {
     });
 });
 
+// Enter key in custom textarea starts
+customDesc.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        startCustomScene();
+    }
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // Badge click — return to scene picker mid-session
 // ═══════════════════════════════════════════════════════════════════
 function showScenePicker() {
     if (ws) ws.close();
+    customPanel.style.display = 'none';
+    spGrid.style.display = 'grid';
     picker.style.display = 'flex';
-    setTimeout(() => picker.classList.remove('sp-leaving'), 10);
+    setTimeout(function() { picker.classList.remove('sp-leaving'); }, 10);
     endBtn.style.display = 'none';
+    window._customDesc = '';
+    customDesc.value = '';
+    customDesc.style.borderColor = '';
 }
 
 // Brand click = back to scene picker
@@ -641,7 +738,7 @@ body {
     flex-direction:column;
     max-width:720px;
     margin:0 auto;
-    padding:0 16px 12px;
+    padding:0 16px 0;
     position:relative;
     background:
         radial-gradient(ellipse 70% 35% at 50% 0%, rgba(184,132,47,0.05) 0%, transparent 70%),
@@ -873,6 +970,22 @@ body {
     gap:8px;
     align-items:center;
     flex-shrink:0;
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:720px;
+    z-index:200;
+    background:var(--bg);
+    padding:8px 16px 12px;
+    border-top:2px solid var(--gold);
+    box-shadow:0 -4px 20px rgba(0,0,0,0.03);
+}
+
+/* Give chat area bottom padding so messages aren't hidden behind fixed bar */
+.chat-area {
+    padding-bottom:60px !important;
 }
 
 .btn-record {
@@ -936,7 +1049,7 @@ body {
     padding:10px 12px;
 }
 .text-input::placeholder { color:var(--text-muted) }
-.text-input:disabled { opacity:0.35 }
+.text-input:disabled { opacity:0.5; background:var(--surface-alt); }
 
 .btn-send {
     display:flex;
@@ -956,7 +1069,7 @@ body {
     background:var(--gold-dim);
     color:var(--gold);
 }
-.btn-send:disabled { opacity:0.25; cursor:not-allowed }
+.btn-send:disabled { opacity:0.4; cursor:not-allowed }
 .btn-send svg { display:block }
 
 /* ── Debug ── */
@@ -1126,7 +1239,10 @@ body {
 
 .scene-picker {
     position:absolute;
-    inset:0;
+    top:0;
+    left:0;
+    right:0;
+    bottom:70px;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -1245,6 +1361,125 @@ body {
     width:100%;
 }
 
+/* Custom card stands out with dashed border */
+.sp-card-custom {
+    border-style:dashed;
+    border-color:var(--border);
+}
+.sp-card-custom:hover,
+.sp-card-custom:focus-visible {
+    border-style:solid;
+}
+
+/* ── Custom Scene Panel ── */
+.sp-custom {
+    display:none;
+    animation:spIn 0.35s ease-out;
+}
+.sp-cback {
+    background:transparent;
+    border:1px solid var(--border-dim);
+    color:var(--text-muted);
+    padding:4px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-family:'DM Sans', sans-serif;
+    font-size:0.75rem;
+    transition:all 0.2s;
+    margin-bottom:16px;
+}
+.sp-cback:hover {
+    border-color:rgba(184,132,47,0.3);
+    color:var(--gold);
+}
+.sp-ctitle {
+    font-family:'Playfair Display', Georgia, serif;
+    font-weight:600;
+    font-size:1.3rem;
+    color:var(--text);
+    margin-bottom:4px;
+}
+.sp-csub {
+    font-size:0.75rem;
+    color:var(--text-muted);
+    margin-bottom:18px;
+}
+.sp-textarea {
+    width:100%;
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    color:var(--text);
+    font-family:'DM Sans', sans-serif;
+    font-size:0.85rem;
+    padding:12px 14px;
+    resize:vertical;
+    min-height:80px;
+    line-height:1.6;
+    transition:border-color 0.2s;
+    outline:none;
+}
+.sp-textarea:focus {
+    border-color:rgba(184,132,47,0.35);
+}
+.sp-textarea::placeholder { color:var(--text-muted) }
+
+.sp-cexamples {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:12px;
+    margin-bottom:20px;
+    align-items:center;
+}
+.sp-cex-label {
+    font-size:0.65rem;
+    color:var(--text-muted);
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.04em;
+    margin-right:4px;
+}
+.sp-cex-btn {
+    background:var(--gold-dim);
+    border:1px solid rgba(184,132,47,0.12);
+    border-radius:16px;
+    padding:4px 12px;
+    font-size:0.68rem;
+    color:var(--text-dim);
+    cursor:pointer;
+    font-family:'DM Sans', sans-serif;
+    transition:all 0.2s;
+    white-space:nowrap;
+}
+.sp-cex-btn:hover {
+    background:rgba(184,132,47,0.12);
+    border-color:rgba(184,132,47,0.25);
+    color:var(--gold);
+}
+.sp-start-btn {
+    display:block;
+    width:100%;
+    padding:12px 20px;
+    border-radius:10px;
+    border:none;
+    background:linear-gradient(135deg, rgba(184,132,47,0.12) 0%, rgba(184,132,47,0.08) 100%);
+    color:var(--gold);
+    font-family:'DM Sans', sans-serif;
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.25s;
+    letter-spacing:0.03em;
+}
+.sp-start-btn:hover {
+    background:linear-gradient(135deg, rgba(184,132,47,0.18) 0%, rgba(184,132,47,0.12) 100%);
+    transform:translateY(-1px);
+    box-shadow:0 4px 16px rgba(184,132,47,0.12);
+}
+.sp-start-btn:active {
+    transform:translateY(0);
+}
+
 /* ── Responsive ── */
 @media (max-width: 520px) {
     body { padding:0 10px 10px }
@@ -1264,6 +1499,11 @@ body {
     .sp-emoji { font-size:1.3rem }
     .sp-name { font-size:0.95rem }
     .sp-card:last-child:nth-child(odd) { max-width:100% }
+
+    .sp-custom { padding:0 }
+    .sp-ctitle { font-size:1.1rem }
+    .sp-cexamples { gap:4px }
+    .sp-cex-btn { font-size:0.62rem; padding:3px 10px }
 }
 </style>
 </body>

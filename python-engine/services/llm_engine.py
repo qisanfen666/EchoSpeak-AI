@@ -66,6 +66,18 @@ SCENE_SYSTEM_PROMPTS = {
     ),
 }
 
+# Template for user-customised scenes
+CUSTOM_SCENE_TEMPLATE = """You are an AI English conversation partner for the following custom scenario:
+
+Scenario: {description}
+
+Rules:
+1. Stay fully in character for this specific scenario — respond as the person the user would interact with.
+2. Keep responses concise (1-3 sentences).
+3. Ask natural follow-up questions to keep the conversation flowing.
+4. If the user makes grammar mistakes, gently include the correct form in your response.
+5. Use natural, conversational English appropriate to the scenario."""
+
 
 class Conversation:
     """Manages a multi-turn conversation with LLM context."""
@@ -81,6 +93,11 @@ class Conversation:
         self.scene = scene
         system = SCENE_SYSTEM_PROMPTS.get(scene, SCENE_SYSTEM_PROMPTS["default"])
         self.messages = [{"role": "system", "content": system}]
+
+    def set_custom_scene(self, description: str):
+        """Set a custom scene from user description."""
+        self.scene = "custom"
+        self.messages = [{"role": "system", "content": CUSTOM_SCENE_TEMPLATE.format(description=description)}]
 
     def add_user_message(self, text: str):
         self.messages.append({"role": "user", "content": text})
@@ -185,6 +202,7 @@ class LLMEngine:
             "travel": "Welcome! Let me check you in. Do you have a reservation with us?",
             "daily": "That's nice! How has your day been so far?",
             "business": "Good point. I'll follow up on that after the meeting.",
+            "custom": "That's an interesting scenario! What would you like to talk about?",
         }
         return fallbacks.get(scene, fallbacks["ordering"])
 
@@ -202,3 +220,10 @@ def get_llm() -> LLMEngine:
 
 def create_conversation(scene: str = "default") -> Conversation:
     return Conversation(scene=scene)
+
+
+def create_custom_conversation(description: str) -> Conversation:
+    """Create a conversation for a user-customised scene."""
+    conv = Conversation(scene="custom")
+    conv.messages[0]["content"] = CUSTOM_SCENE_TEMPLATE.format(description=description)
+    return conv
