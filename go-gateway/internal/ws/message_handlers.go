@@ -5,6 +5,23 @@ import (
 	"log"
 )
 
+// onTextMessage handles typed text — skips ASR, goes directly to Chat
+func onTextMessage(c *Client, data *TextMessageData) {
+	if c.session == nil {
+		log.Println("[Handler] Text message without session")
+		return
+	}
+
+	text := data.Text
+	if text == "" {
+		return
+	}
+
+	log.Printf("[Handler] Text message: session=%s text=\"%s\"", c.session.ID, text)
+
+	HandleTextInput(c.session.ID, text, c)
+}
+
 // onAudioChunk processes audio data from the client
 // Fast channel: forwards to Python ASR via gRPC
 func onAudioChunk(c *Client, data *AudioChunkData, seq int64) {

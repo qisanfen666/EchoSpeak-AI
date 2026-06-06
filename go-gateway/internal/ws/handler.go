@@ -68,6 +68,18 @@ func handleMessage(c *Client, msg *WSMessage) {
 		}
 		onAudioChunk(c, &data, msg.Seq)
 
+	case MsgTextMessage:
+		dataBytes, err := json.Marshal(msg.Data)
+		if err != nil {
+			return
+		}
+		var data TextMessageData
+		if err := json.Unmarshal(dataBytes, &data); err != nil {
+			log.Printf("[Handler] Parse text_message error: %v", err)
+			return
+		}
+		onTextMessage(c, &data)
+
 	case MsgInterrupt:
 		onInterrupt(c, msg.Seq)
 
