@@ -100,7 +100,11 @@
         </div>
         <div class="header-right">
             <span id="status" class="status-badge">⟳ connecting</span>
-            <button id="endBtn" class="btn-end" onclick="endSession()" title="结束会话">✕</button>
+            <div class="mode-toggle" id="modeToggle">
+                <button class="mode-btn active" data-mode="realtime" onclick="setMode('realtime')">实时</button>
+                <button class="mode-btn" data-mode="q_and_a" onclick="setMode('q_and_a')">问答</button>
+            </div>
+            <button id="endBtn" class="btn-end" onclick="endSession()" title="结束会话">结束对话</button>
         </div>
     </header>
 
@@ -271,6 +275,11 @@ let sessionStats = {
     errors: []
 };
 
+// ── Conversation mode ──
+let conversationMode = 'realtime'; // 'realtime' | 'q_and_a'
+let qaRecording = false;          // whether currently recording in Q&A mode
+let aiResponding = false;         // whether AI is currently generating a reply
+
 // ── Current session ID ──
 let currentSessionId = null;
 
@@ -336,6 +345,58 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeCustomModal();
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// Conversation mode toggle
+// ═══════════════════════════════════════════════════════════════════
+function setMode(mode) {
+    if (conversationMode === mode) return;
+    // Stop mic if switching modes while recording
+    if (micActive) stopMic();
+    qaRecording = false;
+    conversationMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    updateRecordButton();
+    log('Mode: ' + (mode === 'q_and_a' ? '一问一答' : '实时对话'));
+}
+
+function updateRecordButton() {
+    if (conversationMode === 'q_and_a') {
+        if (aiResponding) {
+            recBtn.disabled = true;
+            recBtn.classList.remove('recording');
+            recBtn.querySelector('.btn-label').textContent = 'AI responding…';
+        } else if (qaRecording) {
+            recBtn.disabled = false;
+            recBtn.classList.add('recording');
+            recBtn.querySelector('.btn-label').textContent = 'Tap to stop';
+        } else {
+            recBtn.disabled = false;
+            recBtn.classList.remove('recording');
+            recBtn.querySelector('.btn-label').textContent = 'Speak';
+        }
+    } else {
+        // Real-time mode
+        recBtn.querySelector('.btn-label').textContent = micActive ? 'Stop' : 'Record';
+        recBtn.disabled = false;
+        if (!micActive) recBtn.classList.remove('recording');
+    }
+}
+
+function updateTextInput() {
+    // In Q&A mode, disable text input while AI is responding
+    if (conversationMode === 'q_and_a' && aiResponding) {
+        inp.disabled = true;
+        btn.disabled = true;
+        inp.placeholder = 'AI is responding…';
+    } else if (conversationMode === 'q_and_a') {
+        inp.disabled = false;
+        btn.disabled = false;
+        inp.placeholder = 'Type in English…';
+    }
+}
+
 function practiceAgain() {
     // Disconnect if connected
     if (ws) {
@@ -364,6 +425,11 @@ function practiceAgain() {
         fluScores: [],
         errors: []
     };
+
+    // Reset mode state
+    aiResponding = false;
+    qaRecording = false;
+    if (conversationMode === 'q_and_a') updateRecordButton();
 
     inp.value = '';
     endBtn.style.display = 'none';
@@ -542,6 +608,8 @@ function connect(scene) {
         inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
         endBtn.style.display = 'flex';
         inp.focus();
+        aiResponding = false;
+        updateRecordButton();
         addMsg('sys', '✅ Connected — type or tap Record to speak');
         sessionStats.startTime = Date.now();
     };
@@ -596,6 +664,11 @@ function connect(scene) {
                 case 'reply_start':
                     think.classList.add('active');
                     startAIBubble();
+                    aiResponding = true;
+                    if (conversationMode === 'q_and_a') {
+                        updateRecordButton();
+                        updateTextInput();
+                    }
                     break;
                 case 'reply_chunk':
                     think.classList.remove('active');
@@ -604,6 +677,11 @@ function connect(scene) {
                 case 'reply_end':
                     think.classList.remove('active');
                     finalizeAI();
+                    aiResponding = false;
+                    if (conversationMode === 'q_and_a') {
+                        updateRecordButton();
+                        updateTextInput();
+                    }
                     st.textContent = '● connected';
                     st.className = 'status-badge connected';
                     break;
@@ -624,6 +702,7 @@ function connect(scene) {
         st.textContent = '● disconnected';
         st.className = 'status-badge disconnected';
         inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
+        aiResponding = false;
         if (micActive) stopMic();
         endBtn.style.display = 'none';
     };
@@ -637,8 +716,11 @@ function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 function sendText() {
     const t = inp.value.trim();
     if (!t) return;
+    // In Q&A mode, block during AI response
+    if (conversationMode === 'q_and_a' && aiResponding) return;
     inp.value = '';
-    interruptAI();
+    // In Q&A mode, don't auto-interrupt (AI shouldn't be talking)
+    if (conversationMode !== 'q_and_a') interruptAI();
     addMsg('user', t);
     send({ type: 'text_message', data: { text: t } });
     log('-> text: ' + t.slice(0, 30));
@@ -648,6 +730,39 @@ function sendText() {
 // Continuous Mic with VAD + Pre-buffer
 // ═══════════════════════════════════════════════════════════════════
 async function toggleMic() {
+    // ── Q&A Mode ──
+    if (conversationMode === 'q_and_a') {
+        if (qaRecording) {
+            // Stop recording — send buffered audio if enough speech
+            if (speaking && audioBuf.length > 0) {
+                const dur = audioBuf.length / SR;
+                if (dur >= MIN_SPEECH_MS / 1000) {
+                    log('🎤 Q&A manual stop, sending ' + dur.toFixed(1) + 's');
+                    st.textContent = '🔍 Recognizing…';
+                    const pcm16 = new Int16Array(audioBuf.length);
+                    for (let i = 0; i < audioBuf.length; i++) {
+                        const s = Math.max(-1, Math.min(1, audioBuf[i]));
+                        pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+                    }
+                    const bytes = new Uint8Array(pcm16.buffer);
+                    let bin = '';
+                    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                    send({ type: 'audio_chunk', data: { data: btoa(bin), is_end: true, chunk_id: chunkId++ } });
+                }
+            }
+            stopMic();
+            qaRecording = false;
+            updateRecordButton();
+            return;
+        }
+        // Start Q&A recording
+        if (aiResponding) return;
+        qaRecording = true;
+        updateRecordButton();
+        // Fall through to start mic
+    }
+
+    // ── Real-time Mode (existing toggle + shared mic start) ──
     if (micActive) { stopMic(); return; }
     try {
         log('🎤 Starting continuous mic…');
@@ -690,7 +805,7 @@ async function toggleMic() {
                         window._preBuf = []; window._preBufVoiceStart = 0; window._vadHits = 0;
                         log('🗣 Speaking (pre-buf ' + (audioBuf.length/SR*1000).toFixed(0) + 'ms)');
                         st.textContent = '🎙️ speaking…';
-                        interruptAI();
+                        if (conversationMode !== 'q_and_a') interruptAI();
                     }
                 } else {
                     window._vadHits = 0; window._preBufVoiceStart = 0;
@@ -737,6 +852,10 @@ async function toggleMic() {
                     }
                 }
                 audioBuf = []; speaking = false; silenceStart = null; speechStart = null;
+                // In Q&A mode, auto-stop mic after utterance sent
+                if (conversationMode === 'q_and_a') {
+                    setTimeout(function() { stopMic(); qaRecording = false; updateRecordButton(); }, 0);
+                }
             }
 
             const maxSamples = SR * MAX_BUF_S;
@@ -745,7 +864,11 @@ async function toggleMic() {
 
         micActive = true;
         recBtn.classList.add('recording');
-        recBtn.querySelector('.btn-label').textContent = 'Stop';
+        if (conversationMode === 'q_and_a') {
+            recBtn.querySelector('.btn-label').textContent = 'Tap to stop';
+        } else {
+            recBtn.querySelector('.btn-label').textContent = 'Stop';
+        }
         log('🎤 Mic live — speak anytime');
         st.textContent = '🎙️ listening…';
 
@@ -762,7 +885,11 @@ function stopMic() {
     if (ac) { ac.close().catch(()=>{}); ac = null; }
     audioBuf = []; silenceStart = null; speechStart = null;
     recBtn.classList.remove('recording');
-    recBtn.querySelector('.btn-label').textContent = 'Record';
+    if (conversationMode === 'q_and_a') {
+        recBtn.querySelector('.btn-label').textContent = 'Speak';
+    } else {
+        recBtn.querySelector('.btn-label').textContent = 'Record';
+    }
     st.textContent = '● connected';
     st.className = 'status-badge connected';
     log('⏹ Mic stopped');
@@ -1083,19 +1210,51 @@ body {
     background:transparent;
     border:1px solid var(--border);
     color:var(--text-muted);
-    width:28px;height:28px;
+    height:28px;
+    padding:0 10px;
     border-radius:6px;
     cursor:pointer;
-    font-size:12px;
+    font-size:0.7rem;
+    font-family:'DM Sans', sans-serif;
     display:flex;
     align-items:center;
     justify-content:center;
     transition:all 0.2s;
+    white-space:nowrap;
 }
 .btn-end:hover {
     border-color:var(--rose);
     color:var(--rose);
     background:rgba(184,90,90,0.06);
+}
+
+/* ── Mode toggle (realtime / Q&A) ── */
+.mode-toggle {
+    display:flex;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    flex-shrink:0;
+}
+.mode-btn {
+    padding:3px 12px;
+    border:none;
+    background:transparent;
+    color:var(--text-muted);
+    font-family:'DM Sans', sans-serif;
+    font-size:0.68rem;
+    font-weight:500;
+    cursor:pointer;
+    transition:all 0.2s;
+    white-space:nowrap;
+}
+.mode-btn.active {
+    background:var(--gold);
+    color:#fff;
+}
+.mode-btn:not(.active):hover {
+    color:var(--text-dim);
+    background:var(--bg);
 }
 
 /* ── Chat area ── */
