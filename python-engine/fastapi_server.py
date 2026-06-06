@@ -29,6 +29,14 @@ os.environ.setdefault("HF_HUB_DISABLE_SSL_VERIFY", "1")
 os.environ.setdefault("CURL_CA_BUNDLE", "")
 os.environ.setdefault("REQUESTS_CA_BUNDLE", "")
 
+# ── Pre-import torch to prevent circular import when ctranslate2 loads it later ──
+try:
+    import torch
+    if torch.cuda.is_available():
+        _ = torch.cuda.device_count()
+except Exception:
+    pass
+
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -65,14 +73,48 @@ async def lifespan(app: FastAPI):
 
 
 async def _preload_asr():
-    """Pre-load Whisper model in background."""
+    """Pre-load Whisper model + warm up CUDA kernels + preload LLM."""
+    t_start = time.time()
+
+    # ── 1. Load ASR model ──
     logger.info("Pre-loading ASR model ...")
-    t0 = time.time()
     try:
-        get_asr_engine().model
-        logger.info(f"ASR model loaded in {time.time() - t0:.1f}s")
+        engine = get_asr_engine()
+        model = engine.model
+        load_s = time.time() - t_start
+        logger.info(f"ASR model loaded in {load_s:.1f}s")
     except Exception as e:
         logger.warning(f"ASR preload failed (will lazy-load later): {e}")
+        # Still try to preload LLM below, don't return yet
+        model = None
+
+    # ── 2. Warm up CUDA kernels (silent dummy inference) ──
+    if model is not None:
+        try:
+            import io, wave, struct
+            # 1 second of silent 16kHz 16-bit mono PCM
+            dummy = struct.pack("<" + "h" * 16000, *([0] * 16000))
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+                w.writeframes(dummy)
+            wav = buf.getvalue()
+            t0 = time.time()
+            engine._transcribe_wav_novad(wav, language="en")
+            logger.info(f"ASR warm-up done in {time.time() - t0:.1f}s")
+        except Exception as e:
+            logger.warning(f"ASR warm-up failed (non-fatal): {e}")
+
+    logger.info(f"ASR ready (total {time.time() - t_start:.1f}s)")
+
+    # ── 3. Preload LLM engine ──
+    try:
+        llm = get_llm()
+        if config.LLM_API_KEY:
+            _ = llm.client
+            logger.info("LLM engine preloaded")
+    except Exception as e:
+        logger.warning(f"LLM preload failed: {e}")
 
 
 # ---------------------------------------------------------------------------

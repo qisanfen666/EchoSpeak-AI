@@ -10,7 +10,7 @@ class Config:
     DEV_PORT: int = int(os.getenv("DEV_PORT", "8000"))
     GRPC_LISTEN_ADDR: str = os.getenv("GRPC_LISTEN_ADDR", "0.0.0.0:50051")
     REDIS_ADDR: str = os.getenv("REDIS_ADDR", "localhost:6379")
-    WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "tiny")
+    WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "base.en")
     WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "auto")
     WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "auto")
     # "auto" detects CUDA; falls back to CPU + int8 if no GPU

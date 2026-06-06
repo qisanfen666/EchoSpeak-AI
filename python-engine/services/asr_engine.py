@@ -202,30 +202,48 @@ class ASREngine:
                 if _has_gpu:
                     _device = "cuda"
                     _compute = "float16"
-                    # Default to medium.en on GPU if user didn't explicitly set a model path
-                    if _model_size == "tiny" and not _os.environ.get("WHISPER_MODEL_SIZE"):
-                        _model_size = "medium.en"
-                    logger.info(f"GPU detected — using {_device}/{_compute}, model={_model_size}")
                 else:
                     _device = "cpu"
                     _compute = "int8"
-                    if _model_size in ("medium.en", "large-v3") and not _os.environ.get("WHISPER_MODEL_SIZE"):
-                        _model_size = "tiny"
-                    logger.info(f"No GPU — using {_device}/{_compute}, model={_model_size}")
-            else:
-                logger.info(f"Manual config — {_device}/{_compute}, model={_model_size}")
 
-            model_path = _model_size
-            # Resolve local path (if it looks like a filesystem path)
+            # ── Resolve model name to local path ──
+            # Maps short names to cached snapshot directories.
+            # Falls back to faster-whisper's download if not cached.
             from pathlib import Path
-            p = Path(model_path)
-            if p.exists():
-                model_path = str(p.resolve())
+            _model_dir = Path(str(config.ASR_MODEL_DIR))
+
+            def _resolve_local(model_name: str) -> str | None:
+                """Resolve a model name (e.g. 'base.en') to a local snapshot path."""
+                model_dir = _model_dir / f"models--Systran--faster-whisper-{model_name}" / "snapshots"
+                if model_dir.exists():
+                    snapshots = sorted(model_dir.iterdir(), key=lambda x: x.name, reverse=True)
+                    for snap in snapshots:
+                        if (snap / "model.bin").exists():
+                            return str(snap.resolve())
+                return None
+
+            _model_path = _resolve_local(_model_size)
+            if _model_path:
+                # Found local cache — use it directly (zero network)
+                model_path = _model_path
                 download_root = None
-                logger.info(f"Loading Whisper model from local: {model_path}")
+                logger.info(f"Loading {_model_size} from local cache: {model_path}")
             else:
+                # Not cached — let faster-whisper download it
+                model_path = _model_size
                 download_root = str(config.ASR_MODEL_DIR)
-                logger.info(f"Loading Whisper model '{model_path}' ...")
+                logger.info(f"Model '{_model_size}' not cached, will download to {download_root}")
+                # Try auto-upgrade: GPU → medium.en, CPU → base.en
+                if not _os.environ.get("WHISPER_MODEL_SIZE"):
+                    if _has_gpu and _model_size == "base.en":
+                        _upgraded = _resolve_local("medium.en")
+                        if _upgraded:
+                            model_path = _upgraded
+                            download_root = None
+                            _model_size = "medium.en"
+                            logger.info(f"GPU detected — upgraded to medium.en from cache")
+
+            logger.info(f"Device: {_device}/{_compute}, model: {_model_size}")
 
             t0 = time.time()
             from faster_whisper import WhisperModel
