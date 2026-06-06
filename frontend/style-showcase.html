@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI/UX Pro Max — 风格演示 · EchoSpeak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Base fonts -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=Archivo:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Geist+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&family=Chakra+Petch:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Sora:wght@300;400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════ */
+/* RESET */
+/* ═══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e0e0e0; line-height: 1.6; }
+img, svg { display: block; max-width: 100%; }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* PAGE LAYOUT */
+/* ═══════════════════════════════════════════════════════════════════ */
+.showcase-header {
+    text-align: center; padding: 60px 24px 40px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f0f 100%);
+    border-bottom: 1px solid #222;
+}
+.showcase-header h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.showcase-header p { color: #888; margin-top: 12px; font-size: 1.05rem; max-width: 600px; margin-inline: auto; }
+.badge-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+.badge {
+    font-size: 0.75rem; padding: 4px 12px; border-radius: 20px;
+    background: #1e1e2e; color: #a78bfa; border: 1px solid #2a2a3e;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE GRID */
+/* ═══════════════════════════════════════════════════════════════════ */
+.styles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 32px; padding: 40px 32px; max-width: 1600px; margin: 0 auto;
+}
+.style-panel {
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid #222; transition: transform 0.2s, box-shadow 0.2s;
+}
+.style-panel:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+.style-panel-header {
+    padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.style-panel-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; }
+.style-tag {
+    font-size: 0.7rem; padding: 3px 10px; border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.style-preview { padding: 24px; min-height: 340px; }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 1: Warm Parchment (Current / Baseline) */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-warm-parchment {
+    --wp-bg: #faf6f0; --wp-surface: #fffbf5; --wp-text: #3d3226;
+    --wp-accent: #b8860b; --wp-border: #e8dcc8; --wp-muted: #8b7d6b;
+    background: var(--wp-bg); color: var(--wp-text); font-family: 'DM Sans', sans-serif;
+    border-radius: 12px;
+}
+.st-warm-parchment .top-rule { height: 3px; background: linear-gradient(90deg, #b8860b, #d4a843, #b8860b); border-radius: 12px 12px 0 0; }
+.st-warm-parchment .inner { padding: 20px; }
+.st-warm-parchment h4 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: #3d3226; }
+.st-warm-parchment .card { background: var(--wp-surface); border: 1px solid var(--wp-border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+.st-warm-parchment .card:hover { border-color: var(--wp-accent); box-shadow: 0 2px 12px rgba(184,134,11,0.1); }
+.st-warm-parchment .card-icon { font-size: 1.4rem; }
+.st-warm-parchment .card-label { font-weight: 500; }
+.st-warm-parchment .card-sub { font-size: 0.78rem; color: var(--wp-muted); }
+.st-warm-parchment .btn { background: var(--wp-accent); color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+.st-warm-parchment .msg-ai { background: #fffbf5; border: 1px solid #e8dcc8; border-radius: 10px 10px 10px 2px; padding: 12px 16px; margin: 8px 0; font-size: 0.9rem; }
+.st-warm-parchment .trans-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 3px 10px; border: 1px solid #d4a843; border-radius: 6px; background: transparent; color: #b8860b; font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 2: Swiss Minimalism */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-swiss {
+    --sw-bg: #ffffff; --sw-surface: #fafafa; --sw-text: #171717;
+    --sw-accent: #2563eb; --sw-border: #e5e5e5; --sw-muted: #737373;
+    background: var(--sw-bg); color: var(--sw-text); font-family: 'Inter', sans-serif; border-radius: 12px;
+}
+.st-swiss .top-rule { height: 4px; background: #171717; border-radius: 12px 12px 0 0; }
+.st-swiss .inner { padding: 20px; }
+.st-swiss h4 { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; color: #171717; }
+.st-swiss .card { background: var(--sw-surface); border: 1px solid var(--sw-border); border-radius: 6px; padding: 16px; margin: 10px 0; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s; }
+.st-swiss .card:hover { border-color: #171717; box-shadow: 4px 4px 0 rgba(0,0,0,0.06); }
+.st-swiss .card-icon { font-size: 1.2rem; }
+.st-swiss .card-label { font-weight: 600; font-size: 0.92rem; }
+.st-swiss .card-sub { font-size: 0.75rem; color: var(--sw-muted); }
+.st-swiss .btn { background: #171717; color: #fff; border: none; border-radius: 6px; padding: 10px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+.st-swiss .msg-ai { background: #fafafa; border-left: 3px solid #2563eb; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 8px 0; font-size: 0.9rem; }
+.st-swiss .trans-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 3px 10px; border: 1px solid #d4d4d4; border-radius: 4px; background: transparent; color: #737373; font-size: 0.75rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 3: Glassmorphism */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-glass {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1040 40%, #0d1b2a 100%);
+    color: #e0e0f0; font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 12px;
+    position: relative; overflow: hidden;
+}
+.st-glass::before {
+    content: ''; position: absolute; top: -60%; left: -20%; width: 140%; height: 200%;
+    background: radial-gradient(circle at 30% 40%, rgba(139,92,246,0.25) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(6,182,212,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(236,72,153,0.15) 0%, transparent 40%);
+    pointer-events: none;
+}
+.st-glass .top-rule { height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); border-radius: 12px 12px 0 0; }
+.st-glass .inner { padding: 20px; position: relative; z-index: 1; }
+.st-glass h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; color: #f0e0ff; }
+.st-glass .card {
+    background: rgba(255,255,255,0.06); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    padding: 14px 16px; margin: 10px 0; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.2s;
+}
+.st-glass .card:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+.st-glass .card-icon { font-size: 1.3rem; filter: drop-shadow(0 0 6px rgba(255,255,255,0.3)); }
+.st-glass .card-label { font-weight: 500; color: #e8e0f8; }
+.st-glass .card-sub { font-size: 0.75rem; color: rgba(200,190,220,0.7); }
+.st-glass .btn {
+    background: linear-gradient(135deg, rgba(139,92,246,0.5), rgba(6,182,212,0.4));
+    color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
+    padding: 10px 20px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; backdrop-filter: blur(8px);
+}
+.st-glass .msg-ai {
+    background: rgba(255,255,255,0.05); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 12px 12px 12px 4px;
+    padding: 12px 16px; margin: 8px 0; font-size: 0.9rem; color: #d8d0f0;
+}
+.st-glass .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+    background: rgba(255,255,255,0.06); color: rgba(220,200,255,0.8); font-size: 0.75rem;
+    cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; backdrop-filter: blur(8px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 4: Neo-Brutalism */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-brutal {
+    --br-bg: #fffdf7; --br-text: #1a1a1a; --br-accent: #ff6b35;
+    --br-yellow: #ffd700; --br-pink: #ff69b4; --br-blue: #4169e1;
+    background: var(--br-bg); color: var(--br-text); font-family: 'Space Grotesk', sans-serif; border-radius: 12px;
+}
+.st-brutal .top-rule { height: 5px; background: #1a1a1a; border-radius: 12px 12px 0 0; }
+.st-brutal .inner { padding: 20px; }
+.st-brutal h4 { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: #1a1a1a; text-transform: uppercase; }
+.st-brutal .card {
+    background: #fff; border: 3px solid #1a1a1a; border-radius: 8px;
+    padding: 14px 16px; margin: 10px 0; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.1s; box-shadow: 5px 5px 0 #1a1a1a;
+}
+.st-brutal .card:hover { box-shadow: 8px 8px 0 #1a1a1a; transform: translate(-3px, -3px); }
+.st-brutal .card:nth-child(odd) { border-color: var(--br-blue); box-shadow: 5px 5px 0 var(--br-blue); }
+.st-brutal .card:nth-child(odd):hover { box-shadow: 8px 8px 0 var(--br-blue); }
+.st-brutal .card-icon { font-size: 1.4rem; }
+.st-brutal .card-label { font-weight: 700; font-size: 0.95rem; text-transform: uppercase; letter-spacing: -0.01em; }
+.st-brutal .card-sub { font-size: 0.75rem; color: #666; font-weight: 500; }
+.st-brutal .btn {
+    background: var(--br-accent); color: #fff; border: 3px solid #1a1a1a; border-radius: 8px;
+    padding: 10px 20px; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; box-shadow: 4px 4px 0 #1a1a1a;
+}
+.st-brutal .msg-ai {
+    background: #fff; border: 3px solid #1a1a1a; border-radius: 8px 8px 8px 0;
+    padding: 12px 16px; margin: 8px 0; font-size: 0.9rem; box-shadow: 3px 3px 0 #1a1a1a;
+}
+.st-brutal .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 2px solid #1a1a1a; border-radius: 6px;
+    background: var(--br-yellow); color: #1a1a1a; font-size: 0.75rem;
+    cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 5: Editorial / Magazine */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-editorial {
+    --ed-bg: #fefaf3; --ed-surface: #fffbf5; --ed-text: #2c2416;
+    --ed-accent: #8b4513; --ed-border: #d4c4a8; --ed-muted: #8b7355;
+    background: var(--ed-bg); color: var(--ed-text); font-family: 'Crimson Pro', serif; border-radius: 12px;
+}
+.st-editorial .top-rule { height: 2px; background: linear-gradient(90deg, #8b4513, #d4a843, transparent); border-radius: 12px 12px 0 0; }
+.st-editorial .inner { padding: 24px; }
+.st-editorial h4 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 600; font-style: italic; color: #2c2416; margin-bottom: 4px; }
+.st-editorial .deck { font-family: 'Crimson Pro', serif; font-size: 0.95rem; font-style: italic; color: var(--ed-muted); margin-bottom: 16px; }
+.st-editorial .card {
+    background: transparent; border-bottom: 1px solid var(--ed-border);
+    padding: 14px 0; margin: 0; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.2s;
+}
+.st-editorial .card:hover { border-bottom-color: var(--ed-accent); padding-left: 8px; }
+.st-editorial .card-icon { font-size: 1.1rem; }
+.st-editorial .card-label { font-family: 'Crimson Pro', serif; font-weight: 600; font-size: 1.05rem; }
+.st-editorial .card-sub { font-family: 'Crimson Pro', serif; font-size: 0.85rem; color: var(--ed-muted); font-style: italic; }
+.st-editorial .btn {
+    background: var(--ed-accent); color: #fefaf3; border: none; border-radius: 2px;
+    padding: 10px 24px; font-family: 'Crimson Pro', serif; font-weight: 600; font-size: 0.95rem;
+    cursor: pointer; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.st-editorial .msg-ai {
+    background: var(--ed-surface); border-left: 3px solid var(--ed-accent);
+    padding: 14px 18px; margin: 8px 0; font-family: 'Crimson Pro', serif; font-size: 1rem;
+}
+.st-editorial .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 1px solid var(--ed-border); background: transparent;
+    color: var(--ed-accent); font-size: 0.8rem; cursor: pointer;
+    font-family: 'Crimson Pro', serif; font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 6: Dark Mode Pro (OLED Luxury) */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-dark-pro {
+    --dk-bg: #0a0a0a; --dk-surface: #141414; --dk-text: #e8e8e8;
+    --dk-accent: #d4af37; --dk-border: #2a2a2a; --dk-muted: #888;
+    background: var(--dk-bg); color: var(--dk-text); font-family: 'Manrope', sans-serif; border-radius: 12px;
+}
+.st-dark-pro .top-rule { height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); border-radius: 12px 12px 0 0; }
+.st-dark-pro .inner { padding: 24px; }
+.st-dark-pro h4 { font-family: 'Manrope', sans-serif; font-size: 1.2rem; font-weight: 300; letter-spacing: 0.15em; color: #d4af37; text-transform: uppercase; }
+.st-dark-pro .card {
+    background: var(--dk-surface); border: 1px solid var(--dk-border); border-radius: 4px;
+    padding: 14px 16px; margin: 8px 0; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.3s;
+}
+.st-dark-pro .card:hover { border-color: #d4af37; background: #1a1a1a; }
+.st-dark-pro .card-icon { font-size: 1.2rem; opacity: 0.8; }
+.st-dark-pro .card-label { font-weight: 400; font-size: 0.9rem; letter-spacing: 0.03em; }
+.st-dark-pro .card-sub { font-size: 0.72rem; color: var(--dk-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.st-dark-pro .btn {
+    background: transparent; color: #d4af37; border: 1px solid #d4af37; border-radius: 4px;
+    padding: 10px 24px; font-weight: 400; font-size: 0.82rem; cursor: pointer;
+    font-family: 'Manrope', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.st-dark-pro .msg-ai {
+    background: var(--dk-surface); border: 1px solid var(--dk-border); border-radius: 4px;
+    padding: 14px 18px; margin: 8px 0; font-size: 0.88rem; line-height: 1.7;
+}
+.st-dark-pro .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 1px solid #333; border-radius: 3px;
+    background: transparent; color: #888; font-size: 0.72rem;
+    cursor: pointer; font-family: 'Manrope', sans-serif; letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 7: Y2K / Retro-Futuristic */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-y2k {
+    --y2-bg: #0a0a2e; --y2-text: #e0e8ff; --y2-pink: #ff69b4;
+    --y2-cyan: #00ffff; --y2-purple: #bf5fff; --y2-lime: #39ff14;
+    background: linear-gradient(180deg, #0a0a2e 0%, #12062e 50%, #0a0a2e 100%);
+    color: var(--y2-text); font-family: 'Chakra Petch', sans-serif; border-radius: 12px;
+    position: relative; overflow: hidden;
+}
+.st-y2k::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+    pointer-events: none; border-radius: 12px;
+}
+.st-y2k .top-rule { height: 3px; background: linear-gradient(90deg, #ff69b4, #00ffff, #bf5fff); border-radius: 12px 12px 0 0; }
+.st-y2k .inner { padding: 20px; position: relative; z-index: 1; }
+.st-y2k h4 { font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 600; letter-spacing: 0.05em; color: #00ffff; text-shadow: 0 0 20px rgba(0,255,255,0.4); text-transform: uppercase; }
+.st-y2k .card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 2px; padding: 12px 14px; margin: 8px 0; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: all 0.2s; clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+}
+.st-y2k .card:hover { border-color: #ff69b4; background: rgba(255,105,180,0.08); box-shadow: 0 0 20px rgba(255,105,180,0.15); }
+.st-y2k .card-icon { font-size: 1.2rem; }
+.st-y2k .card-label { font-weight: 500; color: #e0e8ff; font-size: 0.9rem; }
+.st-y2k .card-sub { font-size: 0.7rem; color: rgba(0,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; }
+.st-y2k .btn {
+    background: transparent; color: #ff69b4; border: 2px solid #ff69b4; border-radius: 0;
+    padding: 10px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+    font-family: 'Chakra Petch', sans-serif; text-transform: uppercase; letter-spacing: 0.1em;
+    transition: all 0.2s; box-shadow: 0 0 15px rgba(255,105,180,0.2);
+}
+.st-y2k .btn:hover { background: #ff69b4; color: #0a0a2e; }
+.st-y2k .msg-ai {
+    background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.15);
+    padding: 12px 16px; margin: 8px 0; font-size: 0.85rem;
+    clip-path: polygon(0 0, 100% 0, 97% 100%, 0 100%);
+}
+.st-y2k .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 1px solid rgba(191,95,255,0.4); background: transparent;
+    color: #bf5fff; font-size: 0.7rem; cursor: pointer;
+    font-family: 'Chakra Petch', sans-serif; text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* STYLE 8: Bento Grid */
+/* ═══════════════════════════════════════════════════════════════════ */
+.st-bento {
+    --bn-bg: #f5f5f5; --bn-surface: #ffffff; --bn-text: #1a1a1a;
+    --bn-accent: #6366f1; --bn-border: #e5e5e5; --bn-muted: #888;
+    background: var(--bn-bg); color: var(--bn-text); font-family: 'Sora', sans-serif; border-radius: 12px;
+}
+.st-bento .top-rule { height: 0; }
+.st-bento .inner { padding: 20px; }
+.st-bento h4 { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em; color: #1a1a1a; }
+.st-bento .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.st-bento .card {
+    background: var(--bn-surface); border: 1px solid var(--bn-border); border-radius: 14px;
+    padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;
+    aspect-ratio: 1; justify-content: center;
+}
+.st-bento .card:hover { border-color: var(--bn-accent); box-shadow: 0 4px 20px rgba(99,102,241,0.1); transform: scale(1.02); }
+.st-bento .card-icon { font-size: 1.6rem; }
+.st-bento .card-label { font-weight: 600; font-size: 0.9rem; }
+.st-bento .card-sub { font-size: 0.7rem; color: var(--bn-muted); }
+.st-bento .btn {
+    background: var(--bn-accent); color: #fff; border: none; border-radius: 12px;
+    padding: 10px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+    font-family: 'Sora', sans-serif; letter-spacing: -0.01em;
+}
+.st-bento .msg-ai {
+    background: var(--bn-surface); border: 1px solid var(--bn-border); border-radius: 16px 16px 16px 6px;
+    padding: 14px 18px; margin: 8px 0; font-size: 0.88rem;
+}
+.st-bento .trans-btn {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    padding: 3px 10px; border: 1px solid var(--bn-border); border-radius: 8px;
+    background: var(--bn-surface); color: var(--bn-accent); font-size: 0.75rem;
+    cursor: pointer; font-family: 'Sora', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* COMPARISON TABLE */
+/* ═══════════════════════════════════════════════════════════════════ */
+.compare-section { max-width: 1600px; margin: 0 auto; padding: 0 32px 60px; }
+.compare-section h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; text-align: center; margin-bottom: 24px; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.compare-table th, .compare-table td {
+    padding: 10px 14px; text-align: left; border-bottom: 1px solid #222;
+}
+.compare-table th { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+.compare-table td:first-child { font-weight: 600; color: #e0e0e0; white-space: nowrap; }
+.compare-table .chip { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+.chip-match { background: #064e3b; color: #34d399; }
+.chip-ok { background: #1e1e2e; color: #a78bfa; }
+.chip-diff { background: #4a1e1e; color: #f87171; }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 500px) {
+    .styles-grid { grid-template-columns: 1fr; padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<header class="showcase-header">
+    <h1>UI/UX Pro Max · 风格演示</h1>
+    <p>每种风格都基于 EchoSpeak 的相同 UI 元素构建 — 场景卡片 + AI 回复 + 翻译折叠。对比找到适合你的方向。</p>
+    <div class="badge-row">
+        <span class="badge">67 Styles</span>
+        <span class="badge">161 Palettes</span>
+        <span class="badge">57 Fonts</span>
+        <span class="badge">99 UX Rules</span>
+        <span class="badge">by nextlevelbuilder</span>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="styles-grid">
+
+    <!-- 1. WARM PARCHMENT (Baseline) -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>① Warm Parchment</h3>
+            <span class="style-tag" style="background:rgba(184,134,11,0.2);color:#d4a843">当前风格</span>
+        </div>
+        <div class="style-preview st-warm-parchment">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">Restaurant Ordering</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SWISS MINIMALISM -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>② Swiss Minimalism</h3>
+            <span class="style-tag" style="background:rgba(37,99,235,0.2);color:#60a5fa">极简 Swiss</span>
+        </div>
+        <div class="style-preview st-swiss">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">Restaurant Ordering</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. GLASSMORPHISM -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>③ Glassmorphism</h3>
+            <span class="style-tag" style="background:rgba(139,92,246,0.2);color:#a78bfa">毛玻璃</span>
+        </div>
+        <div class="style-preview st-glass">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">Restaurant Ordering</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. NEO-BRUTALISM -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>④ Neo-Brutalism</h3>
+            <span class="style-tag" style="background:rgba(255,107,53,0.2);color:#ff6b35">粗野主义</span>
+        </div>
+        <div class="style-preview st-brutal">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">Restaurant Ordering</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. EDITORIAL -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>⑤ Editorial / Magazine</h3>
+            <span class="style-tag" style="background:rgba(139,69,19,0.2);color:#d4a843">编辑杂志</span>
+        </div>
+        <div class="style-preview st-editorial">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <p class="deck">Begin your language journey</p>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">Restaurant Ordering</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. DARK MODE PRO -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>⑥ Dark Mode Pro</h3>
+            <span class="style-tag" style="background:rgba(212,175,55,0.2);color:#d4af37">暗色奢华</span>
+        </div>
+        <div class="style-preview st-dark-pro">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">RESTAURANT</div><div class="card-sub">Ordering Practice</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">TRAVEL</div><div class="card-sub">Conversation Practice</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">START PRACTICE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Y2K / RETRO-FUTURISTIC -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>⑦ Y2K Retro-Future</h3>
+            <span class="style-tag" style="background:rgba(0,255,255,0.15);color:#00ffff">千禧复古</span>
+        </div>
+        <div class="style-preview st-y2k">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>▸ Choose a Scenario</h4>
+                <div class="card"><span class="card-icon">🍽️</span><div><div class="card-label">餐厅点餐</div><div class="card-sub">ORDERING.SYS</div></div></div>
+                <div class="card"><span class="card-icon">✈️</span><div><div class="card-label">旅行出行</div><div class="card-sub">TRAVEL.EXE</div></div></div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">▶ START PRACTICE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. BENTO GRID -->
+    <div class="style-panel">
+        <div class="style-panel-header" style="background:#1e1e2e">
+            <h3>⑧ Bento Grid</h3>
+            <span class="style-tag" style="background:rgba(99,102,241,0.2);color:#818cf8">便当布局</span>
+        </div>
+        <div class="style-preview st-bento">
+            <div class="top-rule"></div>
+            <div class="inner">
+                <h4>Choose a Scenario</h4>
+                <div class="grid-2">
+                    <div class="card"><span class="card-icon">🍽️</span><div class="card-label">餐厅点餐</div><div class="card-sub">Ordering</div></div>
+                    <div class="card"><span class="card-icon">✈️</span><div class="card-label">旅行出行</div><div class="card-sub">Travel</div></div>
+                    <div class="card"><span class="card-icon">💼</span><div class="card-label">工作面试</div><div class="card-sub">Interview</div></div>
+                    <div class="card"><span class="card-icon">📊</span><div class="card-label">商务会议</div><div class="card-sub">Meeting</div></div>
+                </div>
+                <div class="msg-ai">Could I have a table for two by the window?</div>
+                <button class="trans-btn">译 中文 ▾</button>
+                <button class="btn" style="margin-top:10px;">Start Practice</button>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- COMPARISON TABLE -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="compare-section">
+    <h2>风格快选对照表</h2>
+    <div style="overflow-x:auto">
+    <table class="compare-table">
+        <thead>
+            <tr>
+                <th>风格</th><th>氛围</th><th>适合场景</th><th>与当前匹配度</th><th>字体</th><th>实现难度</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>① Warm Parchment</td>
+                <td>温暖、精致、手作感</td>
+                <td>语言学习、阅读、写作</td>
+                <td><span class="chip chip-match">当前</span></td>
+                <td>DM Serif + DM Sans</td>
+                <td><span class="chip chip-match">已完成</span></td>
+            </tr>
+            <tr>
+                <td>② Swiss Minimalism</td>
+                <td>理性、清晰、冷静</td>
+                <td>效率工具、教育</td>
+                <td><span class="chip chip-ok">中</span></td>
+                <td>Inter + 几何无衬线</td>
+                <td><span class="chip chip-ok">低</span></td>
+            </tr>
+            <tr>
+                <td>③ Glassmorphism</td>
+                <td>科技感、轻盈、现代</td>
+                <td>AI 产品、SaaS</td>
+                <td><span class="chip chip-diff">低</span></td>
+                <td>Plus Jakarta Sans</td>
+                <td><span class="chip chip-ok">中</span></td>
+            </tr>
+            <tr>
+                <td>④ Neo-Brutalism</td>
+                <td>大胆、个性、活力</td>
+                <td>创意工具、年轻用户</td>
+                <td><span class="chip chip-diff">低</span></td>
+                <td>Space Grotesk</td>
+                <td><span class="chip chip-ok">中</span></td>
+            </tr>
+            <tr>
+                <td>⑤ Editorial</td>
+                <td>优雅、文学、经典</td>
+                <td>阅读、学习、写作</td>
+                <td><span class="chip chip-match">高</span></td>
+                <td>Playfair + Crimson Pro</td>
+                <td><span class="chip chip-ok">低</span></td>
+            </tr>
+            <tr>
+                <td>⑥ Dark Mode Pro</td>
+                <td>奢华、沉浸、神秘</td>
+                <td>夜间学习、专注</td>
+                <td><span class="chip chip-ok">中</span></td>
+                <td>Manrope + 衬线</td>
+                <td><span class="chip chip-ok">低</span></td>
+            </tr>
+            <tr>
+                <td>⑦ Y2K Retro-Future</td>
+                <td>怀旧、赛博、玩味</td>
+                <td>游戏化学习、年轻</td>
+                <td><span class="chip chip-diff">低</span></td>
+                <td>Chakra Petch</td>
+                <td><span class="chip chip-diff">高</span></td>
+            </tr>
+            <tr>
+                <td>⑧ Bento Grid</td>
+                <td>现代、模块化、Apple风</td>
+                <td>Dashboard、工具型</td>
+                <td><span class="chip chip-ok">中</span></td>
+                <td>Sora + 几何无衬线</td>
+                <td><span class="chip chip-ok">中</span></td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+</section>
+
+</body>
+</html>
