@@ -11,8 +11,9 @@ class Config:
     GRPC_LISTEN_ADDR: str = os.getenv("GRPC_LISTEN_ADDR", "0.0.0.0:50051")
     REDIS_ADDR: str = os.getenv("REDIS_ADDR", "localhost:6379")
     WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "tiny")
-    WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "cpu")
-    WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+    WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "auto")
+    WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "auto")
+    # "auto" detects CUDA; falls back to CPU + int8 if no GPU
     ASR_MODEL: str = os.getenv("ASR_MODEL", "paraformer-zh-streaming")
     TTS_VOICE: str = os.getenv("TTS_VOICE", "en-US-JennyNeural")
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")

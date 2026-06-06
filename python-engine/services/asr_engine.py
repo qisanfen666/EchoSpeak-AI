@@ -186,7 +186,36 @@ class ASREngine:
             except Exception:
                 pass
 
-            model_path = str(config.WHISPER_MODEL_SIZE)
+            # ── Auto-detect GPU and configure model ──
+            _has_gpu = False
+            try:
+                import ctranslate2
+                _has_gpu = ctranslate2.get_cuda_device_count() > 0
+            except Exception:
+                pass
+
+            _device = config.WHISPER_DEVICE
+            _compute = config.WHISPER_COMPUTE_TYPE
+            _model_size = str(config.WHISPER_MODEL_SIZE)
+
+            if _device == "auto" or _compute == "auto":
+                if _has_gpu:
+                    _device = "cuda"
+                    _compute = "float16"
+                    # Default to medium.en on GPU if user didn't explicitly set a model path
+                    if _model_size == "tiny" and not _os.environ.get("WHISPER_MODEL_SIZE"):
+                        _model_size = "medium.en"
+                    logger.info(f"GPU detected — using {_device}/{_compute}, model={_model_size}")
+                else:
+                    _device = "cpu"
+                    _compute = "int8"
+                    if _model_size in ("medium.en", "large-v3") and not _os.environ.get("WHISPER_MODEL_SIZE"):
+                        _model_size = "tiny"
+                    logger.info(f"No GPU — using {_device}/{_compute}, model={_model_size}")
+            else:
+                logger.info(f"Manual config — {_device}/{_compute}, model={_model_size}")
+
+            model_path = _model_size
             # Resolve local path (if it looks like a filesystem path)
             from pathlib import Path
             p = Path(model_path)
@@ -202,8 +231,8 @@ class ASREngine:
             from faster_whisper import WhisperModel
             self._model = WhisperModel(
                 model_path,
-                device=config.WHISPER_DEVICE,
-                compute_type=config.WHISPER_COMPUTE_TYPE,
+                device=_device,
+                compute_type=_compute,
                 download_root=download_root,
             )
             logger.info(f"Whisper model loaded in {time.time() - t0:.1f}s")
@@ -362,7 +391,7 @@ class ASREngine:
             buf,
             language=language,
             beam_size=5,
-            best_of=5,
+            best_of=1,
             temperature=0.0,
             vad_filter=False,
             condition_on_previous_text=True,
