@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x61iservice.proto\x12\taiservice\"\x0f\n\rHealthRequest\"-\n\x0eHealthResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"D\n\nAudioChunk\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x0e\n\x06is_end\x18\x03 \x01(\x08\"?\n\tASRResult\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x12\x12\n\nsession_id\x18\x03 \x01(\t\"o\n\x0b\x43hatRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05scene\x18\x02 \x01(\t\x12\x14\n\x0cuser_message\x18\x03 \x01(\t\x12\'\n\x07history\x18\x04 \x03(\x0b\x32\x16.aiservice.ChatMessage\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"\x93\x01\n\x0c\x43hatResponse\x12&\n\x05reply\x18\x01 \x01(\x0b\x32\x15.aiservice.ReplyChunkH\x00\x12+\n\ncorrection\x18\x02 \x01(\x0b\x32\x15.aiservice.CorrectionH\x00\x12\x0e\n\x04\x64one\x18\x03 \x01(\x08H\x00\x12\x13\n\ttts_audio\x18\x04 \x01(\x0cH\x00\x42\t\n\x07payload\",\n\nReplyChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_first\x18\x02 \x01(\x08\"m\n\nCorrection\x12\x10\n\x08original\x18\x01 \x01(\t\x12\x11\n\tcorrected\x18\x02 \x01(\t\x12\x12\n\nerror_type\x18\x03 \x01(\t\x12&\n\nhighlights\x18\x04 \x03(\x0b\x32\x12.aiservice.WordFix\"A\n\x07WordFix\x12\x11\n\tstart_idx\x18\x01 \x01(\x05\x12\x0f\n\x07\x65nd_idx\x18\x02 \x01(\x05\x12\x12\n\nsuggestion\x18\x03 \x01(\t\"G\n\x11SynthesizeRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x10\n\x08\x63hunk_id\x18\x03 \x01(\x05\"G\n\rTTSAudioChunk\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x10\n\x08\x63hunk_id\x18\x02 \x01(\x05\x12\x10\n\x08is_final\x18\x03 \x01(\x08\"e\n\x0f\x45valuateRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\naudio_data\x18\x02 \x01(\x0c\x12\x16\n\x0ereference_text\x18\x03 \x01(\t\x12\x12\n\ntranscript\x18\x04 \x01(\t\"\x8d\x01\n\x10\x45valuateResponse\x12\x15\n\roverall_score\x18\x01 \x01(\x02\x12\x10\n\x08\x61\x63\x63uracy\x18\x02 \x01(\x02\x12\x0f\n\x07\x66luency\x18\x03 \x01(\x02\x12\x14\n\x0c\x63ompleteness\x18\x04 \x01(\x02\x12)\n\x0bword_scores\x18\x05 \x03(\x0b\x32\x14.aiservice.WordScore\"@\n\tWordScore\x12\x0c\n\x04word\x18\x01 \x01(\t\x12\r\n\x05score\x18\x02 \x01(\x02\x12\x16\n\x0ephoneme_detail\x18\x03 \x01(\t\"\xb9\x01\n\rReportRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05scene\x18\x02 \x01(\t\x12\'\n\x07history\x18\x03 \x03(\x0b\x32\x16.aiservice.ChatMessage\x12*\n\x0b\x63orrections\x18\x04 \x03(\x0b\x32\x15.aiservice.Correction\x12\x30\n\x0b\x65valuations\x18\x05 \x03(\x0b\x32\x1b.aiservice.EvaluateResponse\"x\n\x0eReportResponse\x12\x15\n\roverall_score\x18\x01 \x01(\x02\x12\x0f\n\x07summary\x18\x02 \x01(\t\x12)\n\x0bweak_points\x18\x03 \x03(\x0b\x32\x14.aiservice.WeakPoint\x12\x13\n\x0bsuggestions\x18\x04 \x03(\t\"@\n\tWeakPoint\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x02 \x01(\t\x12\x11\n\tfrequency\x18\x03 \x01(\x05\x32\x94\x03\n\tAIService\x12<\n\tStreamASR\x12\x15.aiservice.AudioChunk\x1a\x14.aiservice.ASRResult(\x01\x30\x01\x12\x39\n\x04\x43hat\x12\x16.aiservice.ChatRequest\x1a\x17.aiservice.ChatResponse0\x01\x12\x43\n\nSynthesize\x12\x1c.aiservice.SynthesizeRequest\x1a\x15.aiservice.AudioChunk0\x01\x12\x43\n\x08\x45valuate\x12\x1a.aiservice.EvaluateRequest\x1a\x1b.aiservice.EvaluateResponse\x12\x45\n\x0eGenerateReport\x12\x18.aiservice.ReportRequest\x1a\x19.aiservice.ReportResponse\x12=\n\x06Health\x12\x18.aiservice.HealthRequest\x1a\x19.aiservice.HealthResponseB\nZ\x08./;protob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x61iservice.proto\x12\taiservice\"\x0f\n\rHealthRequest\"-\n\x0eHealthResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"D\n\nAudioChunk\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x0e\n\x06is_end\x18\x03 \x01(\x08\"?\n\tASRResult\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x12\x12\n\nsession_id\x18\x03 \x01(\t\"o\n\x0b\x43hatRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05scene\x18\x02 \x01(\t\x12\x14\n\x0cuser_message\x18\x03 \x01(\t\x12\'\n\x07history\x18\x04 \x03(\x0b\x32\x16.aiservice.ChatMessage\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"\x93\x01\n\x0c\x43hatResponse\x12&\n\x05reply\x18\x01 \x01(\x0b\x32\x15.aiservice.ReplyChunkH\x00\x12+\n\ncorrection\x18\x02 \x01(\x0b\x32\x15.aiservice.CorrectionH\x00\x12\x0e\n\x04\x64one\x18\x03 \x01(\x08H\x00\x12\x13\n\ttts_audio\x18\x04 \x01(\x0cH\x00\x42\t\n\x07payload\",\n\nReplyChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_first\x18\x02 \x01(\x08\"m\n\nCorrection\x12\x10\n\x08original\x18\x01 \x01(\t\x12\x11\n\tcorrected\x18\x02 \x01(\t\x12\x12\n\nerror_type\x18\x03 \x01(\t\x12&\n\nhighlights\x18\x04 \x03(\x0b\x32\x12.aiservice.WordFix\"g\n\x07WordFix\x12\x11\n\tstart_idx\x18\x01 \x01(\x05\x12\x0f\n\x07\x65nd_idx\x18\x02 \x01(\x05\x12\x12\n\nsuggestion\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\x16\n\x0e\x65xplanation_cn\x18\x05 \x01(\t\"G\n\x11SynthesizeRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x10\n\x08\x63hunk_id\x18\x03 \x01(\x05\"G\n\rTTSAudioChunk\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x10\n\x08\x63hunk_id\x18\x02 \x01(\x05\x12\x10\n\x08is_final\x18\x03 \x01(\x08\"e\n\x0f\x45valuateRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\naudio_data\x18\x02 \x01(\x0c\x12\x16\n\x0ereference_text\x18\x03 \x01(\t\x12\x12\n\ntranscript\x18\x04 \x01(\t\"\x8d\x01\n\x10\x45valuateResponse\x12\x15\n\roverall_score\x18\x01 \x01(\x02\x12\x10\n\x08\x61\x63\x63uracy\x18\x02 \x01(\x02\x12\x0f\n\x07\x66luency\x18\x03 \x01(\x02\x12\x14\n\x0c\x63ompleteness\x18\x04 \x01(\x02\x12)\n\x0bword_scores\x18\x05 \x03(\x0b\x32\x14.aiservice.WordScore\"@\n\tWordScore\x12\x0c\n\x04word\x18\x01 \x01(\t\x12\r\n\x05score\x18\x02 \x01(\x02\x12\x16\n\x0ephoneme_detail\x18\x03 \x01(\t\"\xb9\x01\n\rReportRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05scene\x18\x02 \x01(\t\x12\'\n\x07history\x18\x03 \x03(\x0b\x32\x16.aiservice.ChatMessage\x12*\n\x0b\x63orrections\x18\x04 \x03(\x0b\x32\x15.aiservice.Correction\x12\x30\n\x0b\x65valuations\x18\x05 \x03(\x0b\x32\x1b.aiservice.EvaluateResponse\"x\n\x0eReportResponse\x12\x15\n\roverall_score\x18\x01 \x01(\x02\x12\x0f\n\x07summary\x18\x02 \x01(\t\x12)\n\x0bweak_points\x18\x03 \x03(\x0b\x32\x14.aiservice.WeakPoint\x12\x13\n\x0bsuggestions\x18\x04 \x03(\t\"@\n\tWeakPoint\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x02 \x01(\t\x12\x11\n\tfrequency\x18\x03 \x01(\x05\x32\x94\x03\n\tAIService\x12<\n\tStreamASR\x12\x15.aiservice.AudioChunk\x1a\x14.aiservice.ASRResult(\x01\x30\x01\x12\x39\n\x04\x43hat\x12\x16.aiservice.ChatRequest\x1a\x17.aiservice.ChatResponse0\x01\x12\x43\n\nSynthesize\x12\x1c.aiservice.SynthesizeRequest\x1a\x15.aiservice.AudioChunk0\x01\x12\x43\n\x08\x45valuate\x12\x1a.aiservice.EvaluateRequest\x1a\x1b.aiservice.EvaluateResponse\x12\x45\n\x0eGenerateReport\x12\x18.aiservice.ReportRequest\x1a\x19.aiservice.ReportResponse\x12=\n\x06Health\x12\x18.aiservice.HealthRequest\x1a\x19.aiservice.HealthResponseB\nZ\x08./;protob\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -51,23 +51,23 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CORRECTION']._serialized_start=584
   _globals['_CORRECTION']._serialized_end=693
   _globals['_WORDFIX']._serialized_start=695
-  _globals['_WORDFIX']._serialized_end=760
-  _globals['_SYNTHESIZEREQUEST']._serialized_start=762
-  _globals['_SYNTHESIZEREQUEST']._serialized_end=833
-  _globals['_TTSAUDIOCHUNK']._serialized_start=835
-  _globals['_TTSAUDIOCHUNK']._serialized_end=906
-  _globals['_EVALUATEREQUEST']._serialized_start=908
-  _globals['_EVALUATEREQUEST']._serialized_end=1009
-  _globals['_EVALUATERESPONSE']._serialized_start=1012
-  _globals['_EVALUATERESPONSE']._serialized_end=1153
-  _globals['_WORDSCORE']._serialized_start=1155
-  _globals['_WORDSCORE']._serialized_end=1219
-  _globals['_REPORTREQUEST']._serialized_start=1222
-  _globals['_REPORTREQUEST']._serialized_end=1407
-  _globals['_REPORTRESPONSE']._serialized_start=1409
-  _globals['_REPORTRESPONSE']._serialized_end=1529
-  _globals['_WEAKPOINT']._serialized_start=1531
-  _globals['_WEAKPOINT']._serialized_end=1595
-  _globals['_AISERVICE']._serialized_start=1598
-  _globals['_AISERVICE']._serialized_end=2002
+  _globals['_WORDFIX']._serialized_end=798
+  _globals['_SYNTHESIZEREQUEST']._serialized_start=800
+  _globals['_SYNTHESIZEREQUEST']._serialized_end=871
+  _globals['_TTSAUDIOCHUNK']._serialized_start=873
+  _globals['_TTSAUDIOCHUNK']._serialized_end=944
+  _globals['_EVALUATEREQUEST']._serialized_start=946
+  _globals['_EVALUATEREQUEST']._serialized_end=1047
+  _globals['_EVALUATERESPONSE']._serialized_start=1050
+  _globals['_EVALUATERESPONSE']._serialized_end=1191
+  _globals['_WORDSCORE']._serialized_start=1193
+  _globals['_WORDSCORE']._serialized_end=1257
+  _globals['_REPORTREQUEST']._serialized_start=1260
+  _globals['_REPORTREQUEST']._serialized_end=1445
+  _globals['_REPORTRESPONSE']._serialized_start=1447
+  _globals['_REPORTRESPONSE']._serialized_end=1567
+  _globals['_WEAKPOINT']._serialized_start=1569
+  _globals['_WEAKPOINT']._serialized_end=1633
+  _globals['_AISERVICE']._serialized_start=1636
+  _globals['_AISERVICE']._serialized_end=2040
 # @@protoc_insertion_point(module_scope)
