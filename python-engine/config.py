@@ -33,9 +33,7 @@ class Config:
     REDIS_ADDR: str = os.getenv("REDIS_ADDR", "localhost:6379")
 
     # ---- ASR — faster-whisper (integrated engine) ----
-    # Default: "tiny" for broad compatibility.
-    # For better accuracy set WHISPER_MODEL_SIZE=small.en (requires ~480 MB download).
-    WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "tiny")
+    WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "small.en")
     WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "cpu")
     WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 
