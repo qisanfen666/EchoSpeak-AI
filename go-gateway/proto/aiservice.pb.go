@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v7.35.0
-// source: aiservice.proto
+// source: proto/aiservice.proto
 
 package proto
 
@@ -29,7 +29,7 @@ type HealthRequest struct {
 
 func (x *HealthRequest) Reset() {
 	*x = HealthRequest{}
-	mi := &file_aiservice_proto_msgTypes[0]
+	mi := &file_proto_aiservice_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -41,7 +41,7 @@ func (x *HealthRequest) String() string {
 func (*HealthRequest) ProtoMessage() {}
 
 func (x *HealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[0]
+	mi := &file_proto_aiservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -54,7 +54,7 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
 func (*HealthRequest) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{0}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{0}
 }
 
 type HealthResponse struct {
@@ -67,7 +67,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_aiservice_proto_msgTypes[1]
+	mi := &file_proto_aiservice_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -79,7 +79,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[1]
+	mi := &file_proto_aiservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -92,7 +92,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{1}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *HealthResponse) GetOk() bool {
@@ -120,7 +120,7 @@ type AudioChunk struct {
 
 func (x *AudioChunk) Reset() {
 	*x = AudioChunk{}
-	mi := &file_aiservice_proto_msgTypes[2]
+	mi := &file_proto_aiservice_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +132,7 @@ func (x *AudioChunk) String() string {
 func (*AudioChunk) ProtoMessage() {}
 
 func (x *AudioChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[2]
+	mi := &file_proto_aiservice_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +145,7 @@ func (x *AudioChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AudioChunk.ProtoReflect.Descriptor instead.
 func (*AudioChunk) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{2}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AudioChunk) GetAudioData() []byte {
@@ -180,7 +180,7 @@ type ASRResult struct {
 
 func (x *ASRResult) Reset() {
 	*x = ASRResult{}
-	mi := &file_aiservice_proto_msgTypes[3]
+	mi := &file_proto_aiservice_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +192,7 @@ func (x *ASRResult) String() string {
 func (*ASRResult) ProtoMessage() {}
 
 func (x *ASRResult) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[3]
+	mi := &file_proto_aiservice_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,7 +205,7 @@ func (x *ASRResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ASRResult.ProtoReflect.Descriptor instead.
 func (*ASRResult) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{3}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ASRResult) GetText() string {
@@ -241,7 +241,7 @@ type ChatRequest struct {
 
 func (x *ChatRequest) Reset() {
 	*x = ChatRequest{}
-	mi := &file_aiservice_proto_msgTypes[4]
+	mi := &file_proto_aiservice_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -253,7 +253,7 @@ func (x *ChatRequest) String() string {
 func (*ChatRequest) ProtoMessage() {}
 
 func (x *ChatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[4]
+	mi := &file_proto_aiservice_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -266,7 +266,7 @@ func (x *ChatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
 func (*ChatRequest) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{4}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ChatRequest) GetSessionId() string {
@@ -307,7 +307,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_aiservice_proto_msgTypes[5]
+	mi := &file_proto_aiservice_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -319,7 +319,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[5]
+	mi := &file_proto_aiservice_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -332,7 +332,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{5}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ChatMessage) GetRole() string {
@@ -364,7 +364,7 @@ type ChatResponse struct {
 
 func (x *ChatResponse) Reset() {
 	*x = ChatResponse{}
-	mi := &file_aiservice_proto_msgTypes[6]
+	mi := &file_proto_aiservice_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -376,7 +376,7 @@ func (x *ChatResponse) String() string {
 func (*ChatResponse) ProtoMessage() {}
 
 func (x *ChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[6]
+	mi := &file_proto_aiservice_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -389,7 +389,7 @@ func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
 func (*ChatResponse) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{6}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ChatResponse) GetPayload() isChatResponse_Payload {
@@ -473,7 +473,7 @@ type ReplyChunk struct {
 
 func (x *ReplyChunk) Reset() {
 	*x = ReplyChunk{}
-	mi := &file_aiservice_proto_msgTypes[7]
+	mi := &file_proto_aiservice_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +485,7 @@ func (x *ReplyChunk) String() string {
 func (*ReplyChunk) ProtoMessage() {}
 
 func (x *ReplyChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[7]
+	mi := &file_proto_aiservice_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +498,7 @@ func (x *ReplyChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplyChunk.ProtoReflect.Descriptor instead.
 func (*ReplyChunk) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{7}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReplyChunk) GetText() string {
@@ -527,7 +527,7 @@ type Correction struct {
 
 func (x *Correction) Reset() {
 	*x = Correction{}
-	mi := &file_aiservice_proto_msgTypes[8]
+	mi := &file_proto_aiservice_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +539,7 @@ func (x *Correction) String() string {
 func (*Correction) ProtoMessage() {}
 
 func (x *Correction) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[8]
+	mi := &file_proto_aiservice_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +552,7 @@ func (x *Correction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Correction.ProtoReflect.Descriptor instead.
 func (*Correction) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{8}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Correction) GetOriginal() string {
@@ -585,16 +585,18 @@ func (x *Correction) GetHighlights() []*WordFix {
 
 type WordFix struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	StartIdx      int32                  `protobuf:"varint,1,opt,name=start_idx,json=startIdx,proto3" json:"start_idx,omitempty"` // 原句中该词的起始字符位置
-	EndIdx        int32                  `protobuf:"varint,2,opt,name=end_idx,json=endIdx,proto3" json:"end_idx,omitempty"`       // 结束位置
-	Suggestion    string                 `protobuf:"bytes,3,opt,name=suggestion,proto3" json:"suggestion,omitempty"`              // 修改建议
+	StartIdx      int32                  `protobuf:"varint,1,opt,name=start_idx,json=startIdx,proto3" json:"start_idx,omitempty"`               // 原句中该词的起始字符位置
+	EndIdx        int32                  `protobuf:"varint,2,opt,name=end_idx,json=endIdx,proto3" json:"end_idx,omitempty"`                     // 结束位置
+	Suggestion    string                 `protobuf:"bytes,3,opt,name=suggestion,proto3" json:"suggestion,omitempty"`                            // 修改建议
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`                                        // error category: grammar|tense|preposition|article|vocabulary|word_choice|expression
+	ExplanationCn string                 `protobuf:"bytes,5,opt,name=explanation_cn,json=explanationCn,proto3" json:"explanation_cn,omitempty"` // 中文解释
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WordFix) Reset() {
 	*x = WordFix{}
-	mi := &file_aiservice_proto_msgTypes[9]
+	mi := &file_proto_aiservice_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -606,7 +608,7 @@ func (x *WordFix) String() string {
 func (*WordFix) ProtoMessage() {}
 
 func (x *WordFix) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[9]
+	mi := &file_proto_aiservice_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -619,7 +621,7 @@ func (x *WordFix) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WordFix.ProtoReflect.Descriptor instead.
 func (*WordFix) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{9}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *WordFix) GetStartIdx() int32 {
@@ -643,6 +645,20 @@ func (x *WordFix) GetSuggestion() string {
 	return ""
 }
 
+func (x *WordFix) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *WordFix) GetExplanationCn() string {
+	if x != nil {
+		return x.ExplanationCn
+	}
+	return ""
+}
+
 type SynthesizeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"` // 待合成的文本
@@ -654,7 +670,7 @@ type SynthesizeRequest struct {
 
 func (x *SynthesizeRequest) Reset() {
 	*x = SynthesizeRequest{}
-	mi := &file_aiservice_proto_msgTypes[10]
+	mi := &file_proto_aiservice_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -666,7 +682,7 @@ func (x *SynthesizeRequest) String() string {
 func (*SynthesizeRequest) ProtoMessage() {}
 
 func (x *SynthesizeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[10]
+	mi := &file_proto_aiservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -679,7 +695,7 @@ func (x *SynthesizeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SynthesizeRequest.ProtoReflect.Descriptor instead.
 func (*SynthesizeRequest) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{10}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SynthesizeRequest) GetText() string {
@@ -714,7 +730,7 @@ type TTSAudioChunk struct {
 
 func (x *TTSAudioChunk) Reset() {
 	*x = TTSAudioChunk{}
-	mi := &file_aiservice_proto_msgTypes[11]
+	mi := &file_proto_aiservice_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -726,7 +742,7 @@ func (x *TTSAudioChunk) String() string {
 func (*TTSAudioChunk) ProtoMessage() {}
 
 func (x *TTSAudioChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[11]
+	mi := &file_proto_aiservice_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -739,7 +755,7 @@ func (x *TTSAudioChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TTSAudioChunk.ProtoReflect.Descriptor instead.
 func (*TTSAudioChunk) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{11}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *TTSAudioChunk) GetAudioData() []byte {
@@ -775,7 +791,7 @@ type EvaluateRequest struct {
 
 func (x *EvaluateRequest) Reset() {
 	*x = EvaluateRequest{}
-	mi := &file_aiservice_proto_msgTypes[12]
+	mi := &file_proto_aiservice_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -787,7 +803,7 @@ func (x *EvaluateRequest) String() string {
 func (*EvaluateRequest) ProtoMessage() {}
 
 func (x *EvaluateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[12]
+	mi := &file_proto_aiservice_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -800,7 +816,7 @@ func (x *EvaluateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EvaluateRequest.ProtoReflect.Descriptor instead.
 func (*EvaluateRequest) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{12}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EvaluateRequest) GetSessionId() string {
@@ -844,7 +860,7 @@ type EvaluateResponse struct {
 
 func (x *EvaluateResponse) Reset() {
 	*x = EvaluateResponse{}
-	mi := &file_aiservice_proto_msgTypes[13]
+	mi := &file_proto_aiservice_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -856,7 +872,7 @@ func (x *EvaluateResponse) String() string {
 func (*EvaluateResponse) ProtoMessage() {}
 
 func (x *EvaluateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[13]
+	mi := &file_proto_aiservice_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -869,7 +885,7 @@ func (x *EvaluateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EvaluateResponse.ProtoReflect.Descriptor instead.
 func (*EvaluateResponse) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{13}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EvaluateResponse) GetOverallScore() float32 {
@@ -918,7 +934,7 @@ type WordScore struct {
 
 func (x *WordScore) Reset() {
 	*x = WordScore{}
-	mi := &file_aiservice_proto_msgTypes[14]
+	mi := &file_proto_aiservice_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -930,7 +946,7 @@ func (x *WordScore) String() string {
 func (*WordScore) ProtoMessage() {}
 
 func (x *WordScore) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[14]
+	mi := &file_proto_aiservice_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -943,7 +959,7 @@ func (x *WordScore) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WordScore.ProtoReflect.Descriptor instead.
 func (*WordScore) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{14}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *WordScore) GetWord() string {
@@ -980,7 +996,7 @@ type ReportRequest struct {
 
 func (x *ReportRequest) Reset() {
 	*x = ReportRequest{}
-	mi := &file_aiservice_proto_msgTypes[15]
+	mi := &file_proto_aiservice_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -992,7 +1008,7 @@ func (x *ReportRequest) String() string {
 func (*ReportRequest) ProtoMessage() {}
 
 func (x *ReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[15]
+	mi := &file_proto_aiservice_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1005,7 +1021,7 @@ func (x *ReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportRequest.ProtoReflect.Descriptor instead.
 func (*ReportRequest) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{15}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ReportRequest) GetSessionId() string {
@@ -1055,7 +1071,7 @@ type ReportResponse struct {
 
 func (x *ReportResponse) Reset() {
 	*x = ReportResponse{}
-	mi := &file_aiservice_proto_msgTypes[16]
+	mi := &file_proto_aiservice_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1067,7 +1083,7 @@ func (x *ReportResponse) String() string {
 func (*ReportResponse) ProtoMessage() {}
 
 func (x *ReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[16]
+	mi := &file_proto_aiservice_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1080,7 +1096,7 @@ func (x *ReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportResponse.ProtoReflect.Descriptor instead.
 func (*ReportResponse) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{16}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ReportResponse) GetOverallScore() float32 {
@@ -1122,7 +1138,7 @@ type WeakPoint struct {
 
 func (x *WeakPoint) Reset() {
 	*x = WeakPoint{}
-	mi := &file_aiservice_proto_msgTypes[17]
+	mi := &file_proto_aiservice_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1134,7 +1150,7 @@ func (x *WeakPoint) String() string {
 func (*WeakPoint) ProtoMessage() {}
 
 func (x *WeakPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_aiservice_proto_msgTypes[17]
+	mi := &file_proto_aiservice_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,7 +1163,7 @@ func (x *WeakPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WeakPoint.ProtoReflect.Descriptor instead.
 func (*WeakPoint) Descriptor() ([]byte, []int) {
-	return file_aiservice_proto_rawDescGZIP(), []int{17}
+	return file_proto_aiservice_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *WeakPoint) GetCategory() string {
@@ -1171,11 +1187,11 @@ func (x *WeakPoint) GetFrequency() int32 {
 	return 0
 }
 
-var File_aiservice_proto protoreflect.FileDescriptor
+var File_proto_aiservice_proto protoreflect.FileDescriptor
 
-const file_aiservice_proto_rawDesc = "" +
+const file_proto_aiservice_proto_rawDesc = "" +
 	"\n" +
-	"\x0faiservice.proto\x12\taiservice\"\x0f\n" +
+	"\x15proto/aiservice.proto\x12\taiservice\"\x0f\n" +
 	"\rHealthRequest\":\n" +
 	"\x0eHealthResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
@@ -1221,13 +1237,15 @@ const file_aiservice_proto_rawDesc = "" +
 	"error_type\x18\x03 \x01(\tR\terrorType\x122\n" +
 	"\n" +
 	"highlights\x18\x04 \x03(\v2\x12.aiservice.WordFixR\n" +
-	"highlights\"_\n" +
+	"highlights\"\x9a\x01\n" +
 	"\aWordFix\x12\x1b\n" +
 	"\tstart_idx\x18\x01 \x01(\x05R\bstartIdx\x12\x17\n" +
 	"\aend_idx\x18\x02 \x01(\x05R\x06endIdx\x12\x1e\n" +
 	"\n" +
 	"suggestion\x18\x03 \x01(\tR\n" +
-	"suggestion\"a\n" +
+	"suggestion\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12%\n" +
+	"\x0eexplanation_cn\x18\x05 \x01(\tR\rexplanationCn\"a\n" +
 	"\x11SynthesizeRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1d\n" +
 	"\n" +
@@ -1286,19 +1304,19 @@ const file_aiservice_proto_rawDesc = "" +
 	"Z\b./;protob\x06proto3"
 
 var (
-	file_aiservice_proto_rawDescOnce sync.Once
-	file_aiservice_proto_rawDescData []byte
+	file_proto_aiservice_proto_rawDescOnce sync.Once
+	file_proto_aiservice_proto_rawDescData []byte
 )
 
-func file_aiservice_proto_rawDescGZIP() []byte {
-	file_aiservice_proto_rawDescOnce.Do(func() {
-		file_aiservice_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_aiservice_proto_rawDesc), len(file_aiservice_proto_rawDesc)))
+func file_proto_aiservice_proto_rawDescGZIP() []byte {
+	file_proto_aiservice_proto_rawDescOnce.Do(func() {
+		file_proto_aiservice_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_aiservice_proto_rawDesc), len(file_proto_aiservice_proto_rawDesc)))
 	})
-	return file_aiservice_proto_rawDescData
+	return file_proto_aiservice_proto_rawDescData
 }
 
-var file_aiservice_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
-var file_aiservice_proto_goTypes = []any{
+var file_proto_aiservice_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_proto_aiservice_proto_goTypes = []any{
 	(*HealthRequest)(nil),     // 0: aiservice.HealthRequest
 	(*HealthResponse)(nil),    // 1: aiservice.HealthResponse
 	(*AudioChunk)(nil),        // 2: aiservice.AudioChunk
@@ -1318,7 +1336,7 @@ var file_aiservice_proto_goTypes = []any{
 	(*ReportResponse)(nil),    // 16: aiservice.ReportResponse
 	(*WeakPoint)(nil),         // 17: aiservice.WeakPoint
 }
-var file_aiservice_proto_depIdxs = []int32{
+var file_proto_aiservice_proto_depIdxs = []int32{
 	5,  // 0: aiservice.ChatRequest.history:type_name -> aiservice.ChatMessage
 	7,  // 1: aiservice.ChatResponse.reply:type_name -> aiservice.ReplyChunk
 	8,  // 2: aiservice.ChatResponse.correction:type_name -> aiservice.Correction
@@ -1347,12 +1365,12 @@ var file_aiservice_proto_depIdxs = []int32{
 	0,  // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_aiservice_proto_init() }
-func file_aiservice_proto_init() {
-	if File_aiservice_proto != nil {
+func init() { file_proto_aiservice_proto_init() }
+func file_proto_aiservice_proto_init() {
+	if File_proto_aiservice_proto != nil {
 		return
 	}
-	file_aiservice_proto_msgTypes[6].OneofWrappers = []any{
+	file_proto_aiservice_proto_msgTypes[6].OneofWrappers = []any{
 		(*ChatResponse_Reply)(nil),
 		(*ChatResponse_Correction)(nil),
 		(*ChatResponse_Done)(nil),
@@ -1362,17 +1380,17 @@ func file_aiservice_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aiservice_proto_rawDesc), len(file_aiservice_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_aiservice_proto_rawDesc), len(file_proto_aiservice_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_aiservice_proto_goTypes,
-		DependencyIndexes: file_aiservice_proto_depIdxs,
-		MessageInfos:      file_aiservice_proto_msgTypes,
+		GoTypes:           file_proto_aiservice_proto_goTypes,
+		DependencyIndexes: file_proto_aiservice_proto_depIdxs,
+		MessageInfos:      file_proto_aiservice_proto_msgTypes,
 	}.Build()
-	File_aiservice_proto = out.File
-	file_aiservice_proto_goTypes = nil
-	file_aiservice_proto_depIdxs = nil
+	File_proto_aiservice_proto = out.File
+	file_proto_aiservice_proto_goTypes = nil
+	file_proto_aiservice_proto_depIdxs = nil
 }

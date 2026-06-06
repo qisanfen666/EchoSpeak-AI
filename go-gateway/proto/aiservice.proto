@@ -96,6 +96,8 @@ message WordFix {
   int32 start_idx = 1;         // 原句中该词的起始字符位置
   int32 end_idx = 2;           // 结束位置
   string suggestion = 3;       // 修改建议
+  string type = 4;             // error category: grammar|tense|preposition|article|vocabulary|word_choice|expression
+  string explanation_cn = 5;   // 中文解释
 }
 
 // ============================================

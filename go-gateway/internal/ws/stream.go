@@ -149,12 +149,42 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 
 			case correction, ok := <-result.Correction:
 				if ok {
+					// Convert gRPC Correction → frontend format
+					errors := make([]ErrorItem, 0, len(correction.Highlights))
+					for _, h := range correction.Highlights {
+						errType := h.Type
+						if errType == "" {
+							errType = correction.ErrorType
+						}
+						if errType == "" {
+							errType = "grammar"
+						}
+						start := int(h.StartIdx)
+						end := int(h.EndIdx)
+						if end > len(correction.Original) {
+							end = len(correction.Original)
+						}
+						errors = append(errors, ErrorItem{
+							Type:          errType,
+							Original:      correction.Original[start:end],
+							Corrected:     h.Suggestion,
+							ExplanationCN: h.ExplanationCn,
+						})
+					}
+					// If no highlights, create one error item from the overall correction
+					if len(errors) == 0 && correction.Corrected != correction.Original {
+						errors = append(errors, ErrorItem{
+							Type:      correction.ErrorType,
+							Original:  correction.Original,
+							Corrected: correction.Corrected,
+						})
+					}
 					client.SendJSON(WSMessage{
 						Type: MsgCorrection,
 						Data: CorrectionData{
-							Original:  correction.Original,
-							Corrected: correction.Corrected,
-							ErrorType: correction.ErrorType,
+							OriginalText: correction.Original,
+							CorrectedText: correction.Corrected,
+							Errors:       errors,
 						},
 					})
 				}
@@ -207,4 +237,126 @@ func HandleSessionEnd(sessionID string, client *Client) {
 	mgr := GetOrCreateSession(sessionID, client.SessionScene())
 	log.Printf("[Stream] Session ending: session=%s turns=%d", sessionID, len(mgr.GetHistory()))
 	RemoveSession(sessionID)
+}
+
+// HandleTextInput processes typed text — skips ASR, goes directly to Chat
+func HandleTextInput(sessionID string, text string, client *Client) {
+	mgr := GetOrCreateSession(sessionID, client.SessionScene())
+	mgr.CancelCurrentTurn()
+
+	turnCtx, _ := mgr.NewTurn()
+
+	log.Printf("[Stream] Text input: session=%s text=\"%s\"", sessionID, text)
+
+	// Send transcript to frontend (echo back what user typed)
+	client.SendJSON(WSMessage{
+		Type: MsgTranscript,
+		Data: TranscriptData{Text: text, IsFinal: true, IsUser: true},
+	})
+
+	// Call Chat directly (no ASR needed)
+	startTime := time.Now()
+	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, text)
+
+	go func() {
+		fullReply := ""
+		firstChunk := true
+
+		for {
+			select {
+			case replyText, ok := <-result.ReplyChunks:
+				if !ok {
+					goto done
+				}
+				fullReply += replyText
+				if firstChunk {
+					client.SendJSON(WSMessage{
+						Type: MsgReplyStart,
+						Data: ReplyChunkData{Text: replyText, IsFirst: true},
+					})
+					firstChunk = false
+				} else {
+					client.SendJSON(WSMessage{
+						Type: MsgReplyChunk,
+						Data: ReplyChunkData{Text: replyText, IsFirst: false},
+					})
+				}
+
+			case audio, ok := <-result.AudioChunks:
+				if ok && len(audio) > 0 {
+					client.SendBinary(audio)
+				}
+
+			case correction, ok := <-result.Correction:
+				if ok {
+					errors := make([]ErrorItem, 0, len(correction.Highlights))
+					for _, h := range correction.Highlights {
+						errType := h.Type
+						if errType == "" {
+							errType = correction.ErrorType
+						}
+						if errType == "" {
+							errType = "grammar"
+						}
+						start := int(h.StartIdx)
+						end := int(h.EndIdx)
+						if end > len(correction.Original) {
+							end = len(correction.Original)
+						}
+						errors = append(errors, ErrorItem{
+							Type:          errType,
+							Original:      correction.Original[start:end],
+							Corrected:     h.Suggestion,
+							ExplanationCN: h.ExplanationCn,
+						})
+					}
+					if len(errors) == 0 && correction.Corrected != correction.Original {
+						errors = append(errors, ErrorItem{
+							Type:      correction.ErrorType,
+							Original:  correction.Original,
+							Corrected: correction.Corrected,
+						})
+					}
+					client.SendJSON(WSMessage{
+						Type: MsgCorrection,
+						Data: CorrectionData{
+							OriginalText: correction.Original,
+							CorrectedText: correction.Corrected,
+							Errors:       errors,
+						},
+					})
+				}
+
+			case <-result.Done:
+				elapsed := time.Since(startTime)
+				log.Printf("[Stream] Done: session=%s text=\"%s\" reply=\"%s\" %v",
+					sessionID, text, fullReply, elapsed)
+
+				client.SendJSON(WSMessage{
+					Type: MsgReplyEnd,
+					Data: map[string]interface{}{
+						"interrupted": false,
+						"elapsed_ms":  elapsed.Milliseconds(),
+					},
+				})
+
+				mgr.AddTurn(session.ConversationTurn{
+					UserText:      text,
+					AssistantText: fullReply,
+				})
+				goto done
+
+			case err, ok := <-result.Err:
+				if ok {
+					log.Printf("[Stream] Chat error: %v", err)
+					client.SendJSON(WSMessage{
+						Type: MsgError,
+						Data: map[string]string{"message": err.Error()},
+					})
+				}
+				goto done
+			}
+		}
+	done:
+	}()
 }

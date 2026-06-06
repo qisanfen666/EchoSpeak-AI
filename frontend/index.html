@@ -235,7 +235,7 @@ function showCorrection(data) {
 // WebSocket
 // ═══════════════════════════════════════════════════════════════════
 function connect() {
-    const u = 'ws://' + location.host + '/ws?session_id=c_' + Date.now() + '&scene=ordering';
+    const u = 'ws://localhost:8080/ws?session_id=c_' + Date.now() + '&scene=ordering';
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
@@ -317,7 +317,7 @@ function sendText() {
     if (!t) return;
     inp.value = '';
     interruptAI();
-    addMsg('user', t);
+    // Don't addMsg here — Go gateway sends back a 'transcript' that handles the bubble
     send({ type: 'text_message', data: { text: t } });
     log('-> text: ' + t.slice(0, 30));
 }
