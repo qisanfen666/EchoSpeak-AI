@@ -403,9 +403,11 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"end_session", "data":{}}
 
       Server -> Client:
+        {"type":"transcript", "data":{"text":"...","is_final":true,"is_user":true,"pronunciation":N,"fluency":N}}
         {"type":"reply_start"}
         {"type":"reply_chunk", "data":{"text":"..."}}
         {"type":"reply_end", "data":{"interrupted":bool}}
+        {"type":"correction", "data":{"original_text":"...","corrected_text":"...","errors":[...],"has_corrections":bool}}
         {"type":"score_update", "data":{"score":N}}
         {"type":"session_report", "data":{"overall_score":N,...}}
         {"type":"custom_scene_ready", "data":{"scene":"custom","description":"..."}}  // custom scene acknowledged
@@ -623,10 +625,16 @@ async def echo_speak_ws(websocket: WebSocket):
                             logger.warning(f"[WS:{session_id}] ASR fallback error: {e2}")
 
                     if text:
-                        # Show user what was recognized
+                        # Show user what was recognized (with pronunciation & fluency scores)
                         await send_json({
                             "type": "transcript",
-                            "data": {"text": text, "is_final": True, "is_user": True}
+                            "data": {
+                                "text": text,
+                                "is_final": True,
+                                "is_user": True,
+                                "pronunciation": result.get("pronunciation", 0),
+                                "fluency": result.get("fluency", 0),
+                            }
                         })
                         await start_turn(text)
                     else:
