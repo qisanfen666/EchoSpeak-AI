@@ -43,6 +43,21 @@ SCENE_SYSTEM_PROMPTS = {
         "Keep your responses concise (1-3 sentences). "
         "If they make grammar mistakes, gently include the correct form in your response."
     ),
+    "daily": (
+        "You are a friendly English conversation partner for daily chat. "
+        "Discuss everyday topics like weather, hobbies, family, weekend plans, "
+        "movies, books, or current events. "
+        "Keep your responses concise (1-3 sentences). "
+        "If they make grammar mistakes, gently include the correct form in your response."
+    ),
+    "business": (
+        "You are a senior manager in an international company. "
+        "The user is practicing English for business communication. "
+        "Discuss topics like project proposals, presentations, negotiations, "
+        "team coordination, and professional emails. "
+        "Keep your responses concise (1-3 sentences). "
+        "If they make grammar mistakes, gently include the correct form in your response."
+    ),
     "default": (
         "You are an AI English conversation partner. "
         "Help the user practice their spoken English by having a natural conversation. "
@@ -168,6 +183,8 @@ class LLMEngine:
             "interview": "That's very interesting! Can you tell me more about your experience?",
             "meeting": "Good point. Let's discuss the next steps for this project.",
             "travel": "Welcome! Let me check you in. Do you have a reservation with us?",
+            "daily": "That's nice! How has your day been so far?",
+            "business": "Good point. I'll follow up on that after the meeting.",
         }
         return fallbacks.get(scene, fallbacks["ordering"])
 

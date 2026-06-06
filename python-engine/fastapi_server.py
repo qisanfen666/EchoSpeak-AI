@@ -384,7 +384,7 @@ async def websocket_tts(websocket: WebSocket, client_id: str):
 # EchoSpeak AI — Full-duplex WebSocket (ASR + LLM + TTS + scoring)
 # ===================================================================
 
-VALID_SCENES = {"ordering", "interview", "meeting", "travel", "default"}
+VALID_SCENES = {"ordering", "interview", "meeting", "travel", "daily", "business", "default"}
 
 
 @app.websocket("/ws")
@@ -398,7 +398,7 @@ async def echo_speak_ws(websocket: WebSocket):
         {"type":"audio_chunk", "data":{"data":"<base64_audio>","is_end":bool,"chunk_id":N}}
         {"type":"text_message", "data":{"text":"..."}}
         {"type":"interrupt", "seq":N}
-        {"type":"scene_select", "data":{"scene":"ordering|interview|meeting|travel"}}
+        {"type":"scene_select", "data":{"scene":"ordering|interview|meeting|travel|daily|business|default"}}
         {"type":"end_session", "data":{}}
 
       Server -> Client:

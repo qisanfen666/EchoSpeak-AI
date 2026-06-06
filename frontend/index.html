@@ -25,6 +25,43 @@
     </div>
 </header>
 
+<!-- Scene Picker Overlay -->
+<div id="scenePicker" class="scene-picker">
+    <div class="sp-inner">
+        <div class="sp-header">
+            <h2 class="sp-title">Choose Your Scene</h2>
+            <p class="sp-sub">Select a real-life scenario to begin practicing English</p>
+        </div>
+        <div class="sp-grid">
+            <div class="sp-card" data-scene="interview" tabindex="0" role="button" aria-label="Interview scene">
+                <div class="sp-emoji">🎙️</div>
+                <h3 class="sp-name">Interview</h3>
+                <p class="sp-desc">模拟求职面试，自我介绍与问答</p>
+            </div>
+            <div class="sp-card" data-scene="ordering" tabindex="0" role="button" aria-label="Restaurant ordering scene">
+                <div class="sp-emoji">🍽️</div>
+                <h3 class="sp-name">Restaurant</h3>
+                <p class="sp-desc">餐厅点餐、与服务员对话交流</p>
+            </div>
+            <div class="sp-card" data-scene="daily" tabindex="0" role="button" aria-label="Daily conversation scene">
+                <div class="sp-emoji">💬</div>
+                <h3 class="sp-name">Daily Chat</h3>
+                <p class="sp-desc">日常闲聊，天气、爱好、生活话题</p>
+            </div>
+            <div class="sp-card" data-scene="business" tabindex="0" role="button" aria-label="Business meeting scene">
+                <div class="sp-emoji">📊</div>
+                <h3 class="sp-name">Business</h3>
+                <p class="sp-desc">商务会谈、项目讨论与邮件沟通</p>
+            </div>
+            <div class="sp-card" data-scene="travel" tabindex="0" role="button" aria-label="Travel scene">
+                <div class="sp-emoji">✈️</div>
+                <h3 class="sp-name">Travel</h3>
+                <p class="sp-desc">酒店入住、问路与旅行场景</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Chat area -->
 <main id="chat" class="chat-area">
     <div class="chat-welcome">
@@ -234,8 +271,11 @@ function showCorrection(data) {
 // ═══════════════════════════════════════════════════════════════════
 // WebSocket
 // ═══════════════════════════════════════════════════════════════════
-function connect() {
-    const u = 'ws://' + location.host + '/ws?session_id=c_' + Date.now() + '&scene=ordering';
+let _scene = 'daily';
+
+function connect(scene) {
+    _scene = scene || 'daily';
+    const u = 'ws://' + location.host + '/ws?session_id=c_' + Date.now() + '&scene=' + _scene;
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
@@ -303,6 +343,8 @@ function connect() {
         st.className = 'status-badge disconnected';
         inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
         if (micActive) stopMic();
+        // Don't auto-reconnect if user went back to scene picker
+        if (picker && picker.style.display !== 'none') return;
         setTimeout(connect, 2000);
     };
 }
@@ -512,9 +554,44 @@ st.addEventListener('dblclick', interruptAI);
 st.title = 'Double-click to interrupt AI';
 
 // ═══════════════════════════════════════════════════════════════════
-// Start
+// Scene Selection
 // ═══════════════════════════════════════════════════════════════════
-connect();
+const picker = $('#scenePicker');
+
+function selectScene(scene) {
+    picker.classList.add('sp-leaving');
+    removeWelcome();
+    setTimeout(() => {
+        picker.style.display = 'none';
+        connect(scene);
+    }, 400);
+}
+
+// Card click / keyboard
+document.querySelectorAll('.sp-card').forEach(card => {
+    card.addEventListener('click', () => selectScene(card.dataset.scene));
+    card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectScene(card.dataset.scene);
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Badge click — return to scene picker mid-session
+// ═══════════════════════════════════════════════════════════════════
+function showScenePicker() {
+    if (ws) ws.close();
+    picker.style.display = 'flex';
+    setTimeout(() => picker.classList.remove('sp-leaving'), 10);
+    endBtn.style.display = 'none';
+}
+
+// Brand click = back to scene picker
+document.querySelector('.brand').addEventListener('click', showScenePicker);
+document.querySelector('.brand').style.cursor = 'pointer';
+document.querySelector('.brand').title = 'Back to scene selection';
 </script>
 
 <style>
@@ -1043,6 +1120,131 @@ body {
     font-family:'DM Sans', sans-serif;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Scene Picker — "Warm Parchment" Editorial Selection
+   ═══════════════════════════════════════════════════════════════════ */
+
+.scene-picker {
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(ellipse 70% 30% at 50% 20%, rgba(184,132,47,0.06) 0%, transparent 60%),
+        var(--bg);
+    z-index:100;
+    padding:24px 20px;
+    animation:spIn 0.5s cubic-bezier(0.22,0.61,0.36,1) both;
+    backdrop-filter:blur(2px);
+}
+@keyframes spIn {
+    from { opacity:0; transform:translateY(12px) }
+    to   { opacity:1; transform:translateY(0) }
+}
+.scene-picker.sp-leaving {
+    animation:spOut 0.35s cubic-bezier(0.55,0.06,0.68,0.19) both;
+}
+@keyframes spOut {
+    from { opacity:1; transform:translateY(0) scale(1) }
+    to   { opacity:0; transform:translateY(-8px) scale(0.98) }
+}
+
+.sp-inner {
+    max-width:580px;
+    width:100%;
+}
+
+.sp-header {
+    text-align:center;
+    margin-bottom:28px;
+}
+
+.sp-title {
+    font-family:'Playfair Display', Georgia, serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:1.9rem;
+    color:var(--gold);
+    letter-spacing:-0.02em;
+    line-height:1.2;
+    margin-bottom:6px;
+}
+.sp-sub {
+    font-size:0.8rem;
+    color:var(--text-muted);
+    font-weight:400;
+}
+
+.sp-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+}
+
+.sp-card {
+    background:var(--surface);
+    border:1.5px solid var(--border-dim);
+    border-radius:var(--radius);
+    padding:22px 18px 18px;
+    cursor:pointer;
+    transition:all 0.25s cubic-bezier(0.22,0.61,0.36,1);
+    position:relative;
+    overflow:hidden;
+    outline:none;
+    user-select:none;
+}
+.sp-card::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:2px;
+    background:linear-gradient(90deg, transparent 0%, var(--gold) 30%, transparent 100%);
+    opacity:0;
+    transition:opacity 0.25s;
+}
+.sp-card:hover,
+.sp-card:focus-visible {
+    border-color:rgba(184,132,47,0.3);
+    transform:translateY(-3px);
+    box-shadow:
+        0 6px 24px rgba(184,132,47,0.08),
+        0 2px 8px rgba(0,0,0,0.03);
+}
+.sp-card:hover::before,
+.sp-card:focus-visible::before { opacity:0.5 }
+.sp-card:focus-visible { box-shadow:0 0 0 3px rgba(184,132,47,0.15) }
+.sp-card:active { transform:translateY(-1px) }
+
+.sp-emoji {
+    font-size:1.6rem;
+    margin-bottom:8px;
+    line-height:1;
+    filter:grayscale(0.2);
+}
+.sp-name {
+    font-family:'Playfair Display', Georgia, serif;
+    font-weight:600;
+    font-size:1.05rem;
+    color:var(--text);
+    margin-bottom:4px;
+    letter-spacing:-0.01em;
+}
+.sp-desc {
+    font-size:0.7rem;
+    color:var(--text-muted);
+    line-height:1.5;
+}
+
+/* Last card alone = center via spanning full width */
+.sp-card:last-child:nth-child(odd) {
+    grid-column:1 / -1;
+    max-width:50%;
+    justify-self:center;
+    width:100%;
+}
+
 /* ── Responsive ── */
 @media (max-width: 520px) {
     body { padding:0 10px 10px }
@@ -1054,6 +1256,14 @@ body {
     .cc-preview-text { font-size:13px }
     .btn-record { padding:8px 10px }
     .btn-record .btn-label { display:none }
+
+    .scene-picker { padding:20px 14px }
+    .sp-title { font-size:1.5rem }
+    .sp-grid { gap:10px }
+    .sp-card { padding:16px 14px 14px }
+    .sp-emoji { font-size:1.3rem }
+    .sp-name { font-size:0.95rem }
+    .sp-card:last-child:nth-child(odd) { max-width:100% }
 }
 </style>
 </body>
