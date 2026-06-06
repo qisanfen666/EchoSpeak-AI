@@ -96,6 +96,27 @@ class ASREngine:
             # Workaround: Windows SSL cert issues when downloading from HF
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
+            import os as _os
+            _os.environ.setdefault("HF_HUB_DISABLE_SSL_VERIFY", "1")
+            # Use mirror for users behind restricted networks (e.g. China)
+            if not _os.environ.get("HF_ENDPOINT"):
+                _os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
+            # Patch httpcore (httpx's low-level HTTP lib) to disable SSL verification,
+            # since httpx ignores the global ssl._create_default_https_context.
+            try:
+                import httpcore._backends.sync as _sync_backend
+                _orig_sync_start_tls = _sync_backend.SyncStream.start_tls
+                def _patched_start_tls(self, ssl_context, server_hostname, timeout=None):
+                    if ssl_context is None:
+                        ssl_context = ssl.create_default_context()
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                    return _orig_sync_start_tls(self, ssl_context, server_hostname, timeout)
+                _sync_backend.SyncStream.start_tls = _patched_start_tls
+                logger.info("Patched httpcore SSL for HuggingFace downloads")
+            except Exception:
+                pass
 
             model_path = str(config.WHISPER_MODEL_SIZE)
             # Resolve local path (if it looks like a filesystem path)
@@ -145,7 +166,7 @@ class ASREngine:
             language=language,
             beam_size=5,
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500, threshold=0.5),
+            vad_parameters=dict(min_silence_duration_ms=500, threshold=0.35),
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
@@ -176,12 +197,13 @@ class ASREngine:
             "fluency": calculate_fluency_score(seg_data, duration_s),
         }
 
-    # ---- PCM streaming transcription (no VAD) ----
+    # ---- PCM streaming transcription (NO VAD — client already handles VAD) ----
 
     def transcribe_pcm(self, pcm_bytes: bytes, sample_rate: int = 16000) -> dict:
         """
-        Transcribe raw PCM 16-bit mono audio (streaming-friendly, no VAD).
-        Wraps in WAV headers then transcribes.
+        Transcribe raw PCM 16-bit mono audio WITHOUT server-side VAD.
+        The client already applies its own VAD; running VAD again on the
+        server clips soft speech onsets (especially consonants like /f/, /h/, /th/).
         """
         buf = io.BytesIO()
         with wave.open(buf, "wb") as w:
@@ -189,7 +211,7 @@ class ASREngine:
             w.setsampwidth(2)
             w.setframerate(sample_rate)
             w.writeframes(pcm_bytes)
-        return self._transcribe_wav(buf.getvalue(), language="en")
+        return self._transcribe_wav_novad(buf.getvalue(), language="en")
 
     def transcribe_bytes(self, audio_bytes: bytes, language: str = "en") -> dict:
         """Transcribe any audio format bytes (MP3/WAV/etc) with scores."""
@@ -200,7 +222,7 @@ class ASREngine:
             language=language,
             beam_size=5,
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500, threshold=0.5),
+            vad_parameters=dict(min_silence_duration_ms=500, threshold=0.35),
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
@@ -233,9 +255,51 @@ class ASREngine:
             vad_filter=True,
             vad_parameters=dict(
                 min_silence_duration_ms=400,
-                threshold=0.5,
-                speech_pad_ms=300,
+                threshold=0.35,
+                speech_pad_ms=500,
             ),
+        )
+        segments = list(segments)
+        full_text = " ".join(seg.text.strip() for seg in segments).strip()
+        seg_data = [
+            {
+                "start": seg.start, "end": seg.end,
+                "text": seg.text.strip(),
+                "avg_logprob": round(seg.avg_logprob, 4),
+                "no_speech_prob": round(seg.no_speech_prob, 4),
+            }
+            for seg in segments
+        ]
+        return {
+            "text": full_text,
+            "segments": seg_data,
+            "duration_s": round(info.duration, 2),
+            "language": info.language,
+            "pronunciation": calculate_pronunciation_score(seg_data),
+            "fluency": calculate_fluency_score(seg_data, info.duration),
+        }
+
+    def _transcribe_wav_novad(self, wav_bytes: bytes, language: str = "en") -> dict:
+        """
+        Transcribe WAV bytes WITHOUT VAD filtering.
+
+        Use this when the client already performs its own VAD —
+        running VAD twice clips soft speech onsets.
+        """
+        buf = io.BytesIO(wav_bytes)
+        buf.seek(0)
+        segments, info = self.model.transcribe(
+            buf,
+            language=language,
+            beam_size=5,
+            best_of=5,
+            temperature=0.0,
+            vad_filter=False,
+            condition_on_previous_text=True,
+            no_speech_threshold=0.6,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            initial_prompt="English conversation practice, dialogue, spoken English.",
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()

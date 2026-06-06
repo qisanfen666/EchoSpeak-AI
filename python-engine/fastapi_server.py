@@ -18,8 +18,16 @@ import time
 import logging
 import base64
 import struct
+import os
+import ssl
 from pathlib import Path
 from contextlib import asynccontextmanager
+
+# ── SSL workaround for HuggingFace model downloads on Windows ──
+ssl._create_default_https_context = ssl._create_unverified_context
+os.environ.setdefault("HF_HUB_DISABLE_SSL_VERIFY", "1")
+os.environ.setdefault("CURL_CA_BUNDLE", "")
+os.environ.setdefault("REQUESTS_CA_BUNDLE", "")
 
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import Response, HTMLResponse
