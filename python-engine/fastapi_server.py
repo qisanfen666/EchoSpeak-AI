@@ -662,6 +662,24 @@ async def echo_speak_ws(websocket: WebSocket):
                 "data": {"interrupted": interrupted}
             })
 
+        # ── Translation (Chinese) ──
+        if full_reply.strip():
+            try:
+                _trans_conv = create_conversation("default")
+                _trans_conv.messages[0] = {
+                    "role": "system",
+                    "content": "Translate the following English to natural Chinese (中文). Return ONLY the translation, no explanation."
+                }
+                _trans_conv.add_user_message(full_reply.strip())
+                _translation = await asyncio.to_thread(llm.reply, _trans_conv)
+                if _translation and _translation.strip():
+                    await send_json({
+                        "type": "translation",
+                        "data": {"text": _translation.strip()}
+                    })
+            except Exception:
+                pass  # Translation is optional
+
         # ── Context usage update ──
         msg_count = len(conversation.messages) - 1  # exclude system prompt
         await send_json({

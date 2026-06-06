@@ -484,6 +484,7 @@ function removeWelcome() {
 // Message display
 // ═══════════════════════════════════════════════════════════════════
 let _lastUserRow = null;
+let _lastAiRow = null;
 
 function addMsg(who, text) {
     removeWelcome();
@@ -500,6 +501,7 @@ function addMsg(who, text) {
         bubble.innerHTML =
             '<span class="msg-label">Tutor</span>' +
             '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>';
+        _lastAiRow = row;
     } else {
         bubble.className = 'msg-bubble msg-sys';
         bubble.textContent = text;
@@ -519,6 +521,7 @@ function startAIBubble() {
     row.appendChild(bubble);
     chat.appendChild(row);
     _pendingAiRow = row;
+    _lastAiRow = row;
 }
 
 function appendAIText(token) {
@@ -564,6 +567,26 @@ function showScores(pron, flu) {
 // ═══════════════════════════════════════════════════════════════════
 // Correction Card (kept from new UI)
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// Translation toggle — collapsible Chinese translation under AI messages
+// ═══════════════════════════════════════════════════════════════════
+function showTranslation(text) {
+    if (!_lastAiRow) return;
+    if (_lastAiRow.querySelector('.trans-toggle')) return; // already added
+    var wrap = document.createElement('div');
+    wrap.className = 'trans-wrap';
+    wrap.innerHTML =
+        '<button class="trans-toggle" onclick="this.parentElement.classList.toggle(\'open\')">' +
+            '<span class="trans-icon">译</span>' +
+            '<span class="trans-label">中文</span>' +
+            '<svg class="trans-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</button>' +
+        '<div class="trans-content">' +
+            '<span class="trans-text">' + escapeHTML(text) + '</span>' +
+        '</div>';
+    _lastAiRow.appendChild(wrap);
+}
+
 function showCorrection(data) {
     if (!_lastUserRow) return;
     if (_lastUserRow.querySelector('.cc-card')) return;
@@ -729,6 +752,9 @@ function connect(scene) {
                     break;
                 case 'session_report':
                     showReport(m.data);
+                    break;
+                case 'translation':
+                    showTranslation(m.data.text);
                     break;
                 case 'error':
                     addMsg('sys', '⚠ ' + (m.data.message || ''));
@@ -1570,6 +1596,66 @@ body {
     font-size:0.7rem;
     border:none;
     background:transparent;
+}
+
+/* ── Translation toggle ── */
+.trans-wrap {
+    margin-top:4px;
+    align-self:flex-start;
+    max-width:86%;
+}
+.trans-toggle {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 8px;
+    border:1px solid var(--border-dim);
+    border-radius:6px;
+    background:var(--surface);
+    color:var(--text-dim);
+    cursor:pointer;
+    font-size:0.65rem;
+    font-family:'DM Sans', sans-serif;
+    transition:all 0.2s;
+}
+.trans-toggle:hover {
+    border-color:var(--gold);
+    color:var(--gold);
+    background:var(--gold-glow);
+}
+.trans-icon {
+    font-size:0.7rem;
+    font-weight:600;
+    color:var(--gold);
+}
+.trans-label {
+    font-weight:500;
+}
+.trans-chevron {
+    transition:transform 0.2s;
+    opacity:0.5;
+}
+.trans-wrap.open .trans-chevron {
+    transform:rotate(180deg);
+}
+.trans-content {
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+    margin-top:0;
+    padding:0 12px;
+    border-left:2px solid transparent;
+}
+.trans-wrap.open .trans-content {
+    max-height:200px;
+    margin-top:4px;
+    padding:6px 12px;
+    border-left-color:var(--gold);
+}
+.trans-text {
+    font-size:0.82rem;
+    color:var(--text-dim);
+    line-height:1.5;
 }
 
 /* ── Thinking indicator ── */
