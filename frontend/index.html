@@ -71,10 +71,7 @@
                 <h4 class="rp-chart-title">评分变化</h4>
                 <canvas id="chart-dash-scores"></canvas>
             </div>
-            <div class="rp-chart-wrap">
-                <h4 class="rp-chart-title">平均回复耗时 (秒)</h4>
-                <canvas id="chart-dash-resptime"></canvas>
-            </div>
+<!-- Response-time chart removed -->
         </div>
     </div>
 
@@ -230,10 +227,7 @@
                     <h4 class="rp-chart-title">错误次数变化</h4>
                     <canvas id="chart-errors"></canvas>
                 </div>
-                <div class="rp-chart-wrap">
-                    <h4 class="rp-chart-title">回复耗时变化 (秒)</h4>
-                    <canvas id="chart-response-time"></canvas>
-                </div>
+<!-- Response-time chart removed -->
             </div>
         </div>
 
@@ -800,8 +794,13 @@ async function toggleMic() {
             updateRecordButton();
             return;
         }
-        // Start Q&A recording
-        if (aiResponding) return;
+        // Start Q&A recording — interrupt AI/TTS if still playing
+        if (aiResponding) {
+            interruptAI();
+            aiResponding = false;
+            updateRecordButton();
+            updateTextInput();
+        }
         qaRecording = true;
         updateRecordButton();
         // Fall through to start mic
@@ -1018,7 +1017,6 @@ function renderDashboard() {
         errCounts.push(h.totalErrors);
         grammarScores.push(h.grammar);
         vocabScores.push(h.vocabulary);
-        avgTimes.push(h.avgResponseTimeSec);
     }
 
     // Error count line chart
@@ -1060,28 +1058,12 @@ function renderDashboard() {
         }
     });
 
-    // Avg response time line chart
-    var d3 = document.getElementById('chart-dash-resptime').getContext('2d');
-    window._chartDashRespTime = new Chart(d3, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{ label: '平均耗时', data: avgTimes, borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,0.15)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#c9a96e' }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
-            scales: {
-                x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
-                y: { beginAtZero: true, title: { display: true, text: '秒', color: '#6b6b67' }, ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
-            }
-        }
-    });
+// Response-time chart removed
 }
 
 function destroyCharts() {
-    var keys = ['_chartErrors', '_chartRespTime', '_chartErrorTypes',
-        '_chartDashErrors', '_chartDashScores', '_chartDashRespTime'];
+    var keys = ['_chartErrors', '_chartErrorTypes',
+        '_chartDashErrors', '_chartDashScores'];
     for (var i = 0; i < keys.length; i++) {
         if (window[keys[i]]) { window[keys[i]].destroy(); window[keys[i]] = null; }
     }
@@ -1186,35 +1168,7 @@ function showReport(data) {
             }
         });
 
-        // Response time trend line chart
-        var rtCtx = document.getElementById('chart-response-time').getContext('2d');
-        window._chartRespTime = new Chart(rtCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: '回复耗时',
-                        data: data.turn_trends.map(function(t) { return (t.response_time_ms / 1000).toFixed(1); }),
-                        borderColor: '#c9a96e',
-                        backgroundColor: 'rgba(201,169,110,0.15)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#c9a96e',
-                    },
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#9b9b97', font: { family: 'JetBrains Mono', size: 10 } } } },
-                scales: {
-                    x: { ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } },
-                    y: { beginAtZero: true, title: { display: true, text: '秒', color: '#6b6b67' }, ticks: { color: '#6b6b67' }, grid: { color: 'rgba(107,107,103,0.15)' } }
-                }
-            }
-        });
+// Response-time chart removed
     } else {
         $('#rp-trends-section').style.display = 'none';
     }
@@ -1315,15 +1269,6 @@ function saveSessionSummary(data) {
         }
     }
 
-    var avgRespSec = 0;
-    if (data.turn_trends && data.turn_trends.length > 0) {
-        var sum = 0;
-        for (var i = 0; i < data.turn_trends.length; i++) {
-            sum += data.turn_trends[i].response_time_ms;
-        }
-        avgRespSec = parseFloat((sum / data.turn_trends.length / 1000).toFixed(1));
-    }
-
     sessionHistory.push({
         scene: data.scene || sessionStats.scene,
         turns: turns,
@@ -1333,7 +1278,6 @@ function saveSessionSummary(data) {
         pronunciation: data.pronunciation || 0,
         fluency: data.fluency || 0,
         totalErrors: totalErrors,
-        avgResponseTimeSec: avgRespSec,
     });
 }
 
