@@ -161,6 +161,37 @@ function appendAIText(token) {
 function finalizeAI() { _pendingAiRow = null; }
 
 // ═══════════════════════════════════════════════════════════════════
+// Score Badges — pronunciation & fluency below user messages
+// ═══════════════════════════════════════════════════════════════════
+function scoreColor(s) {
+    if (s >= 80) return 'var(--sage)';
+    if (s >= 60) return 'var(--gold)';
+    return 'var(--terracotta)';
+}
+
+function showScores(pron, flu) {
+    if (!_lastUserRow) return;
+    // Avoid duplicates
+    if (_lastUserRow.querySelector('.score-bar')) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'score-bar';
+    bar.innerHTML =
+        '<span class="score-item score-pron">' +
+        '<span class="score-icon">🎯</span>' +
+        '<span class="score-label">发音</span>' +
+        '<span class="score-val" style="--c:' + scoreColor(pron) + '">' + pron + '</span>' +
+        '</span>' +
+        '<span class="score-divider"></span>' +
+        '<span class="score-item score-flue">' +
+        '<span class="score-icon">🏃</span>' +
+        '<span class="score-label">流利</span>' +
+        '<span class="score-val" style="--c:' + scoreColor(flu) + '">' + flu + '</span>' +
+        '</span>';
+    _lastUserRow.appendChild(bar);
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Correction Card (kept from new UI)
 // ═══════════════════════════════════════════════════════════════════
 function showCorrection(data) {
@@ -260,6 +291,10 @@ function connect() {
             switch (m.type) {
                 case 'transcript':
                     addMsg('user', m.data.text);
+                    // Show pronunciation & fluency scores (voice input only)
+                    if (m.data.pronunciation !== undefined || m.data.fluency !== undefined) {
+                        showScores(m.data.pronunciation || 0, m.data.fluency || 0);
+                    }
                     st.textContent = '● connected';
                     st.className = 'status-badge connected';
                     break;
@@ -890,6 +925,51 @@ body {
     padding-top:4px;
     display:none;
     flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Score Badges — pronunciation & fluency
+   ═══════════════════════════════════════════════════════════════════ */
+.score-bar {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+    padding:5px 0;
+    align-self:flex-end;
+    animation:msgIn 0.3s ease-out;
+}
+.score-item {
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:0.72rem;
+}
+.score-icon {
+    font-size:0.8rem;
+    line-height:1;
+}
+.score-label {
+    color:var(--text-muted);
+    font-family:'DM Sans', sans-serif;
+    font-weight:400;
+    font-size:0.68rem;
+}
+.score-val {
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:0.75rem;
+    color:var(--c, var(--text-dim));
+    background:color-mix(in srgb, var(--c, var(--text-dim)) 10%, transparent);
+    padding:1px 6px;
+    border-radius:4px;
+    min-width:28px;
+    text-align:center;
+}
+.score-divider {
+    width:1px;
+    height:14px;
+    background:var(--border-dim);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
