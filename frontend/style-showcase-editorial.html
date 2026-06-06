@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editorial 风格演示 · EchoSpeak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════ */
+/* EDITORIAL DESIGN SYSTEM */
+/* ═══════════════════════════════════════════════════════════════════ */
+:root {
+    --ed-bg:        #fefaf3;
+    --ed-surface:   #fffbf5;
+    --ed-text:      #2c2416;
+    --ed-heading:   #1a1814;
+    --ed-accent:    #8b4513;
+    --ed-accent-light: #b8722e;
+    --ed-border:    #d4c4a8;
+    --ed-border-light: #e8dcc8;
+    --ed-muted:     #8b7355;
+    --ed-muted-light: #b8a88a;
+    --ed-gold:      #b8860b;
+    --ed-rule:      linear-gradient(90deg, #8b4513, #d4a843 40%, transparent 80%);
+    --ed-shadow:    0 2px 16px rgba(44,36,22,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Crimson Pro', serif;
+    background: #f5f0e8;
+    color: var(--ed-text);
+    line-height: 1.7;
+    font-size: 18px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* PAGE WRAPPER */
+/* ═══════════════════════════════════════════════════════════════════ */
+.page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* PAGE HEADER */
+/* ═══════════════════════════════════════════════════════════════════ */
+.page-header {
+    text-align: center;
+    padding: 60px 0 48px;
+    border-bottom: 1px solid var(--ed-border);
+    margin-bottom: 48px;
+}
+.page-header .overline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ed-muted);
+    margin-bottom: 12px;
+}
+.page-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 4vw, 3rem);
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+}
+.page-header .sub {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--ed-muted);
+    margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* SECTION TITLES */
+/* ═══════════════════════════════════════════════════════════════════ */
+.section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ed-accent);
+    margin-bottom: 8px;
+}
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+.section-deck {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--ed-muted);
+    margin-bottom: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* TOP RULE */
+/* ═══════════════════════════════════════════════════════════════════ */
+.top-rule {
+    height: 3px;
+    background: var(--ed-rule);
+    margin-bottom: 32px;
+}
+.section-rule {
+    height: 1px;
+    background: var(--ed-border);
+    margin: 32px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* CARD: Scene Selection */
+/* ═══════════════════════════════════════════════════════════════════ */
+.scene-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--ed-border);
+    border: 1px solid var(--ed-border);
+}
+.scene-card {
+    background: var(--ed-surface);
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    width: 100%;
+}
+.scene-card:hover {
+    background: #fffdf7;
+    box-shadow: inset 3px 0 0 var(--ed-accent);
+}
+.scene-card:active {
+    background: #faf5ec;
+}
+.scene-card .sc-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ed-accent);
+    margin-top: 2px;
+}
+.scene-card .sc-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.5;
+}
+.scene-card .sc-body { flex: 1; min-width: 0; }
+.scene-card .sc-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ed-heading);
+    line-height: 1.3;
+}
+.scene-card .sc-en {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--ed-muted);
+    margin-top: 2px;
+}
+.scene-card .sc-hint {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.8rem;
+    color: var(--ed-muted-light);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Custom scene card — full width */
+.scene-card-custom {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--ed-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* CHAT AREA */
+/* ═══════════════════════════════════════════════════════════════════ */
+.chat-panel {
+    background: var(--ed-surface);
+    border: 1px solid var(--ed-border);
+    min-height: 320px;
+    padding: 24px;
+}
+.chat-welcome {
+    text-align: center;
+    padding: 48px 24px;
+}
+.chat-welcome .cw-mark {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    color: var(--ed-accent);
+    font-style: italic;
+    margin-bottom: 8px;
+}
+.chat-welcome .cw-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+}
+.chat-welcome .cw-sub {
+    font-size: 0.95rem;
+    color: var(--ed-muted);
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Message bubbles */
+.msg-row {
+    margin-bottom: 20px;
+}
+.msg-user {
+    display: flex;
+    justify-content: flex-end;
+}
+.msg-user .bubble {
+    background: var(--ed-heading);
+    color: #fefaf3;
+    border-radius: 4px 12px 4px 12px;
+    padding: 12px 18px;
+    max-width: 70%;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.msg-ai {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.msg-ai .avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ed-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fefaf3;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+.msg-ai .bubble {
+    background: var(--ed-surface);
+    border: 1px solid var(--ed-border-light);
+    border-radius: 12px 12px 12px 2px;
+    padding: 14px 18px;
+    max-width: 72%;
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* TRANSLATION TOGGLE */
+/* ═══════════════════════════════════════════════════════════════════ */
+.trans-wrap {
+    margin-top: 10px;
+}
+.trans-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid var(--ed-border);
+    background: transparent;
+    color: var(--ed-accent);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.82rem;
+    font-style: italic;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 3px;
+}
+.trans-toggle:hover {
+    border-color: var(--ed-accent);
+    background: rgba(139,69,19,0.04);
+}
+.trans-toggle .trans-chevron {
+    transition: transform 0.25s ease;
+    width: 10px;
+    height: 10px;
+    opacity: 0.6;
+}
+.trans-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.35s ease, opacity 0.25s ease;
+    opacity: 0;
+}
+.trans-wrap.open .trans-content {
+    max-height: 80px;
+    opacity: 1;
+}
+.trans-wrap.open .trans-chevron {
+    transform: rotate(180deg);
+}
+.trans-text {
+    display: block;
+    padding: 10px 16px 2px;
+    font-size: 0.88rem;
+    color: var(--ed-muted);
+    font-style: italic;
+    border-left: 2px solid var(--ed-gold);
+    margin-left: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* CORRECTION CARD */
+/* ═══════════════════════════════════════════════════════════════════ */
+.correction {
+    margin-top: 10px;
+    padding: 12px 16px;
+    background: #fdfaf5;
+    border: 1px solid var(--ed-border-light);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+.correction .corr-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ed-accent);
+    margin-bottom: 6px;
+}
+.correction .corr-orig {
+    color: var(--ed-muted);
+    text-decoration: line-through;
+    text-decoration-color: #c0392b;
+    text-decoration-thickness: 1px;
+}
+.correction .corr-arrow {
+    color: var(--ed-accent);
+    margin: 0 8px;
+    font-family: 'JetBrains Mono', monospace;
+}
+.correction .corr-fix {
+    color: var(--ed-heading);
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* BUTTONS */
+/* ═══════════════════════════════════════════════════════════════════ */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--ed-accent);
+    color: #fefaf3;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-primary:hover {
+    background: var(--ed-accent-light);
+    box-shadow: 0 4px 16px rgba(139,69,19,0.2);
+}
+.btn-primary svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2.5;
+}
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 22px;
+    background: transparent;
+    color: var(--ed-muted);
+    border: 1px solid var(--ed-border);
+    border-radius: 3px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    font-style: italic;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-ghost:hover {
+    border-color: var(--ed-accent);
+    color: var(--ed-accent);
+}
+
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* INPUT BAR */
+/* ═══════════════════════════════════════════════════════════════════ */
+.input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 16px 0;
+    align-items: center;
+}
+.input-bar input {
+    flex: 1;
+    padding: 12px 18px;
+    border: 1px solid var(--ed-border);
+    border-radius: 3px;
+    background: var(--ed-surface);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    color: var(--ed-text);
+    outline: none;
+    transition: border-color 0.2s;
+}
+.input-bar input:focus {
+    border-color: var(--ed-accent);
+    box-shadow: 0 0 0 3px rgba(139,69,19,0.06);
+}
+.input-bar input::placeholder {
+    color: var(--ed-muted-light);
+    font-style: italic;
+}
+.btn-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ed-border);
+    border-radius: 50%;
+    background: var(--ed-surface);
+    color: var(--ed-accent);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-icon:hover {
+    border-color: var(--ed-accent);
+    background: rgba(139,69,19,0.04);
+}
+.btn-icon.recording {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: #fff;
+    animation: pulse-rec 1.5s ease-in-out infinite;
+}
+@keyframes pulse-rec {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(192,57,43,0); }
+}
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.8;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* HEADER BAR */
+/* ═══════════════════════════════════════════════════════════════════ */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--ed-border);
+    margin-bottom: 24px;
+}
+.app-header .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    letter-spacing: -0.01em;
+}
+.app-header .brand-sub {
+    font-size: 0.75rem;
+    color: var(--ed-muted);
+    font-style: italic;
+    margin-left: 8px;
+}
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.mode-pill {
+    display: flex;
+    border: 1px solid var(--ed-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.mode-pill button {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--ed-muted);
+    transition: all 0.15s;
+}
+.mode-pill button.active {
+    background: var(--ed-heading);
+    color: #fefaf3;
+}
+.mode-pill button:not(.active):hover {
+    color: var(--ed-text);
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* REPORT */
+/* ═══════════════════════════════════════════════════════════════════ */
+.report-card {
+    background: var(--ed-surface);
+    border: 1px solid var(--ed-border);
+    padding: 40px 36px;
+    text-align: center;
+}
+.report-card .rp-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    margin-bottom: 4px;
+}
+.report-card .rp-sub {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--ed-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.report-rule {
+    width: 60px;
+    height: 1px;
+    background: var(--ed-gold);
+    margin: 20px auto;
+}
+.report-meta {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 0.88rem;
+    color: var(--ed-muted);
+    font-style: italic;
+    margin-bottom: 28px;
+}
+.report-meta span:first-child {
+    color: var(--ed-text);
+    font-style: normal;
+    font-weight: 500;
+}
+.score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--ed-border);
+    border: 1px solid var(--ed-border);
+    margin-bottom: 24px;
+}
+.score-card {
+    background: var(--ed-surface);
+    padding: 28px 16px;
+}
+.score-card .sc-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    line-height: 1;
+}
+.score-card .sc-val.high { color: #2d6a4f; }
+.score-card .sc-val.mid { color: var(--ed-gold); }
+.score-card .sc-label {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.82rem;
+    color: var(--ed-muted);
+    font-style: italic;
+    margin-top: 4px;
+}
+.score-card .sc-label-cn {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.75rem;
+    color: var(--ed-muted-light);
+}
+
+/* Error list */
+.error-list {
+    text-align: left;
+    padding: 0 8px;
+    margin-bottom: 24px;
+}
+.error-list .el-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    margin-bottom: 12px;
+}
+.error-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--ed-border-light);
+    font-size: 0.9rem;
+}
+.error-item .ei-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ed-accent);
+    min-width: 22px;
+}
+.error-item .ei-type {
+    color: var(--ed-text);
+    flex: 1;
+}
+.error-item .ei-label {
+    font-size: 0.78rem;
+    color: var(--ed-muted);
+    font-style: italic;
+}
+
+/* Suggestions */
+.suggestions {
+    text-align: left;
+    padding: 0 8px;
+}
+.suggestions .sg-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ed-heading);
+    margin-bottom: 12px;
+}
+.sg-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.sg-item::before {
+    content: '';
+    flex-shrink: 0;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--ed-gold);
+    margin-top: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* RESPONSIVE */
+/* ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .scene-cards { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: 1fr 1fr; }
+    .page { padding: 20px 16px 60px; }
+    .app-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- HEADER -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="page-header">
+        <div class="overline">Design System Demo</div>
+        <h1>Editorial Style</h1>
+        <p class="sub">for EchoSpeak AI</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: SCENE SELECTION -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">View 1</div>
+    <h2 class="section-title">Scene Selection</h2>
+    <p class="section-deck">Choose a scenario to begin your practice session</p>
+    <div class="top-rule"></div>
+
+    <div class="scene-cards">
+        <button class="scene-card">
+            <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+            </span>
+            <span class="sc-body">
+                <div class="sc-name">餐厅点餐</div>
+                <div class="sc-en">Restaurant Ordering</div>
+                <div class="sc-hint">练习点餐、询问菜品与餐桌礼仪</div>
+            </span>
+        </button>
+        <button class="scene-card">
+            <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+            </span>
+            <span class="sc-body">
+                <div class="sc-name">工作面试</div>
+                <div class="sc-en">Job Interview</div>
+                <div class="sc-hint">练习自我介绍、项目经验与职业规划</div>
+            </span>
+        </button>
+        <button class="scene-card">
+            <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </span>
+            <span class="sc-body">
+                <div class="sc-name">商务会议</div>
+                <div class="sc-en">Business Meeting</div>
+                <div class="sc-hint">练习项目讨论、进度汇报与方案交流</div>
+            </span>
+        </button>
+        <button class="scene-card">
+            <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="10" r="3"/>
+                    <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+                </svg>
+            </span>
+            <span class="sc-body">
+                <div class="sc-name">旅行出行</div>
+                <div class="sc-en">Travel</div>
+                <div class="sc-hint">练习酒店入住、问路与出行安排</div>
+            </span>
+        </button>
+        <button class="scene-card scene-card-custom">
+            <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </span>
+            <span class="sc-body">
+                <div class="sc-name">自定义对话</div>
+                <div class="sc-en">Free Talk</div>
+                <div class="sc-hint">自由选择话题，AI 英语陪练随心聊</div>
+            </span>
+        </button>
+    </div>
+
+    <div class="section-rule"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: CHAT -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">View 2</div>
+    <h2 class="section-title">Conversation</h2>
+    <p class="section-deck">Real-time practice with correction &amp; translation</p>
+    <div class="top-rule"></div>
+
+    <!-- Header -->
+    <div class="app-header">
+        <div>
+            <span class="brand">EchoSpeak</span>
+            <span class="brand-sub">ai language practice</span>
+        </div>
+        <div class="header-actions">
+            <div class="mode-pill">
+                <button class="active">实时</button>
+                <button>问答</button>
+            </div>
+            <button class="btn-ghost">结束对话</button>
+        </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-panel">
+        <!-- Welcome -->
+        <div class="chat-welcome">
+            <div class="cw-mark">&ldquo;</div>
+            <div class="cw-title">Begin your practice</div>
+            <div class="cw-sub">Speak or type — I'll help refine your English</div>
+        </div>
+
+        <!-- User message -->
+        <div class="msg-row msg-user">
+            <div class="bubble">I would like to order a cup of coffee, please.</div>
+        </div>
+
+        <!-- AI reply -->
+        <div class="msg-row msg-ai">
+            <div class="avatar">AI</div>
+            <div>
+                <div class="bubble">
+                    Certainly! What kind of coffee would you prefer? We have espresso, cappuccino, latte, and Americano. Would you like it hot or iced?
+                </div>
+                <!-- Translation -->
+                <div class="trans-wrap" id="trans1">
+                    <button class="trans-toggle" onclick="this.parentElement.classList.toggle('open')">
+                        <span>译</span>
+                        <span>中文</span>
+                        <svg class="trans-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="trans-content">
+                        <span class="trans-text">当然！您想要哪种咖啡？我们有浓缩咖啡、卡布奇诺、拿铁和美式咖啡。要热的还是冰的？</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User message with correction -->
+        <div class="msg-row msg-user">
+            <div class="bubble">I want a hot latte and a sandwich. Is you have any recommend?</div>
+        </div>
+
+        <!-- AI reply with correction -->
+        <div class="msg-row msg-ai">
+            <div class="avatar">AI</div>
+            <div>
+                <div class="bubble">
+                    Great choice! A hot latte sounds perfect. And yes, we do have sandwiches — I'd recommend our turkey &amp; avocado or the classic BLT.
+                </div>
+                <!-- Correction -->
+                <div class="correction">
+                    <div class="corr-label">Correction</div>
+                    <span class="corr-orig">Is you have any recommend?</span>
+                    <span class="corr-arrow">→</span>
+                    <span class="corr-fix">Do you have any recommendations?</span>
+                </div>
+                <!-- Translation -->
+                <div class="trans-wrap" id="trans2">
+                    <button class="trans-toggle" onclick="this.parentElement.classList.toggle('open')">
+                        <span>译</span>
+                        <span>中文</span>
+                        <svg class="trans-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="trans-content">
+                        <span class="trans-text">好选择！热拿铁很不错。我们确实有三明治——我推荐火鸡牛油果或经典培根生菜番茄三明治。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="input-bar">
+        <button class="btn-icon" title="录音">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+            </svg>
+        </button>
+        <input type="text" placeholder="Type in English…" value="">
+        <button class="btn-icon" title="发送">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="section-rule"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- VIEW 3: REPORT -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">View 3</div>
+    <h2 class="section-title">Session Report</h2>
+    <p class="section-deck">Automatically generated after each practice session</p>
+    <div class="top-rule"></div>
+
+    <div class="report-card">
+        <div class="rp-title">EchoSpeak</div>
+        <div class="rp-sub">session report</div>
+        <div class="report-rule"></div>
+
+        <div class="report-meta">
+            <span>餐厅点餐</span>
+            <span>2026年6月6日</span>
+            <span>4分32秒</span>
+            <span>6轮对话</span>
+        </div>
+
+        <!-- Scores -->
+        <div class="score-grid">
+            <div class="score-card">
+                <div class="sc-val mid">72</div>
+                <div class="sc-label">Grammar</div>
+                <div class="sc-label-cn">语法</div>
+            </div>
+            <div class="score-card">
+                <div class="sc-val high">85</div>
+                <div class="sc-label">Vocabulary</div>
+                <div class="sc-label-cn">词汇</div>
+            </div>
+            <div class="score-card">
+                <div class="sc-val high">88</div>
+                <div class="sc-label">Pronunciation</div>
+                <div class="sc-label-cn">发音</div>
+            </div>
+            <div class="score-card">
+                <div class="sc-val mid">76</div>
+                <div class="sc-label">Fluency</div>
+                <div class="sc-label-cn">流利</div>
+            </div>
+        </div>
+
+        <!-- Top errors -->
+        <div class="error-list">
+            <div class="el-title">Common Errors</div>
+            <div class="error-item">
+                <span class="ei-count">3×</span>
+                <span class="ei-type">Tense error</span>
+                <span class="ei-label">时态错误</span>
+            </div>
+            <div class="error-item">
+                <span class="ei-count">2×</span>
+                <span class="ei-type">Article missing</span>
+                <span class="ei-label">冠词遗漏</span>
+            </div>
+            <div class="error-item">
+                <span class="ei-count">2×</span>
+                <span class="ei-type">Preposition error</span>
+                <span class="ei-label">介词误用</span>
+            </div>
+            <div class="error-item">
+                <span class="ei-count">1×</span>
+                <span class="ei-type">Word choice</span>
+                <span class="ei-label">词汇选择</span>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="suggestions">
+            <div class="sg-title">Practice Suggestions</div>
+            <div class="sg-item">加强时态表达练习，注意过去时和完成时的正确使用</div>
+            <div class="sg-item">注意冠词（a / an / the）的使用，尤其是定冠词和不定冠词的区分</div>
+            <div class="sg-item">多练习介词的搭配，注意 in / on / at 等介词的准确用法</div>
+        </div>
+
+        <div class="btn-group" style="justify-content:center">
+            <button class="btn-primary">
+                再来一次
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+            </button>
+            <button class="btn-ghost">返回场景选择</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- FOOTER NOTE -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div style="text-align:center; margin-top:48px; padding-top:24px; border-top:1px solid var(--ed-border)">
+        <p style="font-size:0.85rem; color:var(--ed-muted); font-style:italic;">
+            Editorial style &middot; Playfair Display + Crimson Pro &middot; Inspired by UI/UX Pro Max
+        </p>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- TOGGLE JS -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<script>
+// Translation toggle (inline onclick fallback)
+document.querySelectorAll('.trans-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        this.parentElement.classList.toggle('open');
+    });
+});
+</script>
+
+</body>
+</html>
