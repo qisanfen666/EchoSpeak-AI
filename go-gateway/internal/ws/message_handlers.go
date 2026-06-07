@@ -74,6 +74,18 @@ func onSceneSelect(c *Client, data *SceneSelectData) {
 	log.Printf("[Handler] Scene changed: session=%s scene=%s", c.session.ID, data.Scene)
 }
 
+// onCustomScene handles custom topic scene setup.
+// The greeting was already fired in ServeWS based on the URL scene parameter,
+// so here we just update the session metadata.
+func onCustomScene(c *Client, data *CustomSceneData) {
+	if c.session == nil {
+		return
+	}
+
+	c.session.Scene = "custom"
+	log.Printf("[Handler] Custom scene: session=%s topic=\"%s\"", c.session.ID, data.Description)
+}
+
 // onEndSession handles session end
 func onEndSession(c *Client) {
 	if c.session == nil {

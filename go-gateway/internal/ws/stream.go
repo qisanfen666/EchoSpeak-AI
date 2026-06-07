@@ -227,9 +227,10 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 							ExplanationCN: h.ExplanationCn,
 						})
 						tc.Errors = append(tc.Errors, session.ErrorItem{
-							Type:      errType,
-							Original:  correction.Original[start:end],
-							Corrected: h.Suggestion,
+							Type:          errType,
+							Original:      correction.Original[start:end],
+							Corrected:     h.Suggestion,
+							ExplanationCN: h.ExplanationCn,
 						})
 					}
 					if len(correction.Highlights) == 0 && correction.Corrected != correction.Original {
@@ -239,10 +240,11 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 							Corrected: correction.Corrected,
 						})
 						tc.Errors = append(tc.Errors, session.ErrorItem{
-							Type:      correction.ErrorType,
-							Original:  correction.Original,
-							Corrected: correction.Corrected,
-						})
+						Type:          correction.ErrorType,
+						Original:      correction.Original,
+						Corrected:     correction.Corrected,
+						ExplanationCN: "",
+					})
 					}
 
 					turnCorrection = tc
@@ -315,6 +317,102 @@ func HandleInterrupt(sessionID string) {
 	SessionManager.audioBuf[sessionID] = nil
 	SessionManager.mu.Unlock()
 	log.Printf("[Stream] Interrupt: session=%s", sessionID)
+}
+
+// HandleGreeting sends an AI greeting when entering a scene.
+// Mirrors Python fastapi_server.py _send_greeting (lines 773-820).
+func HandleGreeting(sessionID, scene string, client *Client, customPrompt string) {
+	chatScene := scene
+	userMessage := "Greet me to start the conversation."
+	if customPrompt != "" {
+		chatScene = "daily"
+		userMessage = fmt.Sprintf(
+			"Greet me and start a conversation about this topic: %s. 1-2 sentences only.",
+			customPrompt,
+		)
+	}
+
+	mgr := GetOrCreateSession(sessionID, scene)
+	mgr.Difficulty = client.SessionDifficulty()
+	mgr.Accent = client.SessionAccent()
+
+	turnCtx, _ := mgr.NewTurn()
+
+	log.Printf("[Stream] Greeting: session=%s scene=%s chatScene=%s", sessionID, scene, chatScene)
+
+	startTime := time.Now()
+	result := grpc_client.ChatStream(turnCtx, sessionID, chatScene, userMessage, nil, mgr.Difficulty, mgr.Accent)
+
+	go func() {
+		fullReply := ""
+		firstChunk := true
+		replySent := false
+
+		defer func() {
+			if !replySent {
+				client.SendJSON(WSMessage{
+					Type: MsgReplyEnd,
+					Data: map[string]interface{}{
+						"interrupted": false,
+						"elapsed_ms":  time.Since(startTime).Milliseconds(),
+					},
+				})
+			}
+			log.Printf("[Stream] Greeting finished: session=%s reply_len=%d", sessionID, len(fullReply))
+		}()
+
+		for {
+			select {
+			case text, ok := <-result.ReplyChunks:
+				if !ok {
+					goto done
+				}
+				fullReply += text
+				if firstChunk {
+					client.SendJSON(WSMessage{
+						Type: MsgReplyStart,
+						Data: ReplyChunkData{Text: text, IsFirst: true},
+					})
+					firstChunk = false
+				} else {
+					client.SendJSON(WSMessage{
+						Type: MsgReplyChunk,
+						Data: ReplyChunkData{Text: text, IsFirst: false},
+					})
+				}
+
+			case audio, ok := <-result.AudioChunks:
+				if ok && len(audio) > 0 {
+					client.SendBinary(audio)
+				}
+
+			case <-result.Correction:
+				// Ignore correction for greeting
+
+			case <-result.Translation:
+				// Ignore translation for greeting
+
+			case <-result.Done:
+				elapsed := time.Since(startTime)
+				log.Printf("[Stream] Greeting done: session=%s reply=\"%s\" %v", sessionID, fullReply, elapsed)
+
+				client.SendJSON(WSMessage{
+					Type: MsgReplyEnd,
+					Data: map[string]interface{}{
+						"interrupted": false,
+						"elapsed_ms":  elapsed.Milliseconds(),
+					},
+				})
+				replySent = true
+				goto done
+
+			case <-result.Err:
+				log.Printf("[Stream] Greeting interrupted: session=%s", sessionID)
+				goto done
+			}
+		}
+	done:
+	}()
 }
 
 // HandleTextInput processes typed text — skips ASR, goes directly to Chat
@@ -410,9 +508,10 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 							ExplanationCN: h.ExplanationCn,
 						})
 						tc.Errors = append(tc.Errors, session.ErrorItem{
-							Type:      errType,
-							Original:  correction.Original[start:end],
-							Corrected: h.Suggestion,
+							Type:          errType,
+							Original:      correction.Original[start:end],
+							Corrected:     h.Suggestion,
+							ExplanationCN: h.ExplanationCn,
 						})
 					}
 					if len(correction.Highlights) == 0 && correction.Corrected != correction.Original {
@@ -422,10 +521,11 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 							Corrected: correction.Corrected,
 						})
 						tc.Errors = append(tc.Errors, session.ErrorItem{
-							Type:      correction.ErrorType,
-							Original:  correction.Original,
-							Corrected: correction.Corrected,
-						})
+						Type:          correction.ErrorType,
+						Original:      correction.Original,
+						Corrected:     correction.Corrected,
+						ExplanationCN: "",
+					})
 					}
 
 					turnCorrection = tc
@@ -543,7 +643,10 @@ func generateReport(mgr *session.Manager, sessionID string) SessionReportData {
 	fluCount := 0
 	errorCounts := make(map[string]int)
 
-	for _, turn := range history {
+	// Collect per-error details for the report
+	var allErrors []ReportErrorItem
+
+	for i, turn := range history {
 		if turn.Pronunciation > 0 {
 			totalPron += turn.Pronunciation
 			pronCount++
@@ -555,9 +658,24 @@ func generateReport(mgr *session.Manager, sessionID string) SessionReportData {
 		if turn.Correction != nil {
 			for _, err := range turn.Correction.Errors {
 				errorCounts[err.Type]++
+				allErrors = append(allErrors, ReportErrorItem{
+					Type:          err.Type,
+					TypeLabel:     errorLabelMap[err.Type],
+					Original:      err.Original,
+					Corrected:     err.Corrected,
+					ExplanationCN: err.ExplanationCN,
+					TurnIndex:     i,
+				})
 			}
 			if len(turn.Correction.Errors) == 0 && turn.Correction.ErrorType != "" {
 				errorCounts[turn.Correction.ErrorType]++
+				allErrors = append(allErrors, ReportErrorItem{
+					Type:          turn.Correction.ErrorType,
+					TypeLabel:     errorLabelMap[turn.Correction.ErrorType],
+					Original:      turn.Correction.Original,
+					Corrected:     turn.Correction.Corrected,
+					TurnIndex:     i,
+				})
 			}
 		}
 	}
@@ -632,6 +750,7 @@ func generateReport(mgr *session.Manager, sessionID string) SessionReportData {
 		Fluency:       avgFlu,
 		ErrorStats:    errorStats,
 		Suggestions:   suggestions,
+		AllErrors:     allErrors,
 	}
 
 	sceneNames := map[string]string{
