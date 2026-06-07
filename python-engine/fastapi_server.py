@@ -767,16 +767,18 @@ async def echo_speak_ws(websocket: WebSocket):
         "travel": "You are a hotel receptionist. Greet the guest and ask how you can help. 1-2 sentences only.",
         "daily": "You are a friendly chat partner. Greet the user and ask how their day is going. 1-2 sentences only.",
         "business": "You are a business partner. Greet your colleague and ask about their progress. 1-2 sentences only.",
-        "custom": "You are a friendly English conversation partner. Greet the user warmly and ask what they'd like to talk about today. 1-2 sentences only.",
         "default": "You are a friendly English conversation partner. Greet the user warmly and ask what they'd like to practice today. 1-2 sentences only.",
     }
-    _greeting_user_msg = _greeting_prompts.get(scene, _greeting_prompts["daily"])
 
-    async def _send_greeting():
+    async def _send_greeting(custom_prompt: str = None):
         try:
-            # Use a fresh one-shot conversation for the greeting (don't pollute main conv)
+            if custom_prompt:
+                system_msg = f"You are an AI English conversation partner. Scenario: {custom_prompt}. Greet the user and start a conversation about this topic. 1-2 sentences only."
+            else:
+                system_msg = _greeting_prompts.get(scene, _greeting_prompts["default"])
+
             greet_conv = create_conversation(scene)
-            greet_conv.messages[0] = {"role": "system", "content": _greeting_user_msg}
+            greet_conv.messages[0] = {"role": "system", "content": system_msg}
             greet_conv.add_user_message("Greet me to start the conversation.")
 
             await send_json({"type": "reply_start"})
@@ -806,7 +808,6 @@ async def echo_speak_ws(websocket: WebSocket):
 
             await send_json({"type": "reply_end", "data": {"interrupted": False}})
 
-            # TTS for greeting
             if full_text.strip():
                 communicate = edge_tts.Communicate(full_text.strip(), config.TTS_VOICE)
                 async for chunk in communicate.stream():
@@ -818,8 +819,9 @@ async def echo_speak_ws(websocket: WebSocket):
         except Exception as e:
             logger.warning(f"[WS:{session_id}] Greeting failed (non-fatal): {e}")
 
-    # Fire-and-forget: don't block the main loop
-    asyncio.create_task(_send_greeting())
+    # Fire greeting immediately for preset scenes (custom defers to after topic arrives)
+    if scene != "custom":
+        asyncio.create_task(_send_greeting())
 
     try:
         while True:
@@ -933,6 +935,8 @@ async def echo_speak_ws(websocket: WebSocket):
                         "type": "custom_scene_ready",
                         "data": {"scene": "custom", "description": description.strip()}
                     })
+                    # Fire greeting now that we know the topic
+                    asyncio.create_task(_send_greeting(custom_prompt=description.strip()))
                 else:
                     await send_json({
                         "type": "error",
