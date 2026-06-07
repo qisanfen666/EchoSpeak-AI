@@ -82,6 +82,8 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
                             text=text,
                             is_final=True,
                             session_id=session_id,
+                            pronunciation=result.get("pronunciation", 0),
+                            fluency=result.get("fluency", 0),
                         )
                     except Exception as e:
                         logger.exception(f"[gRPC:StreamASR] Transcription error")
@@ -253,6 +255,22 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
                 )
             except Exception as e:
                 logger.warning(f"[gRPC:Chat] Failed to yield correction: {e}")
+
+        # ── Phase 4: Translation (Chinese) ──
+        if full_reply.strip():
+            try:
+                trans_conv = create_conversation("default")
+                trans_conv.messages[0] = {
+                    "role": "system",
+                    "content": "Translate the following English to natural Chinese (中文). Return ONLY the translation, no explanation."
+                }
+                trans_conv.add_user_message(full_reply.strip())
+                translation = await asyncio.to_thread(llm.reply, trans_conv)
+                if translation and translation.strip():
+                    yield pb2.ChatResponse(translation=translation.strip())
+                    logger.info(f"[gRPC:Chat] Translation: {translation.strip()[:40]}...")
+            except Exception:
+                pass  # Translation is optional
 
         # ── Done ──
         try:

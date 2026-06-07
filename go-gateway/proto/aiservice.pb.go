@@ -174,6 +174,8 @@ type ASRResult struct {
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`                       // 识别文本（partial 或 final）
 	IsFinal       bool                   `protobuf:"varint,2,opt,name=is_final,json=isFinal,proto3" json:"is_final,omitempty"` // 是否是最终结果
 	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	Pronunciation int32                  `protobuf:"varint,4,opt,name=pronunciation,proto3" json:"pronunciation,omitempty"` // 发音评分 0-100
+	Fluency       int32                  `protobuf:"varint,5,opt,name=fluency,proto3" json:"fluency,omitempty"`             // 流利度评分 0-100
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -227,6 +229,20 @@ func (x *ASRResult) GetSessionId() string {
 		return x.SessionId
 	}
 	return ""
+}
+
+func (x *ASRResult) GetPronunciation() int32 {
+	if x != nil {
+		return x.Pronunciation
+	}
+	return 0
+}
+
+func (x *ASRResult) GetFluency() int32 {
+	if x != nil {
+		return x.Fluency
+	}
+	return 0
 }
 
 type ChatRequest struct {
@@ -357,6 +373,7 @@ type ChatResponse struct {
 	//	*ChatResponse_Correction
 	//	*ChatResponse_Done
 	//	*ChatResponse_TtsAudio
+	//	*ChatResponse_Translation
 	Payload       isChatResponse_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -435,6 +452,15 @@ func (x *ChatResponse) GetTtsAudio() []byte {
 	return nil
 }
 
+func (x *ChatResponse) GetTranslation() string {
+	if x != nil {
+		if x, ok := x.Payload.(*ChatResponse_Translation); ok {
+			return x.Translation
+		}
+	}
+	return ""
+}
+
 type isChatResponse_Payload interface {
 	isChatResponse_Payload()
 }
@@ -455,6 +481,10 @@ type ChatResponse_TtsAudio struct {
 	TtsAudio []byte `protobuf:"bytes,4,opt,name=tts_audio,json=ttsAudio,proto3,oneof"` // TTS 语音片段（MP3 chunk）
 }
 
+type ChatResponse_Translation struct {
+	Translation string `protobuf:"bytes,5,opt,name=translation,proto3,oneof"` // AI 回复的中文翻译
+}
+
 func (*ChatResponse_Reply) isChatResponse_Payload() {}
 
 func (*ChatResponse_Correction) isChatResponse_Payload() {}
@@ -462,6 +492,8 @@ func (*ChatResponse_Correction) isChatResponse_Payload() {}
 func (*ChatResponse_Done) isChatResponse_Payload() {}
 
 func (*ChatResponse_TtsAudio) isChatResponse_Payload() {}
+
+func (*ChatResponse_Translation) isChatResponse_Payload() {}
 
 type ReplyChunk struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1202,12 +1234,14 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"audio_data\x18\x01 \x01(\fR\taudioData\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x15\n" +
-	"\x06is_end\x18\x03 \x01(\bR\x05isEnd\"Y\n" +
+	"\x06is_end\x18\x03 \x01(\bR\x05isEnd\"\x99\x01\n" +
 	"\tASRResult\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n" +
 	"\bis_final\x18\x02 \x01(\bR\aisFinal\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionId\"\x97\x01\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12$\n" +
+	"\rpronunciation\x18\x04 \x01(\x05R\rpronunciation\x12\x18\n" +
+	"\afluency\x18\x05 \x01(\x05R\afluency\"\x97\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x14\n" +
@@ -1216,14 +1250,15 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"\ahistory\x18\x04 \x03(\v2\x16.aiservice.ChatMessageR\ahistory\";\n" +
 	"\vChatMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"\xb6\x01\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"\xda\x01\n" +
 	"\fChatResponse\x12-\n" +
 	"\x05reply\x18\x01 \x01(\v2\x15.aiservice.ReplyChunkH\x00R\x05reply\x127\n" +
 	"\n" +
 	"correction\x18\x02 \x01(\v2\x15.aiservice.CorrectionH\x00R\n" +
 	"correction\x12\x14\n" +
 	"\x04done\x18\x03 \x01(\bH\x00R\x04done\x12\x1d\n" +
-	"\ttts_audio\x18\x04 \x01(\fH\x00R\bttsAudioB\t\n" +
+	"\ttts_audio\x18\x04 \x01(\fH\x00R\bttsAudio\x12\"\n" +
+	"\vtranslation\x18\x05 \x01(\tH\x00R\vtranslationB\t\n" +
 	"\apayload\";\n" +
 	"\n" +
 	"ReplyChunk\x12\x12\n" +
@@ -1375,6 +1410,7 @@ func file_proto_aiservice_proto_init() {
 		(*ChatResponse_Correction)(nil),
 		(*ChatResponse_Done)(nil),
 		(*ChatResponse_TtsAudio)(nil),
+		(*ChatResponse_Translation)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

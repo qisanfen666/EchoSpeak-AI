@@ -53,6 +53,8 @@ message ASRResult {
   string text = 1;             // 识别文本（partial 或 final）
   bool is_final = 2;           // 是否是最终结果
   string session_id = 3;
+  int32 pronunciation = 4;     // 发音评分 0-100
+  int32 fluency = 5;           // 流利度评分 0-100
 }
 
 // ============================================
@@ -77,6 +79,7 @@ message ChatResponse {
     Correction correction = 2; // 纠错结果（在 reply 完成后统一发送）
     bool done = 3;             // 整个对话轮次结束
     bytes tts_audio = 4;       // TTS 语音片段（MP3 chunk）
+    string translation = 5;    // AI 回复的中文翻译
   }
 }
 

@@ -80,65 +80,60 @@ def calculate_fluency_score(segments: list, duration_s: float) -> int:
 # ---------------------------------------------------------------------------
 
 def _dedupe_repetition(text: str) -> str:
-    """
-    Detect and remove repeated phrases from Whisper output.
-
-    Common pattern: "You give me water, you give me water."
-    Handles case-insensitive repetition at comma and word level.
-    """
-    if not text:
+    """Detect and remove repeated/hallucinated phrases from Whisper output."""
+    if not text or len(text.split()) <= 1:
         return text
 
-    # Normalise: lowercase, strip trailing punctuation for comparison
-    def _norm(s: str) -> str:
-        return s.strip().lower().rstrip(".,;:!?")
+    import re
 
-    # ── Fuzzy comparison ──
-    def _fuzzy_eq(a: str, b: str) -> bool:
-        """Return True if strings are identical or differ by a short prefix/suffix."""
-        if a == b:
-            return True
-        # One is a substring of the other (e.g. "ou" vs "you" or "water" vs "water")
-        if len(a) >= 3 and len(b) >= 3:
-            if a in b or b in a:
-                return True
-            # Levenshtein distance <= 2 for short truncations
-            if abs(len(a) - len(b)) <= 2:
-                shorter = a if len(a) <= len(b) else b
-                longer = b if len(a) <= len(b) else a
-                if longer.startswith(shorter) or longer.endswith(shorter):
-                    return True
-        return False
+    def _norm(w: str) -> str:
+        return w.lower().rstrip(',.;:!?')
 
-    # ── Comma-split dedup ──
-    parts = [p.strip() for p in text.split(",") if p.strip()]
+    # ── 1. Comma-split dedup: "hello, hello" → "hello" ──
+    parts = [p.strip() for p in text.split(',') if p.strip()]
     if len(parts) >= 2:
         mid = len(parts) // 2
-        if all(
-            _fuzzy_eq(_norm(parts[i]), _norm(parts[mid + i]))
-            for i in range(mid)
-        ):
-            return ", ".join(parts[:mid])
+        if all(_norm(parts[i]) == _norm(parts[mid + i]) for i in range(mid)):
+            return ', '.join(parts[:mid])
 
-    # ── Word-level dedup — half ──
+    # ── 2. Sentence-level near-duplicate dedup ──
+    sents = re.split(r'[.!?]+', text)
+    sents = [s.strip() for s in sents if s.strip()]
+    if len(sents) >= 2:
+        def _words_similar(a: str, b: str) -> bool:
+            aw = set(_norm(w) for w in a.split())
+            bw = set(_norm(w) for w in b.split())
+            if not aw or not bw:
+                return False
+            overlap = len(aw & bw)
+            return overlap / max(len(aw), len(bw)) >= 0.5
+
+        seen = []
+        for s in sents:
+            words = s.split()
+            if len(words) < 2:
+                seen.append(s)
+                continue
+            dup = False
+            for prev in seen:
+                if len(prev.split()) >= 2 and _words_similar(s, prev):
+                    dup = True
+                    break
+            if not dup:
+                seen.append(s)
+        if len(seen) < len(sents):
+            result = '. '.join(seen)
+            if text.rstrip()[-1] in '.!?':
+                result += '.'
+            return result
+
+    # ── 3. Half-repeat: "give me water give me water" → "give me water" ──
     words = text.split()
     n = len(words)
-    if n >= 4 and n % 2 == 0:
+    if n >= 2 and n % 2 == 0:
         mid = n // 2
-        if all(
-            _fuzzy_eq(_norm(words[i]), _norm(words[mid + i]))
-            for i in range(mid)
-        ):
-            return " ".join(words[:mid])
-
-    # ── Word-level dedup — thirds ──
-    if n >= 6 and n % 3 == 0:
-        third = n // 3
-        if (
-            all(_fuzzy_eq(_norm(words[i]), _norm(words[third + i])) for i in range(third))
-            and all(_fuzzy_eq(_norm(words[i]), _norm(words[2 * third + i])) for i in range(third))
-        ):
-            return " ".join(words[:third])
+        if all(_norm(words[i]) == _norm(words[mid + i]) for i in range(mid)):
+            return ' '.join(words[:mid])
 
     return text
 
@@ -417,7 +412,7 @@ class ASREngine:
             compression_ratio_threshold=2.4,
             log_prob_threshold=-1.0,
             repetition_penalty=1.15,
-            initial_prompt="English conversation practice, dialogue, spoken English.",
+            initial_prompt=None,
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()
