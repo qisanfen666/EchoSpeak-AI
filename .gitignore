@@ -11,3 +11,8 @@ __pycache__
 # Generated audio / model files (downloaded at runtime)
 audio/
 !audio/.gitkeep
+# PyInstaller
+*.spec
+build/
+dist/
+redis/
