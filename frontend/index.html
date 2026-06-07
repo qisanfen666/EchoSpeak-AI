@@ -691,6 +691,10 @@ function connect(scene) {
         inp.focus();
         aiResponding = false;
         updateRecordButton();
+        // Send custom scene description if applicable
+        if (sessionStats.scene === 'custom' && sessionStats.customTopic) {
+            send({ type: 'custom_scene', data: { description: sessionStats.customTopic } });
+        }
         addMsg('sys', 'Connected — type or tap Record to speak');
         sessionStats.startTime = Date.now();
     };
