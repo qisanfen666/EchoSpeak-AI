@@ -2,11 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>EchoSpeak — 英语口语陪练</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -15,289 +12,326 @@
 <!-- View 1: Scene Selection -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <div id="view-scene" class="view">
-    <div class="top-rule"></div>
-    <div class="scene-container">
-        <div class="scene-header">
-            <h1 class="brand">EchoSpeak</h1>
-            <span class="brand-sub">ai language practice</span>
-        </div>
-        <p class="scene-intro">Choose a scenario to begin your practice</p>
-        <div class="scene-cards">
-            <button class="scene-card" data-scene="ordering" onclick="selectScene('ordering')">
-                <span class="scene-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <path d="M16 10a4 4 0 0 1-8 0"/>
-                    </svg>
-                </span>
-                <span class="scene-name">餐厅点餐</span>
-                <span class="scene-desc">Restaurant Ordering</span>
-                <span class="scene-hint">练习点餐、询问菜品与餐桌礼仪</span>
-            </button>
-            <button class="scene-card" data-scene="interview" onclick="selectScene('interview')">
-                <span class="scene-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </span>
-                <span class="scene-name">工作面试</span>
-                <span class="scene-desc">Job Interview</span>
-                <span class="scene-hint">练习自我介绍、项目经验与职业规划</span>
-            </button>
-            <button class="scene-card" data-scene="meeting" onclick="selectScene('meeting')">
-                <span class="scene-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                </span>
-                <span class="scene-name">商务会议</span>
-                <span class="scene-desc">Business Meeting</span>
-                <span class="scene-hint">练习项目讨论、进度汇报与方案交流</span>
-            </button>
-            <button class="scene-card" data-scene="travel" onclick="selectScene('travel')">
-                <span class="scene-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="10" r="3"/>
-                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
-                    </svg>
-                </span>
-                <span class="scene-name">旅行出行</span>
-                <span class="scene-desc">Travel</span>
-                <span class="scene-hint">练习酒店入住、问路与出行安排</span>
-            </button>
-            <button class="scene-card scene-card-custom" data-scene="custom" onclick="selectCustomScene()">
-                <span class="scene-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                </span>
-                <span class="scene-name">自定义对话</span>
-                <span class="scene-desc">Free Talk</span>
-                <span class="scene-hint">自由选择话题，AI 英语陪练随心聊</span>
-            </button>
-        </div>
-    </div>
+    <!-- Nav -->
+    <nav class="wx-nav">
+        <span class="wx-nav-title">EchoSpeak</span>
+    </nav>
 
-    <!-- Dashboard: cross-session trends -->
-    <div id="home-dashboard" class="dashboard" style="display:none">
-        <div class="dash-header">
-            <h2 class="dash-title">学习趋势</h2>
-            <span class="dash-sub">过去练习的变化</span>
-        </div>
-        <div class="rp-charts">
-            <div class="rp-chart-wrap">
-                <h4 class="rp-chart-title">每次练习错误总数</h4>
-                <canvas id="chart-dash-errors"></canvas>
+    <!-- Body -->
+    <div class="wx-body wx-scene-body">
+        <!-- User card -->
+        <div class="wx-user-card">
+            <div class="wx-avatar-lg" id="home-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
             </div>
-            <div class="rp-chart-wrap">
-                <h4 class="rp-chart-title">评分变化</h4>
-                <canvas id="chart-dash-scores"></canvas>
+            <div class="wx-user-info">
+                <div class="wx-user-name">我的英语练习</div>
+                <div class="wx-user-sub">坚持练习，每天进步</div>
+            </div>
+        </div>
+
+        <!-- Section -->
+        <div class="wx-section-label">选择练习场景</div>
+
+        <!-- Scene list -->
+        <div class="wx-list-group">
+            <button class="wx-list-item" data-scene="ordering" onclick="selectScene('ordering')">
+                <span class="wx-list-icon wx-icon-ordering">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                </span>
+                <span class="wx-list-text">
+                    <span class="wx-list-name">餐厅点餐</span>
+                    <span class="wx-list-desc">Restaurant Ordering</span>
+                </span>
+                <span class="wx-list-arrow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+            </button>
+            <button class="wx-list-item" data-scene="interview" onclick="selectScene('interview')">
+                <span class="wx-list-icon wx-icon-interview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </span>
+                <span class="wx-list-text">
+                    <span class="wx-list-name">工作面试</span>
+                    <span class="wx-list-desc">Job Interview</span>
+                </span>
+                <span class="wx-list-arrow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+            </button>
+            <button class="wx-list-item" data-scene="meeting" onclick="selectScene('meeting')">
+                <span class="wx-list-icon wx-icon-meeting">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </span>
+                <span class="wx-list-text">
+                    <span class="wx-list-name">商务会议</span>
+                    <span class="wx-list-desc">Business Meeting</span>
+                </span>
+                <span class="wx-list-arrow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+            </button>
+            <button class="wx-list-item" data-scene="travel" onclick="selectScene('travel')">
+                <span class="wx-list-icon wx-icon-travel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>
+                </span>
+                <span class="wx-list-text">
+                    <span class="wx-list-name">旅行出行</span>
+                    <span class="wx-list-desc">Travel</span>
+                </span>
+                <span class="wx-list-arrow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+            </button>
+        </div>
+
+        <!-- Custom entry -->
+        <button class="wx-custom-entry" onclick="selectCustomScene()">
+            <span class="wx-custom-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </span>
+            自定义话题
+        </button>
+
+        <!-- Dashboard: cross-session trends -->
+        <div id="home-dashboard" class="wx-dashboard" style="display:none">
+            <div class="wx-section-label">学习趋势</div>
+            <div class="wx-report-section">
+                <div class="wx-report-section-title">每次练习错误总数</div>
+                <div class="wx-chart-wrap">
+                    <canvas id="chart-dash-errors"></canvas>
+                </div>
+            </div>
+            <div class="wx-report-section">
+                <div class="wx-report-section-title">评分变化</div>
+                <div class="wx-chart-wrap">
+                    <canvas id="chart-dash-scores"></canvas>
+                </div>
+            </div>
+            <div class="wx-report-section">
+                <div class="wx-report-section-title">发音与流利度</div>
+                <div class="wx-chart-wrap">
+                    <canvas id="chart-dash-pron-flu"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Custom scene modal -->
-    <div id="custom-modal" class="modal-overlay" style="display:none">
-        <div class="modal-card">
-            <button class="modal-close" onclick="closeCustomModal()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div id="custom-modal" class="wx-modal-overlay" style="display:none">
+        <div class="wx-modal-card">
+            <button class="wx-modal-close" onclick="closeCustomModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <h3 class="modal-title">开始自由对话</h3>
-            <p class="modal-desc">告诉 AI 你想练习的话题或场景</p>
+            <h3 class="wx-modal-title">开始自由对话</h3>
+            <p class="wx-modal-desc">告诉 AI 你想练习的话题或场景</p>
             <input
                 id="custom-topic"
-                class="modal-input"
+                class="wx-modal-input"
                 type="text"
-                placeholder="例如：聊聊今天的天气 / 模拟星巴克点单 / 讨论人工智能…"
+                placeholder="聊聊今天的天气 / 模拟星巴克点单 / 讨论人工智能…"
                 autocomplete="off"
             >
-            <div class="modal-suggestions">
-                <span class="modal-sug-label">快速选择：</span>
-                <button class="modal-chip" onclick="startCustomWith('日常聊天')">日常聊天</button>
-                <button class="modal-chip" onclick="startCustomWith('职场沟通')">职场沟通</button>
-                <button class="modal-chip" onclick="startCustomWith('旅游出行')">旅游出行</button>
-                <button class="modal-chip" onclick="startCustomWith('科技讨论')">科技讨论</button>
+            <div class="wx-modal-chips">
+                <span class="wx-modal-chips-label">快速选择</span>
+                <button class="wx-chip" onclick="startCustomWith('日常聊天')">日常聊天</button>
+                <button class="wx-chip" onclick="startCustomWith('职场沟通')">职场沟通</button>
+                <button class="wx-chip" onclick="startCustomWith('旅游出行')">旅游出行</button>
+                <button class="wx-chip" onclick="startCustomWith('科技讨论')">科技讨论</button>
             </div>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">取消</button>
-                <button class="modal-btn modal-btn-confirm" onclick="confirmCustomTopic()">
+            <div class="wx-modal-actions">
+                <button class="wx-btn wx-btn-ghost" onclick="closeCustomModal()">取消</button>
+                <button class="wx-btn wx-btn-primary" onclick="confirmCustomTopic()">
                     开始对话
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- View 2: Chat Conversation -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <div id="view-chat" class="view" style="display:none">
-    <div class="top-rule"></div>
-
-    <!-- Header -->
-    <header class="app-header">
-        <div class="header-left">
-            <h1 class="brand">EchoSpeak</h1>
-            <span class="brand-sub">ai language practice</span>
+    <!-- Chat Nav -->
+    <nav class="wx-chat-nav">
+        <button class="wx-nav-back" onclick="endSession()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="wx-chat-nav-center">
+            <div class="wx-chat-nav-title">Tutor</div>
+            <div id="nav-subtitle" class="wx-chat-nav-subtitle">在线</div>
         </div>
-        <div class="header-right">
-            <span id="status" class="status-badge">connecting</span>
-            <div class="mode-toggle" id="modeToggle">
-                <button class="mode-btn active" data-mode="realtime" onclick="setMode('realtime')">实时</button>
-                <button class="mode-btn" data-mode="q_and_a" onclick="setMode('q_and_a')">问答</button>
+        <div class="wx-chat-nav-right">
+            <div class="wx-mode-seg" id="modeToggle">
+                <button class="wx-mode-btn active" data-mode="realtime" onclick="setMode('realtime')">实时</button>
+                <button class="wx-mode-btn" data-mode="q_and_a" onclick="setMode('q_and_a')">问答</button>
             </div>
-            <button id="endBtn" class="btn-end" onclick="endSession()" title="结束会话">结束对话</button>
         </div>
-    </header>
+    </nav>
 
-    <!-- Chat area -->
-    <main id="chat" class="chat-area">
+    <!-- Messages -->
+    <main id="chat" class="wx-chat-area">
         <div class="chat-welcome">
-            <div class="welcome-mark">&ldquo;</div>
-            <p class="welcome-title">Begin your practice</p>
-            <p class="welcome-sub">Speak or type &mdash; I'll help refine your English</p>
+            <div class="wx-welcome-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <p class="wx-welcome-title">开始你的英语练习</p>
+            <p class="wx-welcome-sub">说话或打字 — AI 帮你打磨表达</p>
         </div>
     </main>
 
-    <!-- Thinking indicator -->
-    <div id="think" class="think-indicator">
-        <span class="think-dot"></span>
-        <span class="think-dot"></span>
-        <span class="think-dot"></span>
-        <span class="think-label">listening &amp; responding</span>
-    </div>
-
-    <!-- Input bar -->
-    <div class="input-bar">
-        <button id="recBtn" class="btn-record" disabled title="录音">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-            <span class="btn-label">Record</span>
-        </button>
-        <div class="input-wrap">
-            <input id="inp" class="text-input" type="text" placeholder="Type in English…" disabled autocomplete="off">
-            <button id="sendBtn" class="btn-send" disabled title="发送">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
+    <!-- Typing indicator -->
+    <div id="think" class="wx-typing-bar">
+        <div class="wx-msg-row ai">
+            <div class="wx-msg-avatar ai">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><circle cx="12" cy="16" r="6"/><circle cx="9" cy="14.5" r="1" fill="currentColor"/><circle cx="15" cy="14.5" r="1" fill="currentColor"/><path d="M10 18c.6.8 1.3 1 2 1s1.4-.2 2-1"/></svg>
+            </div>
+            <div class="wx-typing-bubble">
+                <span class="wx-typing-dot"></span>
+                <span class="wx-typing-dot"></span>
+                <span class="wx-typing-dot"></span>
+            </div>
         </div>
     </div>
 
+    <!-- Input bar -->
+    <div class="wx-input-bar">
+        <button id="recBtn" class="wx-input-voice-btn" disabled title="语音输入">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        </button>
+        <input id="inp" class="wx-input-field" type="text" placeholder="输入英文…" disabled autocomplete="off">
+        <button id="sendBtn" class="wx-input-send" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+    </div>
+
     <!-- Debug -->
-    <div id="dbg" class="debug"></div>
+    <div id="dbg" class="wx-debug"></div>
 </div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- View 3: Session Report -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <div id="view-report" class="view" style="display:none">
-    <div class="top-rule"></div>
-    <div class="report-container">
+    <!-- Nav -->
+    <nav class="wx-nav">
+        <button class="wx-nav-back" onclick="practiceAgain()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="wx-nav-title">练习报告</span>
+    </nav>
 
-        <!-- Empty state: no conversations -->
-        <div id="report-empty" class="report-empty-state" style="display:none">
-            <div class="report-empty-mark">&mdash;</div>
-            <h2 class="report-empty-title">本次练习没有对话记录</h2>
-            <p class="report-empty-desc">你还没有进行任何对话就结束了练习。<br>下次试着说几句话再结束吧！</p>
+    <!-- Body -->
+    <div class="wx-body wx-report-body">
+
+        <!-- Empty state -->
+        <div id="report-empty" class="wx-report-empty" style="display:none">
+            <div class="wx-report-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <h2 class="wx-report-empty-title">本次练习没有对话记录</h2>
+            <p class="wx-report-empty-desc">你还没有进行对话就结束了练习，下次试着说几句吧</p>
         </div>
 
-        <!-- Report content (shown when turns > 0) -->
+        <!-- Report content -->
         <div id="report-content">
-            <div class="report-header">
-                <h1 class="brand">EchoSpeak</h1>
-                <span class="brand-sub">session report</span>
+            <!-- Hero -->
+            <div class="wx-report-hero">
+                <div class="wx-report-hero-scene" id="rp-scene"></div>
+                <div class="wx-report-hero-score" id="rp-avg-score">--</div>
+                <div class="wx-report-hero-label">综合评分</div>
             </div>
 
-            <!-- Basic Info -->
-            <div class="report-meta">
-                <span id="rp-scene" class="rp-meta-item"></span>
-                <span class="rp-meta-divider">&middot;</span>
-                <span id="rp-date" class="rp-meta-item"></span>
-                <span class="rp-meta-divider">&middot;</span>
-                <span id="rp-duration" class="rp-meta-item"></span>
-                <span class="rp-meta-divider">&middot;</span>
-                <span id="rp-turns" class="rp-meta-item"></span>
-            </div>
-
-            <!-- Score Cards -->
-            <div class="report-scores">
-                <div class="score-card" id="sc-grammar">
-                    <span class="sc-val">--</span>
-                    <span class="sc-label">Grammar</span>
-                    <span class="sc-label-cn">语法</span>
+            <!-- Score cards -->
+            <div class="wx-report-scores">
+                <div class="wx-score-card" id="sc-grammar">
+                    <div class="wx-score-card-val">--</div>
+                    <div class="wx-score-card-label">Grammar<span>语法</span></div>
                 </div>
-                <div class="score-card" id="sc-vocabulary">
-                    <span class="sc-val">--</span>
-                    <span class="sc-label">Vocabulary</span>
-                    <span class="sc-label-cn">词汇</span>
+                <div class="wx-score-card" id="sc-vocabulary">
+                    <div class="wx-score-card-val">--</div>
+                    <div class="wx-score-card-label">Vocabulary<span>词汇</span></div>
                 </div>
-                <div class="score-card" id="sc-pronunciation">
-                    <span class="sc-val">--</span>
-                    <span class="sc-label">Pronunciation</span>
-                    <span class="sc-label-cn">发音</span>
+                <div class="wx-score-card" id="sc-pronunciation">
+                    <div class="wx-score-card-val">--</div>
+                    <div class="wx-score-card-label">Pron.<span>发音</span></div>
                 </div>
-                <div class="score-card" id="sc-fluency">
-                    <span class="sc-val">--</span>
-                    <span class="sc-label">Fluency</span>
-                    <span class="sc-label-cn">流利</span>
+                <div class="wx-score-card" id="sc-fluency">
+                    <div class="wx-score-card-val">--</div>
+                    <div class="wx-score-card-label">Fluency<span>流利</span></div>
                 </div>
             </div>
 
-            <!-- Learning Trends -->
-            <div class="report-section" id="rp-trends-section" style="display:none">
-                <h3 class="rp-section-title">Trends</h3>
-                <div class="rp-charts">
-                    <div class="rp-chart-wrap">
-                        <h4 class="rp-chart-title">错误次数变化</h4>
-                        <canvas id="chart-errors"></canvas>
-                    </div>
+            <!-- Info -->
+            <div class="wx-info-card">
+                <div class="wx-info-item">
+                    <div class="wx-info-val" id="rp-duration">--</div>
+                    <div class="wx-info-label">练习时长</div>
+                </div>
+                <div class="wx-info-item">
+                    <div class="wx-info-val" id="rp-turns">--</div>
+                    <div class="wx-info-label">对话轮数</div>
+                </div>
+                <div class="wx-info-item">
+                    <div class="wx-info-val" id="rp-error-count">--</div>
+                    <div class="wx-info-label">发现错误</div>
                 </div>
             </div>
 
-            <!-- All Errors Detail -->
-            <div class="report-section" id="rp-all-errors-section" style="display:none">
-                <h3 class="rp-section-title">Errors in Conversation</h3>
-                <div id="rp-all-errors" class="rp-all-errors-list"></div>
+            <!-- Trends -->
+            <div class="wx-report-section" id="rp-trends-section" style="display:none">
+                <div class="wx-report-section-title">练习趋势</div>
+                <div class="wx-chart-wrap">
+                    <canvas id="chart-errors"></canvas>
+                </div>
             </div>
 
-            <!-- Error Statistics -->
-            <div class="report-section" id="rp-errors-section">
-                <h3 class="rp-section-title">Error Breakdown</h3>
-                <div class="rp-chart-wrap">
+            <!-- All Errors -->
+            <div class="wx-report-section" id="rp-all-errors-section" style="display:none">
+                <div class="wx-report-section-title">对话中的错误</div>
+                <div id="rp-all-errors" class="wx-err-list"></div>
+            </div>
+
+            <!-- Error Breakdown -->
+            <div class="wx-report-section" id="rp-errors-section">
+                <div class="wx-report-section-title">错误分类</div>
+                <div class="wx-chart-wrap">
                     <canvas id="chart-error-types"></canvas>
                 </div>
-                <div id="rp-no-errors" class="rp-empty" style="display:none">No significant errors found — excellent work.</div>
+                <div id="rp-no-errors" class="wx-no-errors" style="display:none">没有明显错误 — 表现优异</div>
             </div>
 
             <!-- Suggestions -->
-            <div class="report-section">
-                <h3 class="rp-section-title">Practice Suggestions</h3>
-                <div id="rp-suggestions" class="rp-suggestion-list"></div>
+            <div class="wx-report-section">
+                <div class="wx-report-section-title">学习建议</div>
+                <div id="rp-suggestions" class="wx-suggestion-list"></div>
             </div>
 
-        </div><!-- /report-content -->
-
-        <!-- Action (always visible) -->
-        <button class="btn-again" onclick="practiceAgain()">
-            <span>再来一次</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-        </button>
+            <!-- Again button -->
+            <button class="wx-again-btn" onclick="practiceAgain()">
+                再来一次
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+        </div>
     </div>
 </div>
+
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // EchoSpeak — Real-time conversation (continuous mic + VAD)
+// WeChat-style UI · WeChat green #07C160
 // ═══════════════════════════════════════════════════════════════════
 
 // ── DOM refs ──
 const $ = s => document.querySelector(s);
 const chat = $('#chat'), inp = $('#inp'), btn = $('#sendBtn');
-const recBtn = $('#recBtn'), endBtn = $('#endBtn');
-const think = $('#think'), st = $('#status'), dbg = $('#dbg');
+const recBtn = $('#recBtn');
+const think = $('#think'), st = $('#nav-subtitle'), dbg = $('#dbg');
 
 // ── State ──
 let ws;
@@ -336,9 +370,9 @@ let sessionStats = {
 };
 
 // ── Conversation mode ──
-let conversationMode = 'realtime'; // 'realtime' | 'q_and_a'
-let qaRecording = false;          // whether currently recording in Q&A mode
-let aiResponding = false;         // whether AI is currently generating a reply
+let conversationMode = 'realtime';
+let qaRecording = false;
+let aiResponding = false;
 
 // Cross-session history (in-memory, resets on page reload)
 let sessionHistory = [];
@@ -373,10 +407,10 @@ function selectScene(scene) {
 
 function selectCustomScene() {
     var modal = document.getElementById('custom-modal');
-    var inp = document.getElementById('custom-topic');
-    inp.value = '';
+    var topicInp = document.getElementById('custom-topic');
+    topicInp.value = '';
     modal.style.display = 'flex';
-    setTimeout(function() { inp.focus(); }, 150);
+    setTimeout(function() { topicInp.focus(); }, 150);
 }
 
 function closeCustomModal() {
@@ -414,11 +448,10 @@ document.addEventListener('keydown', function(e) {
 // ═══════════════════════════════════════════════════════════════════
 function setMode(mode) {
     if (conversationMode === mode) return;
-    // Stop mic if switching modes while recording
     if (micActive) stopMic();
     qaRecording = false;
     conversationMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(function(b) {
+    document.querySelectorAll('.wx-mode-btn').forEach(function(b) {
         b.classList.toggle('active', b.dataset.mode === mode);
     });
     updateRecordButton();
@@ -426,46 +459,49 @@ function setMode(mode) {
 }
 
 function updateRecordButton() {
+    var label = recBtn.querySelector('.wx-rec-label');
+    if (!label) {
+        label = document.createElement('span');
+        label.className = 'wx-rec-label';
+        recBtn.appendChild(label);
+    }
     if (conversationMode === 'q_and_a') {
         if (aiResponding) {
             recBtn.disabled = true;
             recBtn.classList.remove('recording');
-            recBtn.querySelector('.btn-label').textContent = 'AI responding…';
+            label.textContent = 'AI 回复中';
         } else if (qaRecording) {
             recBtn.disabled = false;
             recBtn.classList.add('recording');
-            recBtn.querySelector('.btn-label').textContent = 'Tap to stop';
+            label.textContent = '点击停止';
         } else {
             recBtn.disabled = false;
             recBtn.classList.remove('recording');
-            recBtn.querySelector('.btn-label').textContent = 'Speak';
+            label.textContent = '说话';
         }
     } else {
-        // Real-time mode
-        recBtn.querySelector('.btn-label').textContent = micActive ? 'Stop' : 'Record';
+        label.textContent = micActive ? '' : '';
         recBtn.disabled = false;
         if (!micActive) recBtn.classList.remove('recording');
     }
 }
 
 function updateTextInput() {
-    // In Q&A mode, disable text input while AI is responding
     if (conversationMode === 'q_and_a' && aiResponding) {
         inp.disabled = true;
         btn.disabled = true;
-        inp.placeholder = 'AI is responding…';
+        inp.placeholder = 'AI 正在回复…';
     } else if (conversationMode === 'q_and_a') {
         inp.disabled = false;
         btn.disabled = false;
-        inp.placeholder = 'Type in English…';
+        inp.placeholder = '输入英文…';
     }
 }
 
 function practiceAgain() {
-    // Disconnect if connected
     if (ws) {
         if (micActive) stopMic();
-        ws.onclose = null; // prevent auto-reconnect
+        ws.onclose = null;
         ws.close();
         ws = null;
     }
@@ -474,14 +510,14 @@ function practiceAgain() {
     think.classList.remove('active');
     _pendingAiRow = null;
 
-    // Clear chat
     chat.innerHTML = '<div class="chat-welcome">' +
-        '<div class="welcome-mark">&ldquo;</div>' +
-        '<p class="welcome-title">Begin your practice</p>' +
-        '<p class="welcome-sub">Speak or type &mdash; I\'ll help refine your English</p>' +
+        '<div class="wx-welcome-icon">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+        '</div>' +
+        '<p class="wx-welcome-title">开始你的英语练习</p>' +
+        '<p class="wx-welcome-sub">说话或打字 — AI 帮你打磨表达</p>' +
         '</div>';
 
-    // Reset stats
     destroyCharts();
     sessionStats = {
         scene: 'ordering',
@@ -491,13 +527,11 @@ function practiceAgain() {
         errors: []
     };
 
-    // Reset mode state
     aiResponding = false;
     qaRecording = false;
     if (conversationMode === 'q_and_a') updateRecordButton();
 
     inp.value = '';
-    endBtn.style.display = 'none';
     showView('view-scene');
 }
 
@@ -506,12 +540,12 @@ function removeWelcome() {
     if (w) w.remove();
 }
 
-// ── Avatar SVG icons ──
-const AVATAR_AI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><circle cx="12" cy="16" r="6"/><circle cx="9" cy="14.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14.5" r="1" fill="currentColor" stroke="none"/><path d="M10 18c.6.8 1.3 1 2 1s1.4-.2 2-1"/></svg>';
-const AVATAR_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>';
+// ── SVG icons ──
+const SVG_AI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><circle cx="12" cy="16" r="6"/><circle cx="9" cy="14.5" r="1" fill="currentColor"/><circle cx="15" cy="14.5" r="1" fill="currentColor"/><path d="M10 18c.6.8 1.3 1 2 1s1.4-.2 2-1"/></svg>';
+const SVG_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>';
 
 // ═══════════════════════════════════════════════════════════════════
-// Message display
+// Message display — WeChat style
 // ═══════════════════════════════════════════════════════════════════
 let _lastUserRow = null;
 let _lastAiRow = null;
@@ -523,25 +557,25 @@ function addMsg(who, text) {
 
     if (who === 'user') {
         row.innerHTML =
-            '<div class="msg-head msg-head-right">' +
-                '<span class="msg-nick">You</span>' +
-                '<span class="msg-avatar msg-avatar-user">' + AVATAR_USER + '</span>' +
-            '</div>' +
-            '<div class="msg-bubble"><span class="msg-text">' + escapeHTML(text) + '</span></div>';
+            '<div class="wx-msg-avatar me">' + SVG_USER + '</div>' +
+            '<div class="wx-msg-content">' +
+                '<div class="wx-msg-nick">You</div>' +
+                '<div class="wx-msg-bubble"><span class="msg-text">' + escapeHTML(text) + '</span></div>' +
+            '</div>';
         _lastUserRow = row;
         row.dataset.msgRole = 'user';
     } else if (who === 'ai') {
         row.innerHTML =
-            '<div class="msg-head">' +
-                '<span class="msg-avatar msg-avatar-ai">' + AVATAR_AI + '</span>' +
-                '<span class="msg-nick">Tutor</span>' +
-            '</div>' +
-            '<div class="msg-bubble">' +
-                '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>' +
+            '<div class="wx-msg-avatar ai">' + SVG_AI + '</div>' +
+            '<div class="wx-msg-content">' +
+                '<div class="wx-msg-nick">Tutor</div>' +
+                '<div class="wx-msg-bubble">' +
+                    '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>' +
+                '</div>' +
             '</div>';
         _lastAiRow = row;
     } else {
-        row.innerHTML = '<div class="msg-bubble msg-sys" style="margin:0 auto">' + text + '</div>';
+        row.innerHTML = '<div class="wx-msg-sys">' + text + '</div>';
     }
     chat.appendChild(row);
     chat.scrollTop = chat.scrollHeight;
@@ -552,11 +586,11 @@ function startAIBubble() {
     var row = document.createElement('div');
     row.className = 'msg-row msg-ai';
     row.innerHTML =
-        '<div class="msg-head">' +
-            '<span class="msg-avatar msg-avatar-ai">' + AVATAR_AI + '</span>' +
-            '<span class="msg-nick">Tutor</span>' +
-        '</div>' +
-        '<div class="msg-bubble"><span class="msg-text ai-text"></span></div>';
+        '<div class="wx-msg-avatar ai">' + SVG_AI + '</div>' +
+        '<div class="wx-msg-content">' +
+            '<div class="wx-msg-nick">Tutor</div>' +
+            '<div class="wx-msg-bubble"><span class="msg-text ai-text"></span></div>' +
+        '</div>';
     chat.appendChild(row);
     _pendingAiRow = row;
     _lastAiRow = row;
@@ -574,33 +608,27 @@ function finalizeAI() { _pendingAiRow = null; }
 // ═══════════════════════════════════════════════════════════════════
 // Score Badges — pronunciation & fluency below user messages
 // ═══════════════════════════════════════════════════════════════════
-function scoreColor(s) {
-    if (s >= 80) return 'var(--ed-sage)';
-    if (s >= 60) return 'var(--ed-gold)';
-    return 'var(--ed-terracotta)';
-}
-
 function _getUserRow() { return _lastUserRow; }
 function _getAiRow()    { return _lastAiRow; }
 
 function showScores(pron, flu) {
     var row = _getUserRow();
     if (!row) return;
-    if (row.querySelector('.score-bar')) return;
+    var content = row.querySelector('.wx-msg-content');
+    if (!content || content.querySelector('.wx-score-row')) return;
 
     var bar = document.createElement('div');
-    bar.className = 'score-bar';
+    bar.className = 'wx-score-row';
     bar.innerHTML =
-        '<span class="score-item score-pron">' +
-        '<span class="score-label">发音</span>' +
-        '<span class="score-val" style="--c:' + scoreColor(pron) + '">' + pron + '</span>' +
+        '<span class="wx-score-item">' +
+            '<span class="wx-score-label">发音</span>' +
+            '<span class="wx-score-val" style="--sc:' + pron + '">' + pron + '</span>' +
         '</span>' +
-        '<span class="score-divider"></span>' +
-        '<span class="score-item score-flue">' +
-        '<span class="score-label">流利</span>' +
-        '<span class="score-val" style="--c:' + scoreColor(flu) + '">' + flu + '</span>' +
+        '<span class="wx-score-item">' +
+            '<span class="wx-score-label">流利</span>' +
+            '<span class="wx-score-val" style="--sc:' + flu + '">' + flu + '</span>' +
         '</span>';
-    row.appendChild(bar);
+    content.appendChild(bar);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -609,101 +637,88 @@ function showScores(pron, flu) {
 function showTranslation(text) {
     var row = _getAiRow();
     if (!row) return;
-    if (row.querySelector('.trans-toggle')) return;
+    var content = row.querySelector('.wx-msg-content');
+    if (!content || content.querySelector('.wx-trans')) return;
     var wrap = document.createElement('div');
-    wrap.className = 'trans-wrap';
+    wrap.className = 'wx-trans';
     wrap.innerHTML =
-        '<button class="trans-toggle" onclick="this.parentElement.classList.toggle(\'open\')">' +
-            '<span class="trans-icon">译</span>' +
-            '<span class="trans-label">中文</span>' +
-            '<svg class="trans-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '<button class="wx-trans-toggle" onclick="this.parentElement.classList.toggle(\'open\')">' +
+            '<span class="wx-trans-icon">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 8l3 9"/><path d="M19 8l-3 9"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '</span>' +
+            '<span class="wx-trans-label">中文翻译</span>' +
+            '<svg class="wx-trans-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>' +
         '</button>' +
-        '<div class="trans-content">' +
-            '<span class="trans-text">' + escapeHTML(text) + '</span>' +
+        '<div class="wx-trans-body">' +
+            '<span class="wx-trans-text">' + escapeHTML(text) + '</span>' +
         '</div>';
-    row.appendChild(wrap);
+    content.appendChild(wrap);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// Correction Card — Collapsible
+// ═══════════════════════════════════════════════════════════════════
 function showCorrection(data) {
     var row = _getUserRow();
     if (!row) return;
-    if (row.querySelector('.cc-wrap')) return;
+    var content = row.querySelector('.wx-msg-content');
+    if (!content || content.querySelector('.wx-cc-wrap')) return;
 
     var count = data.errors.length;
     var wrap = document.createElement('div');
-    wrap.className = 'cc-wrap';
+    wrap.className = 'wx-cc-wrap';
 
     // Toggle button
     var toggle = document.createElement('button');
-    toggle.className = 'cc-toggle';
+    toggle.className = 'wx-cc-toggle';
     toggle.onclick = function() { wrap.classList.toggle('open'); };
     toggle.innerHTML =
-        '<span class="cc-toggle-icon">' +
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' +
-        '</span>' +
-        '<span class="cc-toggle-label">' + count + ' finding' + (count !== 1 ? 's' : '') + '</span>' +
-        '<svg class="cc-toggle-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+        '<span>' + count + ' 处可改进</span>' +
+        '<svg class="wx-cc-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>';
     wrap.appendChild(toggle);
 
     // Collapsible body
     var inner = document.createElement('div');
-    inner.className = 'cc-inner';
+    inner.className = 'wx-cc-body';
 
     if (data.corrected_text && data.corrected_text !== data.original_text) {
         var preview = document.createElement('div');
-        preview.className = 'cc-preview';
-        preview.innerHTML = '<span class="cc-preview-label">Revised</span>' +
-            '<span class="cc-preview-text">' + escapeHTML(data.corrected_text) + '</span>';
+        preview.className = 'wx-cc-preview';
+        preview.innerHTML = '<span class="wx-cc-preview-label">优化后</span>' +
+            '<span class="wx-cc-preview-text">' + escapeHTML(data.corrected_text) + '</span>';
         inner.appendChild(preview);
     }
 
-    var list = document.createElement('div');
-    list.className = 'cc-list';
-    var PALETTE = {
-        grammar:{label:'Grammar',accent:'#c46a4a',bg:'var(--ed-err-grammar)',rule:'#b85a3a'},
-        tense:{label:'Tense',accent:'#c46a4a',bg:'var(--ed-err-grammar)',rule:'#b85a3a'},
-        preposition:{label:'Prep.',accent:'#5a8a9a',bg:'var(--ed-err-prep)',rule:'#4a7a8a'},
-        article:{label:'Article',accent:'#5a8a9a',bg:'var(--ed-err-prep)',rule:'#4a7a8a'},
-        vocabulary:{label:'Vocab',accent:'#8a7aaa',bg:'var(--ed-err-vocab)',rule:'#7a6a9a'},
-        word_choice:{label:'Word',accent:'#8a7aaa',bg:'var(--ed-err-vocab)',rule:'#7a6a9a'},
-        expression:{label:'Expr.',accent:'#6a9a78',bg:'var(--ed-err-expr)',rule:'#5a8a68'},
-    };
     data.errors.forEach(function(err, i) {
-        var pal = PALETTE[err.type] || PALETTE.grammar;
         var item = document.createElement('div');
-        item.className = 'cc-err';
-        item.style.cssText = '--err-accent:' + pal.accent + ';--err-rule:' + pal.rule + ';--err-delay:' + (i * 0.06) + 's';
-        var line = document.createElement('div');
-        line.className = 'cc-err-line';
-        var badge = document.createElement('span');
-        badge.className = 'cc-badge';
-        badge.style.cssText = 'color:' + pal.accent + ';border-color:' + pal.accent;
-        badge.textContent = pal.label;
-        line.appendChild(badge);
-        var origSpan = document.createElement('span');
-        origSpan.className = 'cc-orig';
-        origSpan.textContent = err.original;
-        line.appendChild(origSpan);
-        var arrow = document.createElement('span');
-        arrow.className = 'cc-arrow';
-        arrow.textContent = '→';
-        line.appendChild(arrow);
-        var corrSpan = document.createElement('span');
-        corrSpan.className = 'cc-corr';
-        corrSpan.textContent = err.corrected;
-        line.appendChild(corrSpan);
-        item.appendChild(line);
+        item.className = 'wx-cc-item';
+        item.style.animationDelay = (i * 0.06) + 's';
+        var typeMap = {
+            grammar:     { label: '语法', cls: 'wx-cc-tag-grammar' },
+            tense:       { label: '时态', cls: 'wx-cc-tag-grammar' },
+            preposition: { label: '介词', cls: 'wx-cc-tag-prep' },
+            article:     { label: '冠词', cls: 'wx-cc-tag-prep' },
+            vocabulary:  { label: '词汇', cls: 'wx-cc-tag-vocab' },
+            word_choice: { label: '用词', cls: 'wx-cc-tag-vocab' },
+            expression:  { label: '表达', cls: 'wx-cc-tag-expr' },
+        };
+        var tm = typeMap[err.type] || typeMap.grammar;
+        item.innerHTML =
+            '<span class="wx-cc-tag ' + tm.cls + '">' + tm.label + '</span>' +
+            '<span class="wx-cc-orig">' + escapeHTML(err.original) + '</span>' +
+            '<span class="wx-cc-arrow">→</span>' +
+            '<span class="wx-cc-corr">' + escapeHTML(err.corrected) + '</span>';
+        inner.appendChild(item);
         if (err.explanation_cn) {
             var expl = document.createElement('div');
-            expl.className = 'cc-expl';
+            expl.className = 'wx-cc-expl';
             expl.textContent = err.explanation_cn;
-            item.appendChild(expl);
+            inner.appendChild(expl);
         }
-        list.appendChild(item);
     });
-    inner.appendChild(list);
     wrap.appendChild(inner);
-    row.appendChild(wrap);
+    content.appendChild(wrap);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -716,18 +731,15 @@ function connect(scene) {
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
-        st.textContent = 'connected';
-        st.className = 'status-badge connected';
+        st.textContent = '在线';
         inp.disabled = false; btn.disabled = false; recBtn.disabled = false;
-        endBtn.style.display = 'flex';
         inp.focus();
         aiResponding = false;
         updateRecordButton();
-        // Send custom scene description if applicable
         if (sessionStats.scene === 'custom' && sessionStats.customTopic) {
             send({ type: 'custom_scene', data: { description: sessionStats.customTopic } });
         }
-        addMsg('sys', 'Connected — type or tap Record to speak');
+        addMsg('sys', '已连接 — 开始你的英语练习吧');
         sessionStats.startTime = Date.now();
     };
 
@@ -743,33 +755,28 @@ function connect(scene) {
             log('<- ' + m.type);
             switch (m.type) {
                 case 'transcript':
-                    // Deduplicate: skip if last user message is identical
                     var text = m.data.text;
                     if (_lastUserRow) {
                         var lastText = _lastUserRow.querySelector('.msg-text');
                         if (lastText && lastText.textContent === text) break;
                     }
                     addMsg('user', text);
-                    // Track pronunciation & fluency scores
                     if (m.data.pronunciation !== undefined && m.data.pronunciation > 0) {
                         sessionStats.pronScores.push(m.data.pronunciation);
                     }
                     if (m.data.fluency !== undefined && m.data.fluency > 0) {
                         sessionStats.fluScores.push(m.data.fluency);
                     }
-                    // Show pronunciation & fluency scores (voice input only)
                     if (m.data.pronunciation !== undefined || m.data.fluency !== undefined) {
                         showScores(m.data.pronunciation || 0, m.data.fluency || 0);
                     }
-                    st.textContent = 'connected';
-                    st.className = 'status-badge connected';
+                    st.textContent = '在线';
                     break;
                 case 'processing':
                     st.textContent = m.data.message;
                     break;
                 case 'correction':
                     showCorrection(m.data);
-                    // Track errors for report
                     if (m.data.errors && Array.isArray(m.data.errors)) {
                         for (var ei = 0; ei < m.data.errors.length; ei++) {
                             sessionStats.errors.push({ type: m.data.errors[ei].type });
@@ -799,8 +806,7 @@ function connect(scene) {
                         updateRecordButton();
                         updateTextInput();
                     }
-                    st.textContent = 'connected';
-                    st.className = 'status-badge connected';
+                    st.textContent = '在线';
                     break;
                 case 'score_update':
                     log('Score: ' + m.data.score);
@@ -812,34 +818,30 @@ function connect(scene) {
                     showTranslation(m.data.text);
                     break;
                 case 'error':
-                    addMsg('sys', 'Error: ' + (m.data.message || ''));
+                    addMsg('sys', '错误: ' + (m.data.message || ''));
                     break;
             }
         } catch(e) {}
     };
 
     ws.onclose = () => {
-        st.textContent = 'disconnected';
-        st.className = 'status-badge disconnected';
+        st.textContent = '未连接';
         inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
         aiResponding = false;
         if (micActive) stopMic();
-        endBtn.style.display = 'none';
     };
 }
 
 function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 // ═══════════════════════════════════════════════════════════════════
-// Text send (auto-interrupt before sending)
+// Text send
 // ═══════════════════════════════════════════════════════════════════
 function sendText() {
     const t = inp.value.trim();
     if (!t) return;
-    // In Q&A mode, block during AI response
     if (conversationMode === 'q_and_a' && aiResponding) return;
     inp.value = '';
-    // In Q&A mode, don't auto-interrupt (AI shouldn't be talking)
     if (conversationMode !== 'q_and_a') interruptAI();
     addMsg('user', t);
     send({ type: 'text_message', data: { text: t } });
@@ -850,15 +852,13 @@ function sendText() {
 // Continuous Mic with VAD + Pre-buffer
 // ═══════════════════════════════════════════════════════════════════
 async function toggleMic() {
-    // ── Q&A Mode ──
     if (conversationMode === 'q_and_a') {
         if (qaRecording) {
-            // Stop recording — send buffered audio if enough speech
             if (speaking && audioBuf.length > 0) {
                 const dur = audioBuf.length / SR;
                 if (dur >= MIN_SPEECH_MS / 1000) {
                     log('Q&A manual stop, sending ' + dur.toFixed(1) + 's');
-                    st.textContent = 'Recognizing…';
+                    st.textContent = '识别中…';
                     const pcm16 = new Int16Array(audioBuf.length);
                     for (let i = 0; i < audioBuf.length; i++) {
                         const s = Math.max(-1, Math.min(1, audioBuf[i]));
@@ -875,7 +875,6 @@ async function toggleMic() {
             updateRecordButton();
             return;
         }
-        // Start Q&A recording — interrupt AI/TTS if still playing
         if (aiResponding) {
             interruptAI();
             aiResponding = false;
@@ -884,10 +883,8 @@ async function toggleMic() {
         }
         qaRecording = true;
         updateRecordButton();
-        // Fall through to start mic
     }
 
-    // ── Real-time Mode (existing toggle + shared mic start) ──
     if (micActive) { stopMic(); return; }
     try {
         log('Starting continuous mic…');
@@ -911,7 +908,6 @@ async function toggleMic() {
             energy = Math.sqrt(energy / input.length);
             const isVoice = energy > VAD_THRESHOLD;
 
-            // Pre-buffer (ring buffer)
             const preBufMax = SR * PRE_SPEECH_MS / 1000;
             if (!window._preBuf) window._preBuf = [];
             for (let i = 0; i < input.length; i++) window._preBuf.push(input[i]);
@@ -929,7 +925,7 @@ async function toggleMic() {
                         audioBuf = window._preBuf.slice(startIdx);
                         window._preBuf = []; window._preBufVoiceStart = 0; window._vadHits = 0;
                         log('Speaking (pre-buf ' + (audioBuf.length/SR*1000).toFixed(0) + 'ms)');
-                        st.textContent = 'speaking';
+                        st.textContent = '你正在说话';
                         if (conversationMode !== 'q_and_a') interruptAI();
                     }
                 } else {
@@ -941,7 +937,6 @@ async function toggleMic() {
                 if (!isVoice && silenceStart === null) silenceStart = now;
             }
 
-            // Send chunk periodically
             if (speaking && (now - lastSendTime) >= CHUNK_MS) {
                 lastSendTime = now;
                 const sendSamples = audioBuf.slice(-(SR * CHUNK_MS / 1000) | 0);
@@ -958,12 +953,11 @@ async function toggleMic() {
                 }
             }
 
-            // Silence → end utterance
             if (speaking && silenceStart !== null && (now - silenceStart) >= SILENCE_MS) {
                 const dur = (now - (speechStart || now)) / 1000;
                 if (dur * 1000 >= MIN_SPEECH_MS) {
                     log('Silence, ending (spoke ' + dur.toFixed(1) + 's)');
-                    st.textContent = 'Recognizing…';
+                    st.textContent = '识别中…';
                     if (audioBuf.length > 0) {
                         const pcm16 = new Int16Array(audioBuf.length);
                         for (let i = 0; i < audioBuf.length; i++) {
@@ -977,7 +971,6 @@ async function toggleMic() {
                     }
                 }
                 audioBuf = []; speaking = false; silenceStart = null; speechStart = null;
-                // In Q&A mode, auto-stop mic after utterance sent
                 if (conversationMode === 'q_and_a') {
                     setTimeout(function() { stopMic(); qaRecording = false; updateRecordButton(); }, 0);
                 }
@@ -989,16 +982,11 @@ async function toggleMic() {
 
         micActive = true;
         recBtn.classList.add('recording');
-        if (conversationMode === 'q_and_a') {
-            recBtn.querySelector('.btn-label').textContent = 'Tap to stop';
-        } else {
-            recBtn.querySelector('.btn-label').textContent = 'Stop';
-        }
         log('Mic live — speak anytime');
-        st.textContent = 'listening';
+        st.textContent = '聆听中';
 
     } catch (err) {
-        addMsg('sys', 'Mic error: ' + err.message + ' — please type instead');
+        addMsg('sys', '麦克风错误: ' + err.message + ' — 请使用文字输入');
         log('Mic err: ' + err.message);
     }
 }
@@ -1010,13 +998,9 @@ function stopMic() {
     if (ac) { ac.close().catch(()=>{}); ac = null; }
     audioBuf = []; silenceStart = null; speechStart = null;
     recBtn.classList.remove('recording');
-    if (conversationMode === 'q_and_a') {
-        recBtn.querySelector('.btn-label').textContent = 'Speak';
-    } else {
-        recBtn.querySelector('.btn-label').textContent = 'Record';
-    }
-    st.textContent = 'connected';
-    st.className = 'status-badge connected';
+    var label = recBtn.querySelector('.wx-rec-label');
+    if (label) label.textContent = '';
+    st.textContent = '在线';
     log('Mic stopped');
 }
 
@@ -1037,11 +1021,10 @@ function playNextTTS() {
             URL.revokeObjectURL(url);
             ttsAudioEl = null;
             ttsPlaying = false;
-            st.textContent = 'connected';
-            st.className = 'status-badge connected';
+            st.textContent = '在线';
             if (ttsChunks.length > 0) playNextTTS();
         };
-        ttsAudioEl.onplay = () => { st.textContent = 'Tutor speaking'; };
+        ttsAudioEl.onplay = () => { st.textContent = 'Tutor 说话中'; };
         ttsAudioEl.play().catch(() => { ttsPlaying = false; });
         log('TTS ' + (blob.size/1024).toFixed(0) + 'KB');
     }, 250);
@@ -1059,19 +1042,20 @@ function interruptAI() {
     think.classList.remove('active');
     finalizeAI();
     log('Interrupted AI');
-    st.textContent = 'connected';
-    st.className = 'status-badge connected';
+    st.textContent = '在线';
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // Session
 // ═══════════════════════════════════════════════════════════════════
 function endSession() {
-    if (!ws || ws.readyState !== 1) return;
+    if (!ws || ws.readyState !== 1) {
+        practiceAgain();
+        return;
+    }
     if (micActive) stopMic();
     send({ type: 'end_session', data: {} });
-    addMsg('sys', 'Generating report…');
-    endBtn.style.display = 'none';
+    addMsg('sys', '正在生成报告…');
     inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
 }
 
@@ -1091,49 +1075,71 @@ function renderDashboard() {
     var errCounts = [];
     var grammarScores = [];
     var vocabScores = [];
+    var pronScores = [];
+    var fluScores = [];
     for (var i = 0; i < sessionHistory.length; i++) {
         var h = sessionHistory[i];
         labels.push('#' + (i + 1));
         errCounts.push(h.totalErrors);
         grammarScores.push(h.grammar);
         vocabScores.push(h.vocabulary);
+        pronScores.push(h.pronunciation);
+        fluScores.push(h.fluency);
     }
 
-    // Error count line chart
     var d1 = document.getElementById('chart-dash-errors').getContext('2d');
     window._chartDashErrors = new Chart(d1, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{ label: '错误总数', data: errCounts, borderColor: '#c46a4a', backgroundColor: 'rgba(196,106,74,0.08)', tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#c46a4a' }]
+            datasets: [{ label: '错误总数', data: errCounts, borderColor: '#07C160', backgroundColor: 'rgba(7,193,96,0.08)', tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#07C160' }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#8b7355', font: { family: 'JetBrains Mono', size: 10 } } } },
+            plugins: { legend: { labels: { color: '#888', font: { family: '-apple-system, sans-serif', size: 11 } } } },
             scales: {
-                x: { ticks: { color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } },
-                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } }
+                x: { ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } }
             }
         }
     });
 
-    // Score trend line chart
     var d2 = document.getElementById('chart-dash-scores').getContext('2d');
     window._chartDashScores = new Chart(d2, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: '语法', data: grammarScores, borderColor: '#c46a4a', backgroundColor: 'rgba(196,106,74,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#c46a4a' },
-                { label: '词汇', data: vocabScores, borderColor: '#8a7aaa', backgroundColor: 'rgba(138,122,170,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#8a7aaa' },
+                { label: '语法', data: grammarScores, borderColor: '#07C160', backgroundColor: 'rgba(7,193,96,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#07C160' },
+                { label: '词汇', data: vocabScores, borderColor: '#576B95', backgroundColor: 'rgba(87,107,149,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#576B95' },
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#8b7355', font: { family: 'JetBrains Mono', size: 10 } } } },
+            plugins: { legend: { labels: { color: '#888', font: { family: '-apple-system, sans-serif', size: 11 } } } },
             scales: {
-                x: { ticks: { color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } },
-                y: { min: 0, max: 100, ticks: { color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } }
+                x: { ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { min: 0, max: 100, ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+            }
+        }
+    });
+
+    var d3 = document.getElementById('chart-dash-pron-flu').getContext('2d');
+    window._chartDashPronFlu = new Chart(d3, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: '发音', data: pronScores, borderColor: '#10AEFF', backgroundColor: 'rgba(16,174,255,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#10AEFF' },
+                { label: '流利', data: fluScores, borderColor: '#F39C12', backgroundColor: 'rgba(243,156,18,0.06)', tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#F39C12' },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#888', font: { family: '-apple-system, sans-serif', size: 11 } } } },
+            scales: {
+                x: { ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { min: 0, max: 100, ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } }
             }
         }
     });
@@ -1141,7 +1147,7 @@ function renderDashboard() {
 
 function destroyCharts() {
     var keys = ['_chartErrors', '_chartErrorTypes',
-        '_chartDashErrors', '_chartDashScores'];
+        '_chartDashErrors', '_chartDashScores', '_chartDashPronFlu'];
     for (var i = 0; i < keys.length; i++) {
         if (window[keys[i]]) { window[keys[i]].destroy(); window[keys[i]] = null; }
     }
@@ -1152,11 +1158,7 @@ function showReport(data) {
     think.classList.remove('active');
 
     // Basic info
-    $('#rp-scene').textContent = data.scene || sessionStats.scene;
-    var now = new Date();
-    $('#rp-date').textContent = now.getFullYear() + '/' +
-        String(now.getMonth() + 1).padStart(2, '0') + '/' +
-        String(now.getDate()).padStart(2, '0');
+    $('#rp-scene').textContent = (data.scene || sessionStats.scene);
 
     var durSec = data.duration_sec || 0;
     if (durSec === 0 && sessionStats.startTime) {
@@ -1164,12 +1166,21 @@ function showReport(data) {
     }
     var mins = Math.floor(durSec / 60);
     var secs = durSec % 60;
-    $('#rp-duration').textContent = '练习时长 ' + mins + '分' + secs + '秒';
+    $('#rp-duration').textContent = mins + '分' + secs + '秒';
 
     var turns = data.turns || 0;
-    $('#rp-turns').textContent = turns + ' 轮对话';
+    $('#rp-turns').textContent = turns + ' 轮';
 
-    // If no conversations, show empty state
+    // Count errors
+    var totalErrCount = 0;
+    if (data.error_stats) {
+        for (var ei = 0; ei < data.error_stats.length; ei++) {
+            totalErrCount += data.error_stats[ei].count;
+        }
+    }
+    $('#rp-error-count').textContent = totalErrCount + ' 个';
+
+    // Empty state
     var reportContent = document.getElementById('report-content');
     var reportEmpty = document.getElementById('report-empty');
     if (turns === 0) {
@@ -1183,16 +1194,17 @@ function showReport(data) {
 
     // Score helper
     function scoreClass(s) {
-        if (s >= 80) return 'sc-green';
-        if (s >= 60) return 'sc-yellow';
-        return 'sc-red';
+        if (s >= 80) return 'good';
+        if (s >= 60) return 'ok';
+        return 'low';
     }
 
     function setScore(id, val) {
-        var el = $('#' + id);
+        var el = document.getElementById(id);
         var v = val !== undefined && val !== null ? val : '--';
-        el.querySelector('.sc-val').textContent = v;
-        el.querySelector('.sc-val').className = 'sc-val ' + scoreClass(typeof v === 'number' ? v : 0);
+        var vEl = el.querySelector('.wx-score-card-val');
+        vEl.textContent = v;
+        vEl.className = 'wx-score-card-val ' + scoreClass(typeof v === 'number' ? v : 0);
     }
 
     setScore('sc-grammar', data.grammar);
@@ -1200,13 +1212,20 @@ function showReport(data) {
     setScore('sc-pronunciation', data.pronunciation);
     setScore('sc-fluency', data.fluency);
 
-    // ── Single-session trend charts ──
+    // Average score in hero
+    var avgScore = '--';
+    var scores = [data.grammar, data.vocabulary, data.pronunciation, data.fluency].filter(function(s) { return typeof s === 'number'; });
+    if (scores.length > 0) {
+        avgScore = Math.round(scores.reduce(function(a, b) { return a + b; }, 0) / scores.length);
+    }
+    $('#rp-avg-score').textContent = avgScore;
+
+    // Trends
     destroyCharts();
     if (data.turn_trends && data.turn_trends.length >= 2) {
         $('#rp-trends-section').style.display = '';
         var labels = data.turn_trends.map(function(t) { return '#' + (t.turn_index + 1); });
 
-        // Error trend line chart
         var errCtx = document.getElementById('chart-errors').getContext('2d');
         window._chartErrors = new Chart(errCtx, {
             type: 'line',
@@ -1216,32 +1235,25 @@ function showReport(data) {
                     {
                         label: '语法类',
                         data: data.turn_trends.map(function(t) { return t.grammar_errors; }),
-                        borderColor: '#c46a4a',
-                        backgroundColor: 'rgba(196,106,74,0.06)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#c46a4a',
+                        borderColor: '#FA5151',
+                        backgroundColor: 'rgba(250,81,81,0.06)',
+                        tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#FA5151',
                     },
                     {
                         label: '词汇类',
                         data: data.turn_trends.map(function(t) { return t.vocab_errors; }),
-                        borderColor: '#8a7aaa',
-                        backgroundColor: 'rgba(138,122,170,0.06)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#8a7aaa',
+                        borderColor: '#576B95',
+                        backgroundColor: 'rgba(87,107,149,0.06)',
+                        tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#576B95',
                     },
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8b7355', font: { family: 'JetBrains Mono', size: 10 } } } },
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#888', font: { family: '-apple-system, sans-serif', size: 11 } } } },
                 scales: {
-                    x: { ticks: { color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } },
-                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } }
+                    x: { ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } }
                 }
             }
         });
@@ -1257,22 +1269,22 @@ function showReport(data) {
         allErrSection.style.display = '';
         data.all_errors.forEach(function(err, i) {
             var card = document.createElement('div');
-            card.className = 'rp-err-card';
-            var typeColor = 'var(--ed-terracotta)';
-            if (err.type === 'preposition' || err.type === 'article') typeColor = 'var(--ed-dusty-blue)';
-            else if (err.type === 'vocabulary' || err.type === 'word_choice') typeColor = 'var(--ed-dusty-plum)';
-            else if (err.type === 'expression') typeColor = 'var(--ed-sage)';
+            card.className = 'wx-err-card';
+            var tagCls = 'wx-err-tag-grammar';
+            if (err.type === 'preposition' || err.type === 'article') tagCls = 'wx-err-tag-prep';
+            else if (err.type === 'vocabulary' || err.type === 'word_choice') tagCls = 'wx-err-tag-vocab';
+            else if (err.type === 'expression') tagCls = 'wx-err-tag-expr';
             card.innerHTML =
-                '<div class="rp-err-head">' +
-                    '<span class="rp-err-badge" style="color:' + typeColor + ';border-color:' + typeColor + '">' + escapeHTML(err.type_label) + '</span>' +
-                    '<span class="rp-err-idx">#' + (i + 1) + '</span>' +
+                '<div class="wx-err-head">' +
+                    '<span class="wx-err-tag ' + tagCls + '">' + escapeHTML(err.type_label || err.type) + '</span>' +
+                    '<span class="wx-err-idx">#' + (i + 1) + '</span>' +
                 '</div>' +
-                '<div class="rp-err-body">' +
-                    '<span class="rp-err-orig">' + escapeHTML(err.original) + '</span>' +
-                    '<span class="rp-err-arrow">→</span>' +
-                    '<span class="rp-err-corr">' + escapeHTML(err.corrected) + '</span>' +
+                '<div class="wx-err-body">' +
+                    '<span class="wx-err-orig">' + escapeHTML(err.original) + '</span>' +
+                    '<span class="wx-err-arrow">→</span>' +
+                    '<span class="wx-err-corr">' + escapeHTML(err.corrected) + '</span>' +
                 '</div>' +
-                (err.explanation_cn ? '<div class="rp-err-expl">' + escapeHTML(err.explanation_cn) + '</div>' : '');
+                (err.explanation_cn ? '<div class="wx-err-expl">' + escapeHTML(err.explanation_cn) + '</div>' : '');
             allErrDiv.appendChild(card);
         });
     } else {
@@ -1288,9 +1300,9 @@ function showReport(data) {
         var errCounts = data.error_stats.map(function(es) { return es.count; });
         var errColors = data.error_stats.map(function(es) {
             var t = es.type;
-            if (t === 'grammar' || t === 'tense' || t === 'preposition' || t === 'article') return 'rgba(196,106,74,0.65)';
-            if (t === 'vocabulary' || t === 'word_choice' || t === 'expression') return 'rgba(138,122,170,0.65)';
-            return 'rgba(184,134,47,0.65)';
+            if (t === 'grammar' || t === 'tense' || t === 'preposition' || t === 'article') return 'rgba(250,81,81,0.65)';
+            if (t === 'vocabulary' || t === 'word_choice' || t === 'expression') return 'rgba(87,107,149,0.65)';
+            return 'rgba(7,193,96,0.65)';
         });
         var errCtx = document.getElementById('chart-error-types').getContext('2d');
         window._chartErrorTypes = new Chart(errCtx, {
@@ -1303,8 +1315,8 @@ function showReport(data) {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { ticks: { color: '#8b7355', font: { size: 10 } }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b7355' }, grid: { color: 'rgba(139,115,85,0.12)' } }
+                    x: { ticks: { color: '#888', font: { size: 10 } }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.04)' } }
                 }
             }
         });
@@ -1319,24 +1331,21 @@ function showReport(data) {
     if (data.suggestions && data.suggestions.length > 0) {
         data.suggestions.forEach(function(s) {
             var div = document.createElement('div');
-            div.className = 'rp-suggestion';
-            div.textContent = s;
+            div.className = 'wx-suggestion';
+            div.innerHTML = '<span class="wx-suggestion-dot"></span>' + escapeHTML(s);
             sugDiv.appendChild(div);
         });
     } else {
-        sugDiv.innerHTML = '<div class="rp-suggestion">继续保持练习，你做得很好！</div>';
+        sugDiv.innerHTML = '<div class="wx-suggestion"><span class="wx-suggestion-dot"></span>继续保持练习，你做得很好</div>';
     }
 
-    // Save summary for cross-session comparison
     saveSessionSummary(data);
-
     showView('view-report');
 }
 
-// Save current session summary into history for cross-session comparison
 function saveSessionSummary(data) {
     var turns = data.turns || 0;
-    if (turns === 0) return; // don't save empty sessions
+    if (turns === 0) return;
 
     var totalErrors = 0;
     if (data.error_stats) {
@@ -1365,8 +1374,8 @@ inp.addEventListener('keydown', e => {
 });
 btn.addEventListener('click', sendText);
 recBtn.addEventListener('click', toggleMic);
-st.addEventListener('dblclick', interruptAI);
-st.title = 'Double-click to interrupt AI';
+st.parentElement && st.parentElement.addEventListener('dblclick', interruptAI);
+st.title = '双击打断 AI 回复';
 
 // ═══════════════════════════════════════════════════════════════════
 // Start — show scene selection first
@@ -1374,707 +1383,55 @@ st.title = 'Double-click to interrupt AI';
 showView('view-scene');
 </script>
 
+
 <style>
 /* ═══════════════════════════════════════════════════════════════════
-   EchoSpeak — "Editorial" Design System
-   Type: Playfair Display + Crimson Pro + JetBrains Mono
+   EchoSpeak — WeChat Design System
+   Colors: WeChat Green #07C160 · Dark Nav #1A1A1A · Gray BG #EDEDED
+   Fonts: System UI (-apple-system, PingFang SC, Microsoft YaHei)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Reset & Variables ── */
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --ed-bg:          #fefaf3;
-    --ed-surface:     #fffbf5;
-    --ed-surface-alt: #f7f2e8;
-    --ed-border:      #d4c4a8;
-    --ed-border-light:#e8dcc8;
-    --ed-text:        #2c2416;
-    --ed-heading:     #1a1814;
-    --ed-dim:         #8b7355;
-    --ed-muted:       #b8a88a;
-    --ed-gold:        #b8860b;
-    --ed-gold-dim:    rgba(184,134,11,0.08);
-    --ed-gold-glow:   rgba(184,134,11,0.04);
-    --ed-accent:      #8b4513;
-    --ed-accent-light:#b8722e;
-    --ed-terracotta:  #c46a4a;
-    --ed-sage:        #5a8a5a;
-    --ed-dusty-blue:  #5a8a9a;
-    --ed-dusty-plum:  #8a7aaa;
-    --ed-rose:        #b85a5a;
+    --wx-green:        #07C160;
+    --wx-green-dark:   #06AD56;
+    --wx-bubble-user:  #95EC69;
+    --wx-bg:           #EDEDED;
+    --wx-surface:      #FFFFFF;
+    --wx-text:         #191919;
+    --wx-secondary:    #888888;
+    --wx-hint:         #B2B2B2;
+    --wx-border:       #E5E5E5;
+    --wx-border-light: #F0F0F0;
+    --wx-navbar:       #1A1A1A;
+    --wx-red:          #FA5151;
+    --wx-orange:       #F39C12;
+    --wx-blue:         #576B95;
+    --wx-header-h:     44px;
+    --wx-input-h:      52px;
+    --safe-bottom:     env(safe-area-inset-bottom, 0px);
 
-    /* Error card palette */
-    --ed-err-grammar: rgba(196,106,74,0.06);
-    --ed-err-prep:    rgba(90,138,154,0.06);
-    --ed-err-vocab:   rgba(138,122,170,0.06);
-    --ed-err-expr:    rgba(90,138,90,0.06);
-
-    font-family: 'Crimson Pro', Georgia, serif;
-    color: var(--ed-text);
-    background: var(--ed-bg);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    color: var(--wx-text);
+    background: var(--wx-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-html { font-size:17px; height:100% }
+html { height: 100%; }
 body {
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    max-width:760px;
-    margin:0 auto;
-    padding:0 20px 16px;
-    position:relative;
-    background: var(--ed-bg);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--wx-bg);
+    overflow: hidden;
 }
 
-/* ── Decorative top rule ── */
-.top-rule {
-    height:2px;
-    background: linear-gradient(90deg, var(--ed-accent), var(--ed-gold) 40%, transparent 85%);
-    opacity:0.3;
-    margin:0 -20px 20px;
-    flex-shrink:0;
-}
-
-/* ── Header ── */
-.app-header {
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    padding:0 2px 14px;
-    flex-shrink:0;
-    border-bottom:1px solid var(--ed-border-light);
-    margin-bottom:16px;
-}
-
-.header-left { display:flex; align-items:baseline; gap:10px }
-
-.brand {
-    font-family:'Playfair Display', Georgia, serif;
-    font-weight:600;
-    font-style:italic;
-    font-size:1.6rem;
-    color:var(--ed-accent);
-    letter-spacing:-0.02em;
-    line-height:1;
-}
-
-.brand-sub {
-    font-size:0.58rem;
-    color:var(--ed-muted);
-    text-transform:uppercase;
-    letter-spacing:0.16em;
-    font-weight:500;
-    padding-bottom:0.15em;
-    font-family:'Crimson Pro', serif;
-    font-style:italic;
-}
-
-.header-right { display:flex; align-items:center; gap:10px }
-
-.status-badge {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.55rem;
-    padding:3px 10px;
-    border-radius:3px;
-    background:var(--ed-surface);
-    border:1px solid var(--ed-border);
-    color:var(--ed-muted);
-    transition:all 0.3s;
-    text-transform:uppercase;
-    letter-spacing:0.04em;
-}
-.status-badge.connected {
-    color:var(--ed-sage);
-    border-color:rgba(90,138,90,0.3);
-    background:rgba(90,138,90,0.05);
-}
-.status-badge.disconnected {
-    color:var(--ed-rose);
-    border-color:rgba(184,90,90,0.3);
-    background:rgba(184,90,90,0.05);
-}
-
-.btn-end {
-    background:transparent;
-    border:1px solid var(--ed-border);
-    color:var(--ed-dim);
-    height:28px;
-    padding:0 12px;
-    border-radius:3px;
-    cursor:pointer;
-    font-size:0.7rem;
-    font-family:'Crimson Pro', serif;
-    font-style:italic;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition:all 0.2s;
-    white-space:nowrap;
-}
-.btn-end:hover {
-    border-color:var(--ed-rose);
-    color:var(--ed-rose);
-    background:rgba(184,90,90,0.04);
-}
-
-/* ── Mode toggle (realtime / Q&A) ── */
-.mode-toggle {
-    display:flex;
-    border:1px solid var(--ed-border);
-    border-radius:3px;
-    overflow:hidden;
-    flex-shrink:0;
-}
-.mode-btn {
-    padding:4px 14px;
-    border:none;
-    background:transparent;
-    color:var(--ed-dim);
-    font-family:'Crimson Pro', serif;
-    font-size:0.7rem;
-    font-weight:500;
-    cursor:pointer;
-    transition:all 0.2s;
-    white-space:nowrap;
-}
-.mode-btn.active {
-    background:var(--ed-heading);
-    color:#fefaf3;
-}
-.mode-btn:not(.active):hover {
-    color:var(--ed-text);
-    background:var(--ed-surface-alt);
-}
-
-/* ── Chat area ── */
-.chat-area {
-    flex:1;
-    background:var(--ed-surface);
-    border:1px solid var(--ed-border);
-    border-radius:4px;
-    padding:18px 20px;
-    overflow-y:auto;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    min-height:0;
-    margin-bottom:8px;
-    box-shadow: 0 2px 12px rgba(44,36,22,0.03);
-    scroll-behavior:smooth;
-}
-
-.chat-area::-webkit-scrollbar { width:4px }
-.chat-area::-webkit-scrollbar-track { background:transparent }
-.chat-area::-webkit-scrollbar-thumb { background:var(--ed-border); border-radius:4px }
-
-/* ── Welcome placeholder ── */
-.chat-welcome {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    opacity:0.45;
-    animation:welcomeFade 0.8s ease-out;
-}
-@keyframes welcomeFade {
-    from { opacity:0; transform:translateY(10px) }
-    to   { opacity:0.45; transform:translateY(0) }
-}
-.welcome-mark {
-    font-family:'Playfair Display', Georgia, serif;
-    font-size:2.8rem;
-    color:var(--ed-accent);
-    font-style:italic;
-    line-height:1;
-    opacity:0.5;
-}
-.welcome-title {
-    font-family:'Playfair Display', Georgia, serif;
-    font-style:italic;
-    font-size:1.15rem;
-    color:var(--ed-dim);
-}
-.welcome-sub {
-    font-size:0.85rem;
-    color:var(--ed-muted);
-    font-style:italic;
-}
-
-/* ── Messages ── */
-.msg-row {
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    margin-bottom:12px;
-}
-.msg-user { align-items:flex-end }
-.msg-ai   { align-items:flex-start }
-
-/* ── Message head (avatar + nickname inline) ── */
-.msg-head {
-    display:flex;
-    align-items:center;
-    gap:6px;
-    padding:0 4px;
-}
-.msg-head-right { flex-direction:row-reverse }
-
-/* ── Avatar ── */
-.msg-avatar {
-    flex-shrink:0;
-    width:28px; height:28px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-.msg-avatar svg {
-    width:15px; height:15px;
-}
-.msg-avatar-ai {
-    background: var(--ed-accent);
-    color: #fefaf3;
-}
-.msg-avatar-user {
-    background: var(--ed-heading);
-    color: #fefaf3;
-}
-
-/* ── Nickname ── */
-.msg-nick {
-    font-family:'Crimson Pro', serif;
-    font-size:0.72rem;
-    font-style:italic;
-    color:var(--ed-dim);
-}
-
-/* ── Bubbles ── */
-.msg-bubble {
-    max-width:80%;
-    padding:10px 16px;
-    border-radius:4px 12px 4px 12px;
-    font-size:0.92rem;
-    line-height:1.65;
-    animation:msgIn 0.25s ease-out;
-}
-@keyframes msgIn {
-    from { opacity:0; transform:translateY(6px) scale(0.98) }
-    to   { opacity:1; transform:translateY(0) scale(1) }
-}
-
-.msg-user .msg-bubble {
-    background:var(--ed-heading);
-    color:#fefaf3;
-    border-radius:12px 4px 12px 12px;
-}
-.msg-user .msg-bubble .msg-text { font-weight:400 }
-
-.msg-ai .msg-bubble {
-    background:var(--ed-surface);
-    border:1px solid var(--ed-border-light);
-    border-radius:4px 12px 12px 12px;
-}
-.ai-text {
-    font-family:'Crimson Pro', serif;
-    color:var(--ed-text);
-    line-height:1.65;
-}
-
-.msg-sys {
-    color:var(--ed-muted);
-    font-size:0.72rem;
-    border:none !important;
-    background:transparent !important;
-    font-style:italic;
-    text-align:center;
-    max-width:100% !important;
-}
-
-/* ── Translation toggle ── */
-.trans-wrap {
-    margin-top:6px;
-    align-self:flex-start;
-    max-width:84%;
-}
-.trans-toggle {
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:4px 12px;
-    border:1px solid var(--ed-border);
-    border-radius:3px;
-    background:transparent;
-    color:var(--ed-accent);
-    cursor:pointer;
-    font-size:0.68rem;
-    font-family:'Crimson Pro', serif;
-    font-style:italic;
-    transition:all 0.2s;
-}
-.trans-toggle:hover {
-    border-color:var(--ed-accent);
-    background:rgba(139,69,19,0.04);
-}
-.trans-icon {
-    font-weight:600;
-    color:var(--ed-accent);
-    font-style:normal;
-}
-.trans-label { font-weight:500; }
-.trans-chevron {
-    transition:transform 0.25s;
-    opacity:0.5;
-}
-.trans-wrap.open .trans-chevron {
-    transform:rotate(180deg);
-}
-.trans-content {
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.35s ease, margin 0.35s ease, padding 0.3s ease, opacity 0.25s;
-    margin-top:0;
-    padding:0 14px;
-    border-left:2px solid transparent;
-    opacity:0;
-}
-.trans-wrap.open .trans-content {
-    max-height:200px;
-    margin-top:6px;
-    padding:6px 14px;
-    border-left-color:var(--ed-gold);
-    opacity:1;
-}
-.trans-text {
-    font-size:0.84rem;
-    color:var(--ed-dim);
-    line-height:1.55;
-    font-style:italic;
-}
-
-/* ── Thinking indicator ── */
-.think-indicator {
-    display:none;
-    align-items:center;
-    gap:4px;
-    padding:4px 12px;
-    margin-bottom:6px;
-    align-self:flex-start;
-}
-.think-indicator.active { display:flex }
-.think-dot {
-    width:5px;height:5px;
-    border-radius:50%;
-    background:var(--ed-accent);
-    animation:thinkBounce 1.2s ease-in-out infinite;
-}
-.think-dot:nth-child(2) { animation-delay:0.15s }
-.think-dot:nth-child(3) { animation-delay:0.3s }
-@keyframes thinkBounce {
-    0%,80%,100% { transform:scale(0.6); opacity:0.3 }
-    40% { transform:scale(1); opacity:1 }
-}
-.think-label {
-    font-size:0.55rem;
-    color:var(--ed-dim);
-    text-transform:uppercase;
-    letter-spacing:0.1em;
-    margin-left:6px;
-    font-family:'JetBrains Mono', monospace;
-}
-
-/* ── Input bar ── */
-.input-bar {
-    display:flex;
-    gap:8px;
-    align-items:center;
-    flex-shrink:0;
-}
-
-.btn-record {
-    display:flex;
-    align-items:center;
-    gap:6px;
-    padding:9px 14px;
-    border-radius:4px;
-    border:1px solid var(--ed-border);
-    background:var(--ed-surface);
-    color:var(--ed-dim);
-    cursor:pointer;
-    font-family:'Crimson Pro', serif;
-    font-size:0.8rem;
-    font-weight:500;
-    white-space:nowrap;
-    transition:all 0.25s;
-    flex-shrink:0;
-}
-.btn-record:hover:not(:disabled) {
-    border-color:var(--ed-accent);
-    color:var(--ed-accent);
-}
-.btn-record:disabled {
-    opacity:0.3;
-    cursor:not-allowed;
-}
-.btn-record.recording {
-    border-color:var(--ed-rose);
-    color:var(--ed-rose);
-    background:rgba(184,90,90,0.05);
-    animation:recPulse 1.5s ease-in-out infinite;
-}
-@keyframes recPulse {
-    0%,100% { box-shadow:0 0 0 0 rgba(184,90,90,0.12) }
-    50% { box-shadow:0 0 0 10px rgba(184,90,90,0) }
-}
-
-.input-wrap {
-    flex:1;
-    display:flex;
-    align-items:center;
-    background:var(--ed-surface);
-    border:1px solid var(--ed-border);
-    border-radius:4px;
-    transition:border-color 0.25s;
-    overflow:hidden;
-}
-.input-wrap:focus-within {
-    border-color:var(--ed-accent);
-    box-shadow:0 0 0 3px rgba(139,69,19,0.05);
-}
-
-.text-input {
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color:var(--ed-text);
-    font-family:'Crimson Pro', serif;
-    font-size:0.88rem;
-    padding:10px 14px;
-}
-.text-input::placeholder { color:var(--ed-muted); font-style:italic; }
-.text-input:disabled { opacity:0.3 }
-
-.btn-send {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:36px;height:36px;
-    margin:4px;
-    border-radius:4px;
-    border:none;
-    background:transparent;
-    color:var(--ed-dim);
-    cursor:pointer;
-    transition:all 0.2s;
-    flex-shrink:0;
-}
-.btn-send:hover:not(:disabled) {
-    background:var(--ed-gold-dim);
-    color:var(--ed-accent);
-}
-.btn-send:disabled { opacity:0.2; cursor:not-allowed }
-.btn-send svg { display:block }
-
-/* ── Debug ── */
-.debug {
-    font-size:0.58rem;
-    color:var(--ed-muted);
-    font-family:'JetBrains Mono', monospace;
-    padding-top:4px;
-    display:none;
-    flex-shrink:0;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   Score Badges — pronunciation & fluency
-   ═══════════════════════════════════════════════════════════════════ */
-.score-bar {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-top:6px;
-    padding:5px 0;
-    align-self:flex-end;
-    animation:msgIn 0.3s ease-out;
-}
-.score-item {
-    display:flex;
-    align-items:center;
-    gap:5px;
-    font-size:0.7rem;
-}
-.score-label {
-    color:var(--ed-muted);
-    font-family:'Crimson Pro', serif;
-    font-style:italic;
-    font-size:0.68rem;
-}
-.score-val {
-    font-family:'JetBrains Mono', monospace;
-    font-weight:600;
-    font-size:0.72rem;
-    color:var(--c, var(--ed-dim));
-    background:color-mix(in srgb, var(--c, var(--ed-dim)) 10%, transparent);
-    padding:1px 6px;
-    border-radius:3px;
-    min-width:28px;
-    text-align:center;
-}
-.score-divider {
-    width:1px;
-    height:14px;
-    background:var(--ed-border-light);
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   Correction Card — Collapsible
-   ═══════════════════════════════════════════════════════════════════ */
-.cc-wrap {
-    margin-top:6px;
-}
-.cc-toggle {
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:4px 10px;
-    border:1px solid var(--ed-border);
-    border-radius:3px;
-    background:transparent;
-    color:var(--ed-dim);
-    cursor:pointer;
-    font-family:'Crimson Pro', serif;
-    font-size:0.72rem;
-    font-style:italic;
-    transition:all 0.2s;
-}
-.cc-toggle:hover {
-    border-color:var(--ed-rose);
-    color:var(--ed-rose);
-}
-.cc-toggle-icon { display:flex; opacity:0.6; }
-.cc-toggle-label { font-weight:500; }
-.cc-toggle-chevron { transition:transform 0.25s; opacity:0.5; }
-.cc-wrap.open .cc-toggle-chevron { transform:rotate(180deg); }
-
-.cc-inner {
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.4s ease, margin 0.35s ease, opacity 0.25s;
-    margin-top:0;
-    opacity:0;
-}
-.cc-wrap.open .cc-inner {
-    max-height:600px;
-    margin-top:8px;
-    opacity:1;
-}
-
-.cc-preview {
-    margin-bottom:10px;
-    padding:8px 12px;
-    border-radius:3px;
-    background:rgba(139,69,19,0.04);
-    border:1px solid rgba(139,69,19,0.08);
-    border-left:3px solid rgba(180,140,80,0.3);
-}
-.cc-preview-label {
-    display:block;
-    color:var(--ed-muted);
-    font-size:0.5rem;
-    font-family:'JetBrains Mono', monospace;
-    letter-spacing:0.08em;
-    margin-bottom:3px;
-    text-transform:uppercase;
-}
-.cc-preview-text {
-    font-family:'Playfair Display', Georgia, serif;
-    color:var(--ed-accent);
-    font-size:0.82rem;
-    line-height:1.5;
-    font-style:italic;
-}
-
-.cc-list {
-    display:flex;flex-direction:column;
-    gap:6px;
-}
-
-.cc-err {
-    padding:8px 10px;
-    border-radius:3px;
-    background:var(--ed-err-bg);
-    border:1px solid rgba(180,140,80,0.06);
-    border-left:3px solid var(--err-rule);
-    animation:corrItemIn 0.3s var(--err-delay, 0s) cubic-bezier(0.22,0.61,0.36,1) both;
-}
-@keyframes corrItemIn {
-    from { opacity:0; transform:translateX(8px) }
-    to   { opacity:1; transform:translateX(0) }
-}
-
-.cc-err-line {
-    display:flex;
-    align-items:center;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-bottom:3px;
-    font-size:0.78rem;
-}
-
-.cc-badge {
-    font-size:0.5rem;
-    padding:1px 5px;
-    border-radius:2px;
-    background:transparent;
-    border:1.5px solid;
-    font-weight:600;
-    letter-spacing:0.05em;
-    font-family:'JetBrains Mono', monospace;
-    flex-shrink:0;
-}
-
-.cc-orig {
-    color:var(--ed-rose);
-    text-decoration:line-through;
-    text-decoration-thickness:1.5px;
-    text-decoration-color:rgba(184,90,90,0.4);
-}
-.cc-arrow {
-    color:var(--ed-muted);
-    font-size:0.55rem;
-    flex-shrink:0;
-}
-.cc-corr {
-    color:var(--ed-sage);
-    font-weight:600;
-}
-.cc-expl {
-    color:var(--ed-dim);
-    font-size:0.68rem;
-    line-height:1.45;
-    padding-left:2px;
-    font-style:italic;
-}
-
-/* ── Responsive ── */
-@media (max-width: 520px) {
-    body { padding:0 12px 12px }
-    .top-rule { margin:0 -12px 16px }
-    .brand { font-size:1.3rem }
-    .brand-sub { font-size:0.5rem }
-    .msg-bubble { max-width:92%; font-size:0.85rem; padding:9px 13px }
-    .cc-wrap { max-width:100% }
-    .cc-preview-text { font-size:0.8rem }
-    .btn-record { padding:9px 10px }
-    .btn-record .btn-label { display:none }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   View System
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── View system ── */
 .view {
     display: flex;
     flex-direction: column;
@@ -2083,612 +1440,1047 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Scene Selection
+   Navigation Bar — WeChat dark style
    ═══════════════════════════════════════════════════════════════════ */
-.scene-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    gap: 1.5rem;
-}
-
-.scene-header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 0.25rem;
-}
-
-.scene-intro {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    color: var(--ed-dim);
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-}
-
-.scene-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--ed-border);
-    border: 1px solid var(--ed-border);
-    max-width: 560px;
-    width: 100%;
-}
-
-.scene-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 1.6rem 1rem;
-    border: none;
-    background: var(--ed-surface);
-    cursor: pointer;
-    transition: all 0.25s;
-    text-align: center;
-    font-family: inherit;
-    color: inherit;
-}
-.scene-card:hover {
-    background: #fffdf7;
-    box-shadow: inset 3px 0 0 var(--ed-accent);
-}
-.scene-icon {
-    width: 28px;
-    height: 28px;
+.wx-nav {
+    height: var(--wx-header-h);
+    background: var(--wx-navbar);
+    color: #FFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--ed-accent);
-    margin-bottom: 2px;
+    flex-shrink: 0;
+    position: relative;
+    padding: 0 16px;
 }
-.scene-icon svg {
-    width: 22px;
-    height: 22px;
-}
-.scene-name {
-    font-family: 'Playfair Display', Georgia, serif;
+.wx-nav-title {
+    font-size: 17px;
     font-weight: 600;
-    font-size: 1rem;
-    color: var(--ed-heading);
-    line-height: 1.2;
+    letter-spacing: 0.02em;
 }
-.scene-desc {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    color: var(--ed-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-.scene-hint {
-    font-size: 0.72rem;
-    color: var(--ed-dim);
-    margin-top: 2px;
-    line-height: 1.4;
-    font-style: italic;
-}
-
-.scene-card-custom {
-    grid-column: 1 / -1;
-    border-top: 1px solid var(--ed-border);
-    background: linear-gradient(135deg, var(--ed-surface) 0%, rgba(139,69,19,0.02) 100%);
-}
-.scene-card-custom:hover {
-    background: #fffdf7;
-}
-
-@media (max-width: 520px) {
-    .scene-cards { grid-template-columns: 1fr; }
-    .scene-card-custom { grid-column: 1; }
+.wx-nav-back {
+    position: absolute;
+    left: 8px;
+    top: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    background: none;
+    border: none;
+    color: #FFF;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Custom Scene Modal
+   Body / Scrollable
    ═══════════════════════════════════════════════════════════════════ */
-.modal-overlay {
+.wx-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Scene Selection — WeChat list style
+   ═══════════════════════════════════════════════════════════════════ */
+.wx-scene-body {
+    padding-bottom: 24px;
+}
+
+/* User card */
+.wx-user-card {
+    background: var(--wx-surface);
+    margin: 12px 16px;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.wx-avatar-lg {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    background: var(--wx-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFF;
+    flex-shrink: 0;
+}
+.wx-avatar-lg svg { width: 28px; height: 28px; }
+.wx-user-info { flex: 1; min-width: 0; }
+.wx-user-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--wx-text);
+}
+.wx-user-sub {
+    font-size: 13px;
+    color: var(--wx-secondary);
+    margin-top: 4px;
+}
+
+/* Section label */
+.wx-section-label {
+    font-size: 13px;
+    color: var(--wx-secondary);
+    padding: 8px 20px 6px;
+    letter-spacing: 0.03em;
+}
+
+/* List group */
+.wx-list-group {
+    margin: 0 16px;
+    background: var(--wx-surface);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.wx-list-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 15px 16px;
+    border: none;
+    border-bottom: 0.5px solid var(--wx-border);
+    background: var(--wx-surface);
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+    color: inherit;
+    text-align: left;
+}
+.wx-list-item:last-child { border-bottom: none; }
+.wx-list-item:active { background: #F5F5F5; }
+
+.wx-list-icon {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+.wx-list-icon svg { width: 22px; height: 22px; }
+.wx-icon-ordering  { background: #E8F8EF; color: #07C160; }
+.wx-icon-interview { background: #E8EEF8; color: #576B95; }
+.wx-icon-meeting   { background: #FDF3E7; color: #F39C12; }
+.wx-icon-travel    { background: #E8F5F8; color: #10AEFF; }
+
+.wx-list-text { flex: 1; min-width: 0; padding-right: 8px; }
+.wx-list-name {
+    font-size: 16px;
+    color: var(--wx-text);
+    font-weight: 500;
+    line-height: 1.3;
+}
+.wx-list-desc {
+    font-size: 12px;
+    color: var(--wx-secondary);
+    margin-top: 2px;
+}
+.wx-list-arrow {
+    color: #C7C7C7;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Custom entry */
+.wx-custom-entry {
+    margin: 16px 16px 0;
+    padding: 14px 16px;
+    background: var(--wx-surface);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: none;
+    font-size: 15px;
+    color: var(--wx-green);
+    cursor: pointer;
+    font-family: inherit;
+    width: calc(100% - 32px);
+    text-align: left;
+}
+.wx-custom-entry:active { background: #F5F5F5; }
+.wx-custom-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: #E8F8EF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wx-green);
+}
+.wx-custom-icon svg { width: 18px; height: 18px; }
+
+/* ── Dashboard on home page ── */
+.wx-dashboard {
+    margin-top: 8px;
+}
+.wx-dashboard .wx-section-label {
+    padding: 12px 20px 8px;
+}
+.wx-dashboard .wx-report-section {
+    margin: 8px 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Modal — WeChat style
+   ═══════════════════════════════════════════════════════════════════ */
+.wx-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 14, 10, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
-    animation: fadeIn 0.2s ease-out;
+    animation: wxFadeIn 0.2s ease-out;
 }
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
+@keyframes wxFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.modal-card {
+.wx-modal-card {
     position: relative;
-    background: var(--ed-surface);
-    border: 1px solid var(--ed-border);
-    border-radius: 4px;
-    padding: 1.8rem 1.5rem 1.5rem;
-    max-width: 440px;
+    background: var(--wx-surface);
+    border-radius: 14px;
+    padding: 24px 20px 20px;
+    max-width: 360px;
     width: calc(100% - 2rem);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.14);
-    animation: modalSlide 0.25s cubic-bezier(0.22, 0.61, 0.36, 1);
+    animation: wxModalSlide 0.25s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-@keyframes modalSlide {
+@keyframes wxModalSlide {
     from { opacity: 0; transform: translateY(20px) scale(0.96); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.modal-close {
+.wx-modal-close {
     position: absolute;
-    top: 10px; right: 12px;
-    background: transparent;
+    top: 12px; right: 12px;
+    background: none;
     border: none;
-    color: var(--ed-muted);
+    color: var(--wx-hint);
     cursor: pointer;
-    width: 28px; height: 28px;
+    width: 30px; height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 3px;
-    transition: all 0.2s;
+    border-radius: 50%;
+    transition: background 0.2s;
 }
-.modal-close:hover {
-    color: var(--ed-rose);
-    background: rgba(184,90,90,0.06);
+.wx-modal-close:hover { background: #F5F5F5; }
+
+.wx-modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--wx-text);
+    margin-bottom: 6px;
+}
+.wx-modal-desc {
+    font-size: 14px;
+    color: var(--wx-secondary);
+    margin-bottom: 16px;
 }
 
-.modal-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-size: 1.2rem;
-    color: var(--ed-heading);
-    margin-bottom: 0.3rem;
-}
-.modal-desc {
-    font-size: 0.82rem;
-    color: var(--ed-dim);
-    margin-bottom: 1rem;
-    font-style: italic;
-}
-
-.modal-input {
+.wx-modal-input {
     width: 100%;
-    padding: 12px 14px;
-    background: var(--ed-bg);
-    border: 1px solid var(--ed-border);
-    border-radius: 3px;
-    color: var(--ed-text);
-    font-family: 'Crimson Pro', serif;
-    font-size: 0.9rem;
+    padding: 10px 14px;
+    background: #F5F5F5;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--wx-text);
+    font-family: inherit;
+    font-size: 15px;
     outline: none;
-    transition: border-color 0.25s;
+    transition: border-color 0.25s, background 0.25s;
 }
-.modal-input:focus {
-    border-color: var(--ed-accent);
-    box-shadow: 0 0 0 3px rgba(139,69,19,0.05);
+.wx-modal-input:focus {
+    background: var(--wx-surface);
+    border-color: var(--wx-green);
 }
-.modal-input::placeholder {
-    color: var(--ed-muted);
-    font-style: italic;
-}
+.wx-modal-input::placeholder { color: var(--wx-hint); }
 
-.modal-suggestions {
+.wx-modal-chips {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    margin-top: 0.8rem;
+    gap: 8px;
+    margin-top: 14px;
 }
-.modal-sug-label {
-    font-size: 0.7rem;
-    color: var(--ed-muted);
+.wx-modal-chips-label {
+    font-size: 13px;
+    color: var(--wx-hint);
     margin-right: 2px;
-    font-style: italic;
 }
-.modal-chip {
-    padding: 4px 12px;
-    border-radius: 3px;
-    border: 1px solid var(--ed-border);
-    background: var(--ed-bg);
-    color: var(--ed-dim);
-    font-size: 0.75rem;
+.wx-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: none;
+    background: #F5F5F5;
+    color: var(--wx-text);
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
-    font-family:'Crimson Pro', serif;
-    white-space: nowrap;
+    font-family: inherit;
 }
-.modal-chip:hover {
-    border-color: var(--ed-accent);
-    color: var(--ed-accent);
-    background: rgba(139,69,19,0.04);
-}
+.wx-chip:hover { background: #E8F8EF; color: var(--wx-green); }
 
-.modal-actions {
+.wx-modal-actions {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    margin-top: 1.2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--ed-border-light);
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--wx-border);
 }
 
-.modal-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 20px;
-    border-radius: 3px;
-    font-family: 'Crimson Pro', serif;
-    font-size: 0.85rem;
+.wx-btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
-.modal-btn-cancel {
+.wx-btn-ghost {
     background: transparent;
-    color: var(--ed-dim);
-    font-style: italic;
+    color: var(--wx-secondary);
 }
-.modal-btn-cancel:hover {
-    color: var(--ed-text);
-    background: var(--ed-bg);
+.wx-btn-ghost:hover { background: #F5F5F5; }
+.wx-btn-primary {
+    background: var(--wx-green);
+    color: #FFF;
 }
-.modal-btn-confirm {
-    background: var(--ed-accent);
-    color: #fefaf3;
-}
-.modal-btn-confirm:hover {
-    background: var(--ed-accent-light);
-    box-shadow: 0 2px 8px rgba(139,69,19,0.2);
-}
+.wx-btn-primary:hover { background: var(--wx-green-dark); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Session Report
+   Chat View
    ═══════════════════════════════════════════════════════════════════ */
-.report-container {
-    flex: 1;
+
+/* Chat nav */
+.wx-chat-nav {
+    height: var(--wx-header-h);
+    background: var(--wx-navbar);
+    color: #FFF;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 2rem 1rem;
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
-    gap: 1.5rem;
-    animation: reportIn 0.5s ease-out;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    padding: 0 16px;
 }
-@keyframes reportIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+.wx-chat-nav-center { text-align: center; }
+.wx-chat-nav-title {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.wx-chat-nav-subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 1px;
+}
+.wx-chat-nav-right {
+    position: absolute;
+    right: 12px;
+    top: 50%; transform: translateY(-50%);
 }
 
-/* Empty state */
-.report-empty-state {
+/* Mode segment control */
+.wx-mode-seg {
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.15);
+}
+.wx-mode-btn {
+    padding: 3px 10px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.wx-mode-btn.active {
+    background: var(--wx-green);
+    color: #FFF;
+}
+
+/* Chat area */
+.wx-chat-area {
+    flex: 1;
+    background: #EDEDED;
+    padding: 12px 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Welcome placeholder */
+.chat-welcome {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 2rem 1rem;
-    text-align: center;
-    animation: reportIn 0.5s ease-out;
-}
-.report-empty-mark {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 2.5rem;
-    color: var(--ed-muted);
-    font-style: italic;
-    opacity: 0.4;
-}
-.report-empty-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-size: 1.2rem;
-    color: var(--ed-dim);
-}
-.report-empty-desc {
-    font-size: 0.85rem;
-    color: var(--ed-muted);
-    line-height: 1.6;
-    font-style: italic;
-}
-
-.report-header {
-    display: flex;
-    align-items: baseline;
     gap: 10px;
+    opacity: 0.5;
+    animation: wxWelcomeIn 0.6s ease-out;
+}
+@keyframes wxWelcomeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 0.5; transform: translateY(0); }
+}
+.wx-welcome-icon {
+    width: 52px; height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wx-green);
+    opacity: 0.6;
+}
+.wx-welcome-icon svg { width: 40px; height: 40px; }
+.wx-welcome-title {
+    font-size: 16px;
+    color: var(--wx-text);
+    font-weight: 500;
+}
+.wx-welcome-sub {
+    font-size: 13px;
+    color: var(--wx-secondary);
 }
 
-.report-meta {
+/* ── Messages ── */
+.msg-row {
+    display: flex;
+    gap: 8px;
+    max-width: 100%;
+    animation: wxMsgIn 0.2s ease-out;
+}
+@keyframes wxMsgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.msg-row.msg-user { flex-direction: row-reverse; }
+.msg-row.msg-ai   { flex-direction: row; }
+
+/* Avatar */
+.wx-msg-avatar {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFF;
+}
+.wx-msg-avatar.ai { background: var(--wx-green); }
+.wx-msg-avatar.me { background: var(--wx-blue); }
+.wx-msg-avatar svg { width: 20px; height: 20px; }
+
+/* Message content wrapper */
+.wx-msg-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.msg-row.msg-user .wx-msg-content { align-items: flex-end; }
+.msg-row.msg-ai .wx-msg-content   { align-items: flex-start; }
+
+/* Nickname */
+.wx-msg-nick {
+    font-size: 11px;
+    color: var(--wx-hint);
+    margin-bottom: 4px;
+    padding: 0 4px;
+}
+
+/* Bubble */
+.wx-msg-bubble {
+    max-width: 280px;
+    padding: 10px 14px;
+    font-size: 15px;
+    line-height: 1.55;
+    word-break: break-word;
+    position: relative;
+}
+/* AI bubble — white */
+.msg-row.msg-ai .wx-msg-bubble {
+    background: #FFF;
+    border-radius: 4px 18px 18px 18px;
+    color: var(--wx-text);
+}
+/* User bubble — green */
+.msg-row.msg-user .wx-msg-bubble {
+    background: var(--wx-bubble-user);
+    border-radius: 18px 4px 18px 18px;
+    color: #000;
+}
+
+/* System message */
+.wx-msg-sys {
+    text-align: center;
+    font-size: 12px;
+    color: var(--wx-hint);
+    padding: 6px 0;
+    margin: 4px 0;
+}
+
+/* ── Typing bar ── */
+.wx-typing-bar {
+    display: none;
+    padding: 0 14px 8px;
+}
+.wx-typing-bar.active { display: block; }
+.wx-typing-bar .msg-row { animation: none; }
+.wx-typing-bubble {
+    background: #FFF;
+    border-radius: 4px 18px 18px 18px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.wx-typing-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #C7C7C7;
+    animation: wxTyping 1.2s ease-in-out infinite;
+}
+.wx-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.wx-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes wxTyping {
+    0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Score row under user message ── */
+.wx-score-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+    padding: 0 4px;
+}
+.wx-score-item {
+    font-size: 11px;
+    color: var(--wx-secondary);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.wx-score-label { color: var(--wx-hint); }
+.wx-score-val {
+    font-weight: 600;
+    color: var(--wx-green);
+    --sc: 0;
+}
+.wx-score-val { color: color-mix(in srgb, var(--wx-green) calc(var(--sc) * 1%), var(--wx-red) calc((100 - var(--sc)) * 1%)); }
+
+/* ── Translation toggle ── */
+.wx-trans {
+    margin-top: 6px;
+}
+.wx-trans-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #FFF;
+    border: 0.5px solid var(--wx-border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--wx-green);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+.wx-trans-toggle:hover { background: #F8F8F8; }
+.wx-trans-icon { display: flex; align-items: center; }
+.wx-trans-label { font-weight: 500; }
+.wx-trans-chevron {
+    transition: transform 0.25s;
+    font-size: 10px;
+    color: var(--wx-hint);
+}
+.wx-trans.open .wx-trans-chevron { transform: rotate(180deg); }
+.wx-trans-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.3s ease, opacity 0.25s;
+    background: #FFF;
+    border-radius: 0 0 12px 12px;
+    opacity: 0;
+}
+.wx-trans.open .wx-trans-body {
+    max-height: 120px;
+    padding: 8px 14px;
+    opacity: 1;
+}
+.wx-trans-text {
+    font-size: 13px;
+    color: var(--wx-secondary);
+    line-height: 1.5;
+}
+
+/* ── Correction card ── */
+.wx-cc-wrap {
+    margin-top: 6px;
+    background: #FFF;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 0.5px solid var(--wx-border);
+}
+.wx-cc-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--wx-blue);
+    cursor: pointer;
+    font-family: inherit;
+}
+.wx-cc-toggle:active { background: #F5F5F5; }
+.wx-cc-chevron {
+    margin-left: auto;
+    transition: transform 0.25s;
+    color: var(--wx-hint);
+}
+.wx-cc-wrap.open .wx-cc-chevron { transform: rotate(180deg); }
+.wx-cc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s;
+    opacity: 0;
+}
+.wx-cc-wrap.open .wx-cc-body {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.wx-cc-preview {
+    padding: 8px 14px;
+    margin: 0 14px;
+    border-radius: 8px;
+    background: #F5F5F5;
+    margin-bottom: 8px;
+}
+.wx-cc-preview-label {
+    display: block;
+    font-size: 10px;
+    color: var(--wx-hint);
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.wx-cc-preview-text {
+    font-size: 14px;
+    color: var(--wx-green-dark);
+    line-height: 1.5;
+}
+
+.wx-cc-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
     flex-wrap: wrap;
-    justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--ed-muted);
-    padding: 10px 20px;
-    background: var(--ed-surface);
-    border: 1px solid var(--ed-border-light);
-    border-radius: 3px;
-    letter-spacing: 0.03em;
+    animation: wxCCItemIn 0.3s ease-out both;
 }
-.rp-meta-item { color: var(--ed-dim); }
-.rp-meta-divider { color: var(--ed-border); }
+@keyframes wxCCItemIn {
+    from { opacity: 0; transform: translateX(6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
 
-/* Score cards */
-.report-scores {
+.wx-cc-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.wx-cc-tag-grammar { background: #FFF0F0; color: #FA5151; }
+.wx-cc-tag-prep    { background: #FFF6E8; color: #F39C12; }
+.wx-cc-tag-vocab   { background: #F0EEFF; color: var(--wx-blue); }
+.wx-cc-tag-expr    { background: #E8F8EF; color: var(--wx-green); }
+
+.wx-cc-orig { color: var(--wx-red); text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: rgba(250,81,81,0.4); }
+.wx-cc-arrow { color: var(--wx-hint); font-size: 11px; flex-shrink: 0; }
+.wx-cc-corr { color: var(--wx-green-dark); font-weight: 600; }
+
+.wx-cc-expl {
+    font-size: 12px;
+    color: var(--wx-secondary);
+    padding: 0 14px 8px;
+    padding-left: 38px;
+    line-height: 1.45;
+}
+
+/* ── Input bar ── */
+.wx-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    padding-bottom: calc(8px + var(--safe-bottom));
+    background: #F7F7F7;
+    border-top: 0.5px solid var(--wx-border);
+    flex-shrink: 0;
+}
+
+.wx-input-voice-btn {
+    width: 36px; height: 36px;
+    border: none; background: none;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #666; cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+    gap: 1px;
+}
+.wx-input-voice-btn:hover:not(:disabled) { background: #EBEBEB; }
+.wx-input-voice-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.wx-input-voice-btn svg { width: 22px; height: 22px; }
+.wx-rec-label {
+    font-size: 9px;
+    color: #666;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.wx-input-voice-btn.recording {
+    color: var(--wx-red);
+    animation: wxRecPulse 1.4s ease-in-out infinite;
+}
+@keyframes wxRecPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.wx-input-field {
+    flex: 1;
+    height: 36px;
+    border: 0.5px solid var(--wx-border);
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+}
+.wx-input-field:focus { border-color: var(--wx-green); }
+.wx-input-field::placeholder { color: var(--wx-hint); }
+.wx-input-field:disabled { opacity: 0.4; }
+
+.wx-input-send {
+    width: 36px; height: 36px;
+    border: none; background: var(--wx-green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #FFF; cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.wx-input-send:hover:not(:disabled) { background: var(--wx-green-dark); }
+.wx-input-send:disabled {
+    background: #C7C7C7; cursor: not-allowed;
+}
+
+/* Debug */
+.wx-debug {
+    font-size: 10px;
+    color: var(--wx-hint);
+    padding: 2px 12px;
+    padding-bottom: var(--safe-bottom);
+    display: none;
+    flex-shrink: 0;
+    background: #F7F7F7;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Report View
+   ═══════════════════════════════════════════════════════════════════ */
+.wx-report-body {
+    padding-bottom: 24px;
+}
+
+/* Hero */
+.wx-report-hero {
+    background: linear-gradient(135deg, #07C160 0%, #06AD56 100%);
+    color: #FFF;
+    padding: 28px 24px 36px;
+    text-align: center;
+}
+.wx-report-hero-scene {
+    font-size: 14px;
+    opacity: 0.85;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+}
+.wx-report-hero-score {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 4px 0;
+}
+.wx-report-hero-label {
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+/* Score card grid */
+.wx-report-scores {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    width: 100%;
-    background: var(--ed-border);
-    border: 1px solid var(--ed-border);
+    gap: 8px;
+    margin: -18px 16px 0;
 }
-
-.score-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 1.4rem 0.6rem;
-    background: var(--ed-surface);
-    transition: background 0.3s;
+.wx-score-card {
+    background: #FFF;
+    border-radius: 12px;
+    padding: 16px 6px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.score-card:hover {
-    background: #fffdf7;
-}
-
-.sc-val {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 2.6rem;
-    font-weight: 600;
-    font-style: italic;
+.wx-score-card-val {
+    font-size: 28px;
+    font-weight: 700;
     line-height: 1;
-    transition: color 0.3s;
+    margin-bottom: 6px;
 }
-.sc-val.sc-green  { color: var(--ed-sage); }
-.sc-val.sc-yellow { color: var(--ed-gold); }
-.sc-val.sc-red    { color: var(--ed-terracotta); }
-
-.sc-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.52rem;
-    color: var(--ed-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+.wx-score-card-val.good { color: var(--wx-green); }
+.wx-score-card-val.ok   { color: var(--wx-orange); }
+.wx-score-card-val.low  { color: var(--wx-red); }
+.wx-score-card-label {
+    font-size: 10px;
+    color: var(--wx-secondary);
+    line-height: 1.4;
 }
-.sc-label-cn {
-    font-size: 0.68rem;
-    color: var(--ed-dim);
-    font-style: italic;
+.wx-score-card-label span {
+    display: block;
 }
 
-@media (max-width: 520px) {
-    .report-scores { grid-template-columns: repeat(2, 1fr); }
+/* Info card */
+.wx-info-card {
+    margin: 12px 16px;
+    background: #FFF;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+.wx-info-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--wx-text);
+}
+.wx-info-label {
+    font-size: 11px;
+    color: var(--wx-secondary);
+    margin-top: 4px;
 }
 
 /* Report sections */
-.report-section {
-    width: 100%;
-    padding: 1.2rem 1.2rem;
-    background: var(--ed-surface);
-    border: 1px solid var(--ed-border-light);
-    border-radius: 3px;
+.wx-report-section {
+    margin: 12px 16px;
+    background: #FFF;
+    border-radius: 12px;
+    overflow: hidden;
 }
-
-.rp-section-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-size: 0.95rem;
-    color: var(--ed-accent);
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px dashed rgba(139,69,19,0.15);
+.wx-report-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 16px 16px 6px;
+    color: var(--wx-text);
 }
-
-/* Dashboard on home page */
-.dashboard {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 1.2rem;
-    background: var(--ed-surface);
-    border: 1px solid var(--ed-border);
-    border-radius: 4px;
-    animation: reportIn 0.5s ease;
+.wx-chart-wrap {
+    padding: 0 12px 16px;
 }
-.dash-header {
-    text-align: center;
-    margin-bottom: 1rem;
-}
-.dash-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-size: 1.05rem;
-    color: var(--ed-accent);
-    margin: 0;
-}
-.dash-sub {
-    font-size: 0.65rem;
-    color: var(--ed-dim);
-    font-family: 'JetBrains Mono', monospace;
-    font-style: italic;
-}
-
-/* Trend charts */
-.rp-charts {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-.rp-chart-wrap {
-    width: 100%;
-}
-.rp-chart-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ed-dim);
-    margin: 0 0 0.4rem 0;
-    font-weight: 500;
-}
-.rp-chart-wrap canvas {
+.wx-chart-wrap canvas {
     width: 100% !important;
     height: 200px !important;
 }
 
-/* Individual error cards */
-.rp-all-errors-list {
+/* Error cards in report */
+.wx-err-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    padding: 0 16px 12px;
+    gap: 8px;
 }
-
-.rp-err-card {
+.wx-err-card {
     padding: 12px 14px;
-    background: var(--ed-bg);
-    border: 1px solid var(--ed-border-light);
-    border-radius: 3px;
-    border-left: 3px solid var(--ed-accent);
-    animation: corrItemIn2 0.3s ease-out both;
+    background: #F8F8F8;
+    border-radius: 8px;
+    animation: wxMsgIn 0.3s ease-out both;
 }
-@keyframes corrItemIn2 {
-    from { opacity: 0; transform: translateX(-8px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-
-.rp-err-head {
+.wx-err-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
 }
-
-.rp-err-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.5rem;
+.wx-err-tag {
+    font-size: 10px;
     padding: 2px 8px;
-    border-radius: 2px;
-    border: 1.5px solid;
+    border-radius: 4px;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
-
-.rp-err-idx {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    color: var(--ed-muted);
+.wx-err-tag-grammar { background: #FFF0F0; color: #FA5151; }
+.wx-err-tag-prep    { background: #FFF6E8; color: #F39C12; }
+.wx-err-tag-vocab   { background: #F0EEFF; color: var(--wx-blue); }
+.wx-err-tag-expr    { background: #E8F8EF; color: var(--wx-green); }
+.wx-err-idx {
+    font-size: 10px;
+    color: var(--wx-hint);
 }
-
-.rp-err-body {
+.wx-err-body {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    font-size: 0.88rem;
+    font-size: 14px;
     margin-bottom: 4px;
 }
-
-.rp-err-orig {
-    color: var(--ed-terracotta);
-    text-decoration: line-through;
-    text-decoration-thickness: 1.5px;
-    text-decoration-color: rgba(196,106,74,0.4);
-}
-
-.rp-err-arrow {
-    color: var(--ed-muted);
-    font-size: 0.65rem;
-    flex-shrink: 0;
-}
-
-.rp-err-corr {
-    color: var(--ed-sage);
-    font-weight: 600;
-}
-
-.rp-err-expl {
-    font-size: 0.72rem;
-    color: var(--ed-dim);
+.wx-err-orig { color: var(--wx-red); text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: rgba(250,81,81,0.4); }
+.wx-err-arrow { color: var(--wx-hint); font-size: 12px; flex-shrink: 0; }
+.wx-err-corr { color: var(--wx-green-dark); font-weight: 600; }
+.wx-err-expl {
+    font-size: 12px;
+    color: var(--wx-secondary);
     line-height: 1.5;
     margin-top: 4px;
     padding-top: 6px;
-    border-top: 1px dashed var(--ed-border-light);
-    font-style: italic;
+    border-top: 0.5px dashed var(--wx-border);
 }
 
-.rp-empty {
+.wx-no-errors {
     text-align: center;
-    color: var(--ed-dim);
-    font-size: 0.85rem;
-    padding: 0.5rem;
-    font-style: italic;
+    color: var(--wx-secondary);
+    font-size: 14px;
+    padding: 12px 16px;
 }
 
 /* Suggestions */
-.rp-suggestion-list {
+.wx-suggestion-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    padding: 0 16px 12px;
+    gap: 0;
 }
-
-.rp-suggestion {
+.wx-suggestion {
     display: flex;
     gap: 10px;
-    padding: 10px 0;
-    font-size: 0.88rem;
-    color: var(--ed-text);
+    padding: 12px 0;
+    font-size: 14px;
+    color: var(--wx-text);
     line-height: 1.55;
-    border-bottom: 1px dotted var(--ed-border-light);
+    border-bottom: 0.5px solid var(--wx-border-light);
 }
-.rp-suggestion::before {
-    content: '';
+.wx-suggestion:last-child { border-bottom: none; }
+.wx-suggestion-dot {
     flex-shrink: 0;
-    width: 3px;
-    height: 3px;
+    width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--ed-gold);
-    margin-top: 10px;
+    background: var(--wx-green);
+    margin-top: 7px;
 }
-.rp-suggestion:last-child {
-    border-bottom: none;
+
+/* Empty state */
+.wx-report-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 2rem;
+    text-align: center;
+    animation: wxWelcomeIn 0.5s ease-out;
+}
+.wx-report-empty-icon {
+    width: 56px; height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wx-hint);
+    opacity: 0.5;
+}
+.wx-report-empty-icon svg { width: 40px; height: 40px; }
+.wx-report-empty-title {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--wx-text);
+}
+.wx-report-empty-desc {
+    font-size: 14px;
+    color: var(--wx-secondary);
+    line-height: 1.5;
 }
 
 /* Again button */
-.btn-again {
-    display: inline-flex;
+.wx-again-btn {
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 12px 28px;
-    background: var(--ed-accent);
-    color: #fefaf3;
+    margin: 12px 16px 24px;
+    padding: 14px;
+    background: var(--wx-green);
+    color: #FFF;
     border: none;
-    border-radius: 3px;
-    font-family: 'Crimson Pro', serif;
-    font-size: 0.9rem;
+    border-radius: 12px;
+    font-size: 16px;
     font-weight: 600;
-    letter-spacing: 0.04em;
     cursor: pointer;
-    transition: all 0.25s;
-    margin-top: 0.5rem;
+    font-family: inherit;
+    transition: background 0.2s, transform 0.15s;
 }
-.btn-again:hover {
-    background: var(--ed-accent-light);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(139,69,19,0.2);
+.wx-again-btn:active {
+    background: var(--wx-green-dark);
+    transform: scale(0.98);
 }
-.btn-again:active {
-    transform: scale(0.97);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+    .wx-report-scores { grid-template-columns: repeat(2, 1fr); }
+    .wx-msg-bubble { max-width: 240px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Scrollbar (thin, subtle)
+   ═══════════════════════════════════════════════════════════════════ */
+.wx-chat-area::-webkit-scrollbar,
+.wx-body::-webkit-scrollbar { width: 3px; }
+.wx-chat-area::-webkit-scrollbar-thumb,
+.wx-body::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
 }
 </style>
 </body>
