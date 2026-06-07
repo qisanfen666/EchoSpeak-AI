@@ -7,6 +7,8 @@
 .claude
 __pycache__
 *.exe*
+!go-gateway/gateway.exe
+*~
 
 # Generated audio / model files (downloaded at runtime)
 audio/

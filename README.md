@@ -53,6 +53,16 @@
 | Redis | ≥ 7.0 | 会话状态缓存（`start.bat` 自动下载 Windows 版） |
 | LLM API Key | - | DeepSeek / OpenAI 兼容接口 |
 
+### 端口
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 6379 | Redis | 会话缓存 |
+| 50051 | Python gRPC | AI 引擎 |
+| 8080 | Go 网关 | WebSocket + 前端页面 |
+
+启动前确保以上端口未被占用。
+
 ### 首次安装
 
 ```bash
