@@ -360,6 +360,15 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
 
 async def serve():
     """启动 gRPC Server"""
+    # ── 启动时预加载 ASR 模型（确保下载/加载完成后再接受请求）──
+    logger.info("[gRPC] Preloading ASR model (first startup may download)...")
+    import time as _time
+    _t0 = _time.time()
+    asr = get_asr_engine()
+    # 触发 lazy-load，模型不在本地时会自动下载
+    await asyncio.to_thread(lambda: asr.model)
+    logger.info(f"[gRPC] ASR model ready ({_time.time() - _t0:.1f}s)")
+
     server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
 
     if PROTO_AVAILABLE:
