@@ -259,17 +259,38 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
                             type=err_item.type,
                             explanation_cn=err_item.explanation_cn,
                         ))
+                # ── Expression tip: suggest a more idiomatic way ──
+                expression_tip = ""
+                try:
+                    _tip_conv = create_conversation("default")
+                    _tip_conv.messages[0] = {
+                        "role": "system",
+                        "content": (
+                            "You are an English coach. Given the user's sentence, suggest ONE more natural, "
+                            "idiomatic way to express the same meaning. Use conversational native-speaker English. "
+                            "Keep it under 30 words. Return ONLY the suggestion, no explanation."
+                        )
+                    }
+                    _tip_conv.add_user_message(user_message)
+                    expression_tip = await asyncio.wait_for(
+                        asyncio.to_thread(llm.reply, _tip_conv), timeout=8
+                    )
+                    expression_tip = (expression_tip or "").strip()
+                except Exception:
+                    expression_tip = ""
+
                 yield pb2.ChatResponse(
                     correction=pb2.Correction(
                         original=correction_result.original_text,
                         corrected=correction_result.corrected_text,
                         error_type=correction_result.errors[0].type if correction_result.errors else "grammar",
                         highlights=highlights,
+                        expression_tip=expression_tip,
                     )
                 )
                 logger.info(
                     f"[gRPC:Chat] Correction sent: "
-                    f"{len(correction_result.errors)} error(s)"
+                    f"{len(correction_result.errors)} error(s), tip={bool(expression_tip)}"
                 )
             except Exception as e:
                 logger.warning(f"[gRPC:Chat] Failed to yield correction: {e}")

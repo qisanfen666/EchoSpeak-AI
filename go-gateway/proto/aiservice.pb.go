@@ -557,10 +557,11 @@ func (x *ReplyChunk) GetIsFirst() bool {
 
 type Correction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Original      string                 `protobuf:"bytes,1,opt,name=original,proto3" json:"original,omitempty"`                    // 用户原句
-	Corrected     string                 `protobuf:"bytes,2,opt,name=corrected,proto3" json:"corrected,omitempty"`                  // 纠正后句子
-	ErrorType     string                 `protobuf:"bytes,3,opt,name=error_type,json=errorType,proto3" json:"error_type,omitempty"` // grammar / vocabulary / pronunciation_hint
-	Highlights    []*WordFix             `protobuf:"bytes,4,rep,name=highlights,proto3" json:"highlights,omitempty"`                // 逐词标记，用于前端高亮
+	Original      string                 `protobuf:"bytes,1,opt,name=original,proto3" json:"original,omitempty"`                                // 用户原句
+	Corrected     string                 `protobuf:"bytes,2,opt,name=corrected,proto3" json:"corrected,omitempty"`                              // 纠正后句子
+	ErrorType     string                 `protobuf:"bytes,3,opt,name=error_type,json=errorType,proto3" json:"error_type,omitempty"`             // grammar / vocabulary / pronunciation_hint
+	Highlights    []*WordFix             `protobuf:"bytes,4,rep,name=highlights,proto3" json:"highlights,omitempty"`                            // 逐词标记，用于前端高亮
+	ExpressionTip string                 `protobuf:"bytes,6,opt,name=expression_tip,json=expressionTip,proto3" json:"expression_tip,omitempty"` // 更地道的表达建议
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -621,6 +622,13 @@ func (x *Correction) GetHighlights() []*WordFix {
 		return x.Highlights
 	}
 	return nil
+}
+
+func (x *Correction) GetExpressionTip() string {
+	if x != nil {
+		return x.ExpressionTip
+	}
+	return ""
 }
 
 type WordFix struct {
@@ -1274,7 +1282,7 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"\n" +
 	"ReplyChunk\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n" +
-	"\bis_first\x18\x02 \x01(\bR\aisFirst\"\x99\x01\n" +
+	"\bis_first\x18\x02 \x01(\bR\aisFirst\"\xc0\x01\n" +
 	"\n" +
 	"Correction\x12\x1a\n" +
 	"\boriginal\x18\x01 \x01(\tR\boriginal\x12\x1c\n" +
@@ -1283,7 +1291,8 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"error_type\x18\x03 \x01(\tR\terrorType\x122\n" +
 	"\n" +
 	"highlights\x18\x04 \x03(\v2\x12.aiservice.WordFixR\n" +
-	"highlights\"\x9a\x01\n" +
+	"highlights\x12%\n" +
+	"\x0eexpression_tip\x18\x06 \x01(\tR\rexpressionTip\"\x9a\x01\n" +
 	"\aWordFix\x12\x1b\n" +
 	"\tstart_idx\x18\x01 \x01(\x05R\bstartIdx\x12\x17\n" +
 	"\aend_idx\x18\x02 \x01(\x05R\x06endIdx\x12\x1e\n" +

@@ -321,11 +321,17 @@
                 <div id="rp-suggestions" class="wx-suggestion-list"></div>
             </div>
 
-            <!-- Again button -->
-            <button class="wx-again-btn" onclick="practiceAgain()">
-                再来一次
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-            </button>
+            <!-- Action buttons -->
+            <div style="display:flex;gap:8px;">
+                <button class="wx-again-btn" onclick="practiceAgain()">
+                    再来一次
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </button>
+                <button class="wx-export-btn" onclick="exportReport()">
+                    导出报告
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -747,6 +753,13 @@ function showCorrection(data) {
             inner.appendChild(expl);
         }
     });
+    // Expression tip — more idiomatic suggestion
+    if (data.expression_tip) {
+        var tip = document.createElement('div');
+        tip.className = 'wx-cc-tip';
+        tip.innerHTML = '<span class="wx-cc-tip-label">💡 更地道的表达</span><span class="wx-cc-tip-text">' + escapeHTML(data.expression_tip) + '</span>';
+        inner.appendChild(tip);
+    }
     wrap.appendChild(inner);
     content.appendChild(wrap);
 }
@@ -1445,7 +1458,84 @@ function showReport(data) {
     }
 
     saveSessionSummary(data);
+    window._lastReportData = data;
     showView('view-report');
+}
+
+function exportReport() {
+    var data = window._lastReportData;
+    if (!data) return;
+
+    // Convert active Chart.js instances to static images
+    var chartImages = [];
+    var chartCanvases = document.querySelectorAll('#view-report canvas');
+    chartCanvases.forEach(function(c) {
+        try { chartImages.push(c.toDataURL('image/png')); } catch(e) {}
+    });
+
+    var html = '<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">' +
+        '<title>EchoSpeak 学习报告</title>' +
+        '<style>body{font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#F5F5F5;color:#1A1A1A}' +
+        'h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;color:#666;font-weight:400;margin:0 0 20px}' +
+        '.card{background:#FFF;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}' +
+        '.scores{display:flex;gap:8px}.score{flex:1;text-align:center;padding:12px 8px;background:#FAFAFA;border-radius:8px}' +
+        '.score-val{font-size:24px;font-weight:700}.score-label{font-size:11px;color:#999;margin-top:4px}' +
+        '.green{color:#07C160}.yellow{color:#FA9D3B}.red{color:#E0483B}' +
+        'h3{font-size:13px;color:#666;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}' +
+        '.err-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0F0F0;font-size:13px}' +
+        '.err-tag{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap}' +
+        '.err-tag-grammar{background:#FFF0ED;color:#E0483B}' +
+        '.err-tag-vocab{background:#F3EDF7;color:#8E6BAE}' +
+        '.err-orig{color:#E0483B;text-decoration:line-through}.err-arrow{color:#CCC}.err-corr{color:#07C160;font-weight:600}' +
+        '.chart-wrap{margin:8px 0}.chart-wrap img{max-width:100%;border-radius:8px}' +
+        '.tip{font-size:12px;color:#666;padding:6px 0}' +
+        '</style></head><body>' +
+        '<h1>EchoSpeak 学习报告</h1><h2>' + (data.scene || '') + ' · ' + (data.turns || 0) + '轮 · ' + (data.duration_sec || 0) + '秒</h2>';
+
+    // Scores
+    html += '<div class=\"card\"><h3>能力评分</h3><div class=\"scores\">';
+    var scores = [
+        {label:'语法',val:data.grammar},{label:'词汇',val:data.vocabulary},
+        {label:'发音',val:data.pronunciation},{label:'流利',val:data.fluency}
+    ];
+    scores.forEach(function(s) {
+        var cls = s.val >= 80 ? 'green' : s.val >= 60 ? 'yellow' : 'red';
+        html += '<div class=\"score\"><div class=\"score-val ' + cls + '\">' + (s.val || '--') + '</div><div class=\"score-label\">' + s.label + '</div></div>';
+    });
+    html += '</div></div>';
+
+    // Error stats
+    if (data.error_stats && data.error_stats.length > 0) {
+        html += '<div class=\"card\"><h3>错误统计</h3>';
+        data.error_stats.forEach(function(es) {
+            html += '<div class=\"err-item\"><span class=\"err-tag err-tag-grammar\">' + escapeHTML(es.label) + '</span><span>' + es.count + '次</span></div>';
+        });
+        html += '</div>';
+    }
+
+    // Chart images
+    chartImages.forEach(function(img, i) {
+        if (img) html += '<div class=\"card\"><div class=\"chart-wrap\"><img src=\"' + img + '\" alt=\"chart\"/></div></div>';
+    });
+
+    // Suggestions
+    if (data.suggestions && data.suggestions.length > 0) {
+        html += '<div class=\"card\"><h3>学习建议</h3>';
+        data.suggestions.forEach(function(s) {
+            html += '<div class=\"tip\">💡 ' + escapeHTML(s) + '</div>';
+        });
+        html += '</div>';
+    }
+
+    html += '<p style=\"text-align:center;color:#CCC;font-size:11px;margin-top:20px\">Generated by EchoSpeak AI</p></body></html>';
+
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'EchoSpeak_Report_' + new Date().toISOString().slice(0,10) + '.html';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function saveSessionSummary(data) {
@@ -2268,6 +2358,16 @@ body {
     padding-left: 38px;
     line-height: 1.45;
 }
+.wx-cc-tip {
+    margin: 6px 14px 8px;
+    padding: 8px 12px;
+    background: #F0F9F4;
+    border-radius: 6px;
+    border-left: 3px solid #07C160;
+    line-height: 1.5;
+}
+.wx-cc-tip-label { font-size: 11px; color: #07C160; font-weight: 600; display: block; margin-bottom: 2px; }
+.wx-cc-tip-text { font-size: 13px; color: #1A3A2A; }
 
 /* ── Input bar ── */
 .wx-input-bar {
@@ -2598,6 +2698,13 @@ body {
     background: var(--wx-green-dark);
     transform: scale(0.98);
 }
+.wx-export-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border: 1px solid var(--wx-border); border-radius: 8px;
+    background: #FFF; color: var(--wx-text); font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s;
+}
+.wx-export-btn:active { background: #F5F5F5; transform: scale(0.98); }
 
 /* ═══════════════════════════════════════════════════════════════════
    Responsive
