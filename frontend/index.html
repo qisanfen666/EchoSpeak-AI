@@ -377,7 +377,7 @@ const VAD_THRESHOLD = 0.012;
 const SILENCE_MS = 1800;
 const MIN_SPEECH_MS = 300;
 const CONSEC_FRAMES = 2;
-const PRE_SPEECH_MS = 2000;
+const PRE_SPEECH_MS = 2500;
 let silenceStart = null;
 let speechStart = null;
 let lastSendTime = 0;
@@ -1023,7 +1023,9 @@ async function toggleMic() {
                         speaking = true;
                         speechStart = now;
                         silenceStart = null;
-                        const startIdx = window._preBufVoiceStart || 0;
+                        // Include 400ms before voice onset to capture first word
+                        const preVoiceSamples = SR * 400 / 1000;
+                        const startIdx = Math.max(0, (window._preBufVoiceStart || 0) - preVoiceSamples);
                         audioBuf = window._preBuf.slice(startIdx);
                         window._preBuf = []; window._preBufVoiceStart = 0; window._vadHits = 0;
                         log('Speaking (pre-buf ' + (audioBuf.length/SR*1000).toFixed(0) + 'ms)');
