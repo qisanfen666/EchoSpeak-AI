@@ -506,6 +506,10 @@ function removeWelcome() {
     if (w) w.remove();
 }
 
+// ── Avatar SVG icons ──
+const AVATAR_AI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><circle cx="12" cy="16" r="6"/><circle cx="9" cy="14.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14.5" r="1" fill="currentColor" stroke="none"/><path d="M10 18c.6.8 1.3 1 2 1s1.4-.2 2-1"/></svg>';
+const AVATAR_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>';
+
 // ═══════════════════════════════════════════════════════════════════
 // Message display
 // ═══════════════════════════════════════════════════════════════════
@@ -514,37 +518,45 @@ let _lastAiRow = null;
 
 function addMsg(who, text) {
     removeWelcome();
-    const row = document.createElement('div');
+    var row = document.createElement('div');
     row.className = 'msg-row msg-' + who;
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
 
     if (who === 'user') {
-        bubble.innerHTML = '<span class="msg-text">' + escapeHTML(text) + '</span>';
+        row.innerHTML =
+            '<div class="msg-head msg-head-right">' +
+                '<span class="msg-nick">You</span>' +
+                '<span class="msg-avatar msg-avatar-user">' + AVATAR_USER + '</span>' +
+            '</div>' +
+            '<div class="msg-bubble"><span class="msg-text">' + escapeHTML(text) + '</span></div>';
         _lastUserRow = row;
         row.dataset.msgRole = 'user';
     } else if (who === 'ai') {
-        bubble.innerHTML =
-            '<span class="msg-label">Tutor</span>' +
-            '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>';
+        row.innerHTML =
+            '<div class="msg-head">' +
+                '<span class="msg-avatar msg-avatar-ai">' + AVATAR_AI + '</span>' +
+                '<span class="msg-nick">Tutor</span>' +
+            '</div>' +
+            '<div class="msg-bubble">' +
+                '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>' +
+            '</div>';
         _lastAiRow = row;
     } else {
-        bubble.className = 'msg-bubble msg-sys';
-        bubble.textContent = text;
+        row.innerHTML = '<div class="msg-bubble msg-sys" style="margin:0 auto">' + text + '</div>';
     }
-    row.appendChild(bubble);
     chat.appendChild(row);
     chat.scrollTop = chat.scrollHeight;
 }
 
 function startAIBubble() {
     removeWelcome();
-    const row = document.createElement('div');
+    var row = document.createElement('div');
     row.className = 'msg-row msg-ai';
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.innerHTML = '<span class="msg-label">Tutor</span><span class="msg-text ai-text"></span>';
-    row.appendChild(bubble);
+    row.innerHTML =
+        '<div class="msg-head">' +
+            '<span class="msg-avatar msg-avatar-ai">' + AVATAR_AI + '</span>' +
+            '<span class="msg-nick">Tutor</span>' +
+        '</div>' +
+        '<div class="msg-bubble"><span class="msg-text ai-text"></span></div>';
     chat.appendChild(row);
     _pendingAiRow = row;
     _lastAiRow = row;
@@ -568,12 +580,15 @@ function scoreColor(s) {
     return 'var(--ed-terracotta)';
 }
 
-function showScores(pron, flu) {
-    if (!_lastUserRow) return;
-    // Avoid duplicates
-    if (_lastUserRow.querySelector('.score-bar')) return;
+function _getUserRow() { return _lastUserRow; }
+function _getAiRow()    { return _lastAiRow; }
 
-    const bar = document.createElement('div');
+function showScores(pron, flu) {
+    var row = _getUserRow();
+    if (!row) return;
+    if (row.querySelector('.score-bar')) return;
+
+    var bar = document.createElement('div');
     bar.className = 'score-bar';
     bar.innerHTML =
         '<span class="score-item score-pron">' +
@@ -585,15 +600,16 @@ function showScores(pron, flu) {
         '<span class="score-label">流利</span>' +
         '<span class="score-val" style="--c:' + scoreColor(flu) + '">' + flu + '</span>' +
         '</span>';
-    _lastUserRow.appendChild(bar);
+    row.appendChild(bar);
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // Translation toggle — collapsible Chinese translation under AI messages
 // ═══════════════════════════════════════════════════════════════════
 function showTranslation(text) {
-    if (!_lastAiRow) return;
-    if (_lastAiRow.querySelector('.trans-toggle')) return; // already added
+    var row = _getAiRow();
+    if (!row) return;
+    if (row.querySelector('.trans-toggle')) return;
     var wrap = document.createElement('div');
     wrap.className = 'trans-wrap';
     wrap.innerHTML =
@@ -605,30 +621,45 @@ function showTranslation(text) {
         '<div class="trans-content">' +
             '<span class="trans-text">' + escapeHTML(text) + '</span>' +
         '</div>';
-    _lastAiRow.appendChild(wrap);
+    row.appendChild(wrap);
 }
 
 function showCorrection(data) {
-    if (!_lastUserRow) return;
-    if (_lastUserRow.querySelector('.cc-card')) return;
-    const card = document.createElement('div');
-    card.className = 'cc-card';
-    const header = document.createElement('div');
-    header.className = 'cc-header';
-    header.innerHTML = '<span class="cc-head-label">Nota bene</span>' +
-        '<span class="cc-head-divider"></span>' +
-        '<span class="cc-head-count">' + data.errors.length + '&nbsp;finding' + (data.errors.length !== 1 ? 's' : '') + '</span>';
-    card.appendChild(header);
+    var row = _getUserRow();
+    if (!row) return;
+    if (row.querySelector('.cc-wrap')) return;
+
+    var count = data.errors.length;
+    var wrap = document.createElement('div');
+    wrap.className = 'cc-wrap';
+
+    // Toggle button
+    var toggle = document.createElement('button');
+    toggle.className = 'cc-toggle';
+    toggle.onclick = function() { wrap.classList.toggle('open'); };
+    toggle.innerHTML =
+        '<span class="cc-toggle-icon">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' +
+        '</span>' +
+        '<span class="cc-toggle-label">' + count + ' finding' + (count !== 1 ? 's' : '') + '</span>' +
+        '<svg class="cc-toggle-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    wrap.appendChild(toggle);
+
+    // Collapsible body
+    var inner = document.createElement('div');
+    inner.className = 'cc-inner';
+
     if (data.corrected_text && data.corrected_text !== data.original_text) {
-        const preview = document.createElement('div');
+        var preview = document.createElement('div');
         preview.className = 'cc-preview';
         preview.innerHTML = '<span class="cc-preview-label">Revised</span>' +
             '<span class="cc-preview-text">' + escapeHTML(data.corrected_text) + '</span>';
-        card.appendChild(preview);
+        inner.appendChild(preview);
     }
-    const list = document.createElement('div');
+
+    var list = document.createElement('div');
     list.className = 'cc-list';
-    const PALETTE = {
+    var PALETTE = {
         grammar:{label:'Grammar',accent:'#c46a4a',bg:'var(--ed-err-grammar)',rule:'#b85a3a'},
         tense:{label:'Tense',accent:'#c46a4a',bg:'var(--ed-err-grammar)',rule:'#b85a3a'},
         preposition:{label:'Prep.',accent:'#5a8a9a',bg:'var(--ed-err-prep)',rule:'#4a7a8a'},
@@ -670,8 +701,9 @@ function showCorrection(data) {
         }
         list.appendChild(item);
     });
-    card.appendChild(list);
-    _lastUserRow.appendChild(card);
+    inner.appendChild(list);
+    wrap.appendChild(inner);
+    row.appendChild(wrap);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1572,13 +1604,57 @@ body {
 }
 
 /* ── Messages ── */
-.msg-row { display:flex; flex-direction:column }
+.msg-row {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:12px;
+}
 .msg-user { align-items:flex-end }
 .msg-ai   { align-items:flex-start }
 
+/* ── Message head (avatar + nickname inline) ── */
+.msg-head {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:0 4px;
+}
+.msg-head-right { flex-direction:row-reverse }
+
+/* ── Avatar ── */
+.msg-avatar {
+    flex-shrink:0;
+    width:28px; height:28px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.msg-avatar svg {
+    width:15px; height:15px;
+}
+.msg-avatar-ai {
+    background: var(--ed-accent);
+    color: #fefaf3;
+}
+.msg-avatar-user {
+    background: var(--ed-heading);
+    color: #fefaf3;
+}
+
+/* ── Nickname ── */
+.msg-nick {
+    font-family:'Crimson Pro', serif;
+    font-size:0.72rem;
+    font-style:italic;
+    color:var(--ed-dim);
+}
+
+/* ── Bubbles ── */
 .msg-bubble {
-    max-width:84%;
-    padding:11px 18px;
+    max-width:80%;
+    padding:10px 16px;
     border-radius:4px 12px 4px 12px;
     font-size:0.92rem;
     line-height:1.65;
@@ -1592,24 +1668,14 @@ body {
 .msg-user .msg-bubble {
     background:var(--ed-heading);
     color:#fefaf3;
-    border-radius:4px 12px 4px 12px;
+    border-radius:12px 4px 12px 12px;
 }
 .msg-user .msg-bubble .msg-text { font-weight:400 }
 
 .msg-ai .msg-bubble {
     background:var(--ed-surface);
     border:1px solid var(--ed-border-light);
-    border-radius:12px 12px 12px 3px;
-}
-.msg-label {
-    display:block;
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.52rem;
-    color:var(--ed-accent);
-    text-transform:uppercase;
-    letter-spacing:0.1em;
-    margin-bottom:4px;
-    opacity:0.6;
+    border-radius:4px 12px 12px 12px;
 }
 .ai-text {
     font-family:'Crimson Pro', serif;
@@ -1618,12 +1684,13 @@ body {
 }
 
 .msg-sys {
-    align-self:center;
     color:var(--ed-muted);
     font-size:0.72rem;
-    border:none;
-    background:transparent;
+    border:none !important;
+    background:transparent !important;
     font-style:italic;
+    text-align:center;
+    max-width:100% !important;
 }
 
 /* ── Translation toggle ── */
@@ -1863,56 +1930,51 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Correction Card — "Editorial Marginalia"
+   Correction Card — Collapsible
    ═══════════════════════════════════════════════════════════════════ */
-.cc-card {
-    margin-top:10px;
-    padding:14px 16px 12px;
-    border-radius:0 6px 6px 0;
-    background: linear-gradient(160deg, rgba(139,69,19,0.03) 0%, rgba(160,120,50,0.02) 50%, rgba(140,100,30,0.03) 100%);
-    border:1px solid rgba(180,140,80,0.14);
-    border-left:3px solid var(--ed-accent);
-    font-size:0.8rem;
-    line-height:1.65;
-    max-width:92%;
-    align-self:flex-end;
-    transition:border-left-color 0.3s, box-shadow 0.3s;
+.cc-wrap {
+    margin-top:6px;
 }
-.cc-card:hover {
-    border-left-color:var(--ed-gold);
-    box-shadow:inset 0 0 0 60px rgba(139,69,19,0.02);
-}
-
-.cc-header {
-    display:flex;align-items:baseline;gap:8px;
-    margin-bottom:12px;
-    padding-bottom:8px;
-    border-bottom:1px dashed rgba(139,69,19,0.15);
-}
-.cc-head-label {
-    font-family:'Playfair Display', Georgia, serif;
-    font-style:italic;
-    color:var(--ed-accent);
-    font-size:0.9rem;
-    letter-spacing:0.01em;
-    font-weight:600;
-}
-.cc-head-divider {
-    width:1px;height:14px;
-    background:rgba(139,69,19,0.2);
-    display:inline-block;
-    align-self:center;
-}
-.cc-head-count {
-    font-family:'JetBrains Mono', monospace;
+.cc-toggle {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:4px 10px;
+    border:1px solid var(--ed-border);
+    border-radius:3px;
+    background:transparent;
     color:var(--ed-dim);
-    font-size:0.58rem;
-    letter-spacing:0.06em;
+    cursor:pointer;
+    font-family:'Crimson Pro', serif;
+    font-size:0.72rem;
+    font-style:italic;
+    transition:all 0.2s;
+}
+.cc-toggle:hover {
+    border-color:var(--ed-rose);
+    color:var(--ed-rose);
+}
+.cc-toggle-icon { display:flex; opacity:0.6; }
+.cc-toggle-label { font-weight:500; }
+.cc-toggle-chevron { transition:transform 0.25s; opacity:0.5; }
+.cc-wrap.open .cc-toggle-chevron { transform:rotate(180deg); }
+
+.cc-inner {
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.4s ease, margin 0.35s ease, opacity 0.25s;
+    margin-top:0;
+    opacity:0;
+}
+.cc-wrap.open .cc-inner {
+    max-height:600px;
+    margin-top:8px;
+    opacity:1;
 }
 
 .cc-preview {
-    margin-bottom:12px;
-    padding:10px 14px;
+    margin-bottom:10px;
+    padding:8px 12px;
     border-radius:3px;
     background:rgba(139,69,19,0.04);
     border:1px solid rgba(139,69,19,0.08);
@@ -1921,50 +1983,50 @@ body {
 .cc-preview-label {
     display:block;
     color:var(--ed-muted);
-    font-size:0.52rem;
+    font-size:0.5rem;
     font-family:'JetBrains Mono', monospace;
     letter-spacing:0.08em;
-    margin-bottom:4px;
+    margin-bottom:3px;
     text-transform:uppercase;
 }
 .cc-preview-text {
     font-family:'Playfair Display', Georgia, serif;
     color:var(--ed-accent);
-    font-size:0.85rem;
-    line-height:1.55;
+    font-size:0.82rem;
+    line-height:1.5;
     font-style:italic;
 }
 
 .cc-list {
     display:flex;flex-direction:column;
-    gap:8px;
+    gap:6px;
 }
 
 .cc-err {
-    padding:9px 12px;
+    padding:8px 10px;
     border-radius:3px;
     background:var(--ed-err-bg);
     border:1px solid rgba(180,140,80,0.06);
     border-left:3px solid var(--err-rule);
-    animation:corrItemIn 0.35s var(--err-delay, 0s) cubic-bezier(0.22,0.61,0.36,1) both;
+    animation:corrItemIn 0.3s var(--err-delay, 0s) cubic-bezier(0.22,0.61,0.36,1) both;
 }
 @keyframes corrItemIn {
-    from { opacity:0; transform:translateX(12px) }
+    from { opacity:0; transform:translateX(8px) }
     to   { opacity:1; transform:translateX(0) }
 }
 
 .cc-err-line {
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:6px;
     flex-wrap:wrap;
-    margin-bottom:5px;
-    font-family:'Crimson Pro', serif;
+    margin-bottom:3px;
+    font-size:0.78rem;
 }
 
 .cc-badge {
-    font-size:0.52rem;
-    padding:1px 6px;
+    font-size:0.5rem;
+    padding:1px 5px;
     border-radius:2px;
     background:transparent;
     border:1.5px solid;
@@ -1979,24 +2041,22 @@ body {
     text-decoration:line-through;
     text-decoration-thickness:1.5px;
     text-decoration-color:rgba(184,90,90,0.4);
-    font-size:0.8rem;
 }
 .cc-arrow {
     color:var(--ed-muted);
-    font-size:0.6rem;
+    font-size:0.55rem;
     flex-shrink:0;
-    font-weight:700;
 }
 .cc-corr {
     color:var(--ed-sage);
     font-weight:600;
-    font-size:0.8rem;
 }
 .cc-expl {
     color:var(--ed-dim);
-    font-size:0.7rem;
-    line-height:1.5;
+    font-size:0.68rem;
+    line-height:1.45;
     padding-left:2px;
+    font-style:italic;
 }
 
 /* ── Responsive ── */
@@ -2006,7 +2066,7 @@ body {
     .brand { font-size:1.3rem }
     .brand-sub { font-size:0.5rem }
     .msg-bubble { max-width:92%; font-size:0.85rem; padding:9px 13px }
-    .cc-card { max-width:96%; padding:12px 12px 10px }
+    .cc-wrap { max-width:100% }
     .cc-preview-text { font-size:0.8rem }
     .btn-record { padding:9px 10px }
     .btn-record .btn-label { display:none }
