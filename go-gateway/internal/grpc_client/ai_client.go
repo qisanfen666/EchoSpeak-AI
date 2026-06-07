@@ -84,7 +84,7 @@ func StreamASR(ctx context.Context, sessionID string, audioData []byte) (string,
 }
 
 // ChatStream calls Python Chat gRPC (server streaming)
-func ChatStream(ctx context.Context, sessionID, scene, userMessage string, history []*proto.ChatMessage, difficulty string) *ChatResult {
+func ChatStream(ctx context.Context, sessionID, scene, userMessage string, history []*proto.ChatMessage, difficulty string, accent string) *ChatResult {
 	result := &ChatResult{
 		ReplyChunks: make(chan string, 50),
 		Correction:  make(chan *proto.Correction, 1),
@@ -110,6 +110,7 @@ func ChatStream(ctx context.Context, sessionID, scene, userMessage string, histo
 			UserMessage: userMessage,
 			History:     history,
 			Difficulty:  difficulty,
+			Accent:      accent,
 		}
 
 		stream, err := defaultClient.client.Chat(ctx, req)

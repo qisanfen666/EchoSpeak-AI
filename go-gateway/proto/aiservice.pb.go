@@ -252,6 +252,7 @@ type ChatRequest struct {
 	UserMessage   string                 `protobuf:"bytes,3,opt,name=user_message,json=userMessage,proto3" json:"user_message,omitempty"` // 用户刚说的（ASR 最终结果）
 	History       []*ChatMessage         `protobuf:"bytes,4,rep,name=history,proto3" json:"history,omitempty"`                            // 对话历史（服务端也可从 Redis 获取）
 	Difficulty    string                 `protobuf:"bytes,5,opt,name=difficulty,proto3" json:"difficulty,omitempty"`                      // 难度: easy / medium / hard
+	Accent        string                 `protobuf:"bytes,6,opt,name=accent,proto3" json:"accent,omitempty"`                              // 口音: us / uk / au
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -317,6 +318,13 @@ func (x *ChatRequest) GetHistory() []*ChatMessage {
 func (x *ChatRequest) GetDifficulty() string {
 	if x != nil {
 		return x.Difficulty
+	}
+	return ""
+}
+
+func (x *ChatRequest) GetAccent() string {
+	if x != nil {
+		return x.Accent
 	}
 	return ""
 }
@@ -1257,7 +1265,7 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x03 \x01(\tR\tsessionId\x12$\n" +
 	"\rpronunciation\x18\x04 \x01(\x05R\rpronunciation\x12\x18\n" +
-	"\afluency\x18\x05 \x01(\x05R\afluency\"\xb7\x01\n" +
+	"\afluency\x18\x05 \x01(\x05R\afluency\"\xcf\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x14\n" +
@@ -1266,7 +1274,8 @@ const file_proto_aiservice_proto_rawDesc = "" +
 	"\ahistory\x18\x04 \x03(\v2\x16.aiservice.ChatMessageR\ahistory\x12\x1e\n" +
 	"\n" +
 	"difficulty\x18\x05 \x01(\tR\n" +
-	"difficulty\";\n" +
+	"difficulty\x12\x16\n" +
+	"\x06accent\x18\x06 \x01(\tR\x06accent\";\n" +
 	"\vChatMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\"\xda\x01\n" +

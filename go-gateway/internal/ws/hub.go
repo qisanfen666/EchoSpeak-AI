@@ -19,6 +19,7 @@ type Session struct {
 	Clients    map[*Client]bool
 	Scene      string // 当前场景
 	Difficulty string // easy / medium / hard
+	Accent     string // TTS voice name
 	Active     bool   // 会话是否活跃
 }
 
