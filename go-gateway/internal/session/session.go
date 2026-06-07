@@ -28,9 +28,10 @@ type TurnCorrection struct {
 
 // ErrorItem 单个错误详情
 type ErrorItem struct {
-	Type      string `json:"type"`      // grammar/tense/preposition/article/vocabulary/word_choice/expression
-	Original  string `json:"original"`  // 错误片段
-	Corrected string `json:"corrected"` // 纠正后片段
+	Type          string `json:"type"`           // grammar/tense/preposition/article/vocabulary/word_choice/expression
+	Original      string `json:"original"`       // 错误片段
+	Corrected     string `json:"corrected"`      // 纠正后片段
+	ExplanationCN string `json:"explanation_cn"` // 中文解释
 }
 
 // Manager 单个会话的上下文管理器

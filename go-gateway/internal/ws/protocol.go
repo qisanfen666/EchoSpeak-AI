@@ -19,6 +19,7 @@ const (
 	MsgInterrupt   = "interrupt"    // 用户打断（VAD 检测到用户开始说话）
 	MsgSceneSelect = "scene_select" // 选择场景
 	MsgEndSession  = "end_session"  // 主动结束会话
+	MsgCustomScene = "custom_scene" // 自定义场景（携带话题描述）
 )
 
 // AudioChunkData 音频块载荷
@@ -36,6 +37,11 @@ type TextMessageData struct {
 // SceneSelectData 场景选择
 type SceneSelectData struct {
 	Scene string `json:"scene"` // interview / ordering / meeting / custom
+}
+
+// CustomSceneData 自定义场景（用户自选话题）
+type CustomSceneData struct {
+	Description string `json:"description"`
 }
 
 // ============ 服务端 → 客户端 ============
@@ -98,16 +104,27 @@ type ScoreUpdateData struct {
 
 // SessionReportData 课后报告
 type SessionReportData struct {
-	Scene         string      `json:"scene"`                 // 场景名称
-	DurationSec   int         `json:"duration_sec"`          // 练习时长（秒）
-	Turns         int         `json:"turns"`                 // 对话轮数
-	Grammar       int         `json:"grammar"`               // 语法评分 0-100
-	Vocabulary    int         `json:"vocabulary"`            // 词汇评分 0-100
-	Pronunciation int         `json:"pronunciation"`         // 发音评分 0-100
-	Fluency       int         `json:"fluency"`               // 流利度评分 0-100
-	ErrorStats    []ErrorStat `json:"error_stats"`           // 高频错误统计
-	Suggestions   []string    `json:"suggestions"`           // 学习建议
-	TurnTrends    []TurnTrend `json:"turn_trends,omitempty"` // 逐轮趋势数据
+	Scene         string            `json:"scene"`                   // 场景名称
+	DurationSec   int               `json:"duration_sec"`            // 练习时长（秒）
+	Turns         int               `json:"turns"`                   // 对话轮数
+	Grammar       int               `json:"grammar"`                 // 语法评分 0-100
+	Vocabulary    int               `json:"vocabulary"`              // 词汇评分 0-100
+	Pronunciation int               `json:"pronunciation"`           // 发音评分 0-100
+	Fluency       int               `json:"fluency"`                 // 流利度评分 0-100
+	ErrorStats    []ErrorStat       `json:"error_stats"`             // 高频错误统计
+	Suggestions   []string          `json:"suggestions"`             // 学习建议
+	TurnTrends    []TurnTrend       `json:"turn_trends,omitempty"`   // 逐轮趋势数据
+	AllErrors     []ReportErrorItem `json:"all_errors,omitempty"`    // 逐条错误详情
+}
+
+// ReportErrorItem 单条错误详情（用于报告展示具体错误位置）
+type ReportErrorItem struct {
+	Type          string `json:"type"`           // grammar/tense/preposition/article/vocabulary/word_choice/expression
+	TypeLabel     string `json:"type_label"`     // 中文标签，如 "时态错误"
+	Original      string `json:"original"`       // 错误原文
+	Corrected     string `json:"corrected"`      // 纠正后文本
+	ExplanationCN string `json:"explanation_cn"` // 中文解释
+	TurnIndex     int    `json:"turn_index"`     // 所属对话轮次（从0开始）
 }
 
 // TurnTrend 单轮趋势数据（用于前端绘制折线图）
