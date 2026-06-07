@@ -396,7 +396,7 @@ function confirmCustomTopic() {
     sessionStats.customTopic = topic;
     currentSessionId = 'c_' + Date.now();
     showView('view-chat');
-    connect('custom');
+    connect(topic);
 }
 
 // Close modal on overlay click
@@ -745,7 +745,20 @@ function connect(scene) {
                 case 'reply_start':
                     think.classList.add('active');
                     startAIBubble();
+                    if (m.data && m.data.text) appendAIText(m.data.text);
                     aiResponding = true;
+                    // Safety timeout: auto-reset if reply_end lost
+                    clearTimeout(window._aiRespondTimer);
+                    window._aiRespondTimer = setTimeout(function() {
+                        if (aiResponding) {
+                            aiResponding = false;
+                            inp.disabled = false; btn.disabled = false;
+                            updateRecordButton(); updateTextInput();
+                            st.textContent = 'connected';
+                            st.className = 'status-badge connected';
+                            log('⚠ AI response timeout — state reset');
+                        }
+                    }, 15000);
                     if (conversationMode === 'q_and_a') {
                         updateRecordButton();
                         updateTextInput();
@@ -756,13 +769,14 @@ function connect(scene) {
                     appendAIText(m.data.text);
                     break;
                 case 'reply_end':
+                    clearTimeout(window._aiRespondTimer);
                     think.classList.remove('active');
                     finalizeAI();
                     aiResponding = false;
-                    if (conversationMode === 'q_and_a') {
-                        updateRecordButton();
-                        updateTextInput();
-                    }
+                    inp.disabled = false;
+                    btn.disabled = false;
+                    updateRecordButton();
+                    updateTextInput();
                     st.textContent = 'connected';
                     st.className = 'status-badge connected';
                     break;
@@ -783,6 +797,7 @@ function connect(scene) {
     };
 
     ws.onclose = () => {
+        clearTimeout(window._aiRespondTimer);
         st.textContent = 'disconnected';
         st.className = 'status-badge disconnected';
         inp.disabled = true; btn.disabled = true; recBtn.disabled = true;
@@ -800,12 +815,10 @@ function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 function sendText() {
     const t = inp.value.trim();
     if (!t) return;
-    // In Q&A mode, block during AI response
     if (conversationMode === 'q_and_a' && aiResponding) return;
     inp.value = '';
-    // In Q&A mode, don't auto-interrupt (AI shouldn't be talking)
     if (conversationMode !== 'q_and_a') interruptAI();
-    addMsg('user', t);
+    // Don't addMsg here — Go gateway sends back 'transcript' that handles the bubble
     send({ type: 'text_message', data: { text: t } });
     log('-> text: ' + t.slice(0, 30));
 }

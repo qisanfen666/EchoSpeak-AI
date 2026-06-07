@@ -417,7 +417,7 @@ class ASREngine:
             compression_ratio_threshold=2.4,
             log_prob_threshold=-1.0,
             repetition_penalty=1.15,
-            initial_prompt="English conversation practice, dialogue, spoken English.",
+            initial_prompt=None,
         )
         segments = list(segments)
         full_text = " ".join(seg.text.strip() for seg in segments).strip()

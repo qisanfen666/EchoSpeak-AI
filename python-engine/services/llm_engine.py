@@ -71,19 +71,26 @@ CUSTOM_SCENE_TEMPLATE = """You are an AI English conversation partner for the fo
 
 Scenario: {description}
 
+Critical rule: You MUST respond in English ONLY. Never use Chinese or any other language in your replies, even if the scenario description is in Chinese. This is an English speaking practice app.
+
 Rules:
-1. Stay fully in character for this specific scenario — respond as the person the user would interact with.
-2. Keep responses concise (1-3 sentences).
-3. Ask natural follow-up questions to keep the conversation flowing.
-4. If the user makes grammar mistakes, gently include the correct form in your response.
-5. Use natural, conversational English appropriate to the scenario."""
+1. ALWAYS respond in English — this is a strict requirement for English speaking practice.
+2. Stay fully in character for this specific scenario — respond as the person the user would interact with.
+3. Keep responses concise (1-3 sentences).
+4. Ask natural follow-up questions to keep the conversation flowing.
+5. If the user makes grammar mistakes, gently include the correct form in your response.
+6. Use natural, conversational English appropriate to the scenario."""
 
 
 class Conversation:
     """Manages a multi-turn conversation with LLM context."""
 
     def __init__(self, scene: str = "default", max_history: int = 20):
-        system = SCENE_SYSTEM_PROMPTS.get(scene, SCENE_SYSTEM_PROMPTS["default"])
+        if scene in SCENE_SYSTEM_PROMPTS:
+            system = SCENE_SYSTEM_PROMPTS[scene]
+        else:
+            # Treat unknown scene as a custom topic description
+            system = CUSTOM_SCENE_TEMPLATE.format(description=scene)
         self.messages = [{"role": "system", "content": system}]
         self.max_history = max_history
         self.scene = scene

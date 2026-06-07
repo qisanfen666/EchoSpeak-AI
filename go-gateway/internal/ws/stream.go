@@ -9,6 +9,7 @@ import (
 
 	"go-gateway/internal/grpc_client"
 	"go-gateway/internal/session"
+	"go-gateway/proto"
 )
 
 // ============================================
@@ -18,8 +19,8 @@ import (
 var SessionManager = struct {
 	mu           sync.RWMutex
 	sessions     map[string]*session.Manager
-	audioBuf     map[string][]byte     // accumulated audio per session
-	sessionStart map[string]time.Time  // session start time
+	audioBuf     map[string][]byte    // accumulated audio per session
+	sessionStart map[string]time.Time // session start time
 }{
 	sessions:     make(map[string]*session.Manager),
 	audioBuf:     make(map[string][]byte),
@@ -31,6 +32,9 @@ func GetOrCreateSession(sessionID, scene string) *session.Manager {
 	defer SessionManager.mu.Unlock()
 
 	if mgr, ok := SessionManager.sessions[sessionID]; ok {
+		if scene != "" && mgr.Scene != scene {
+			mgr.Scene = scene
+		}
 		return mgr
 	}
 	mgr := session.NewManager(sessionID, scene)
@@ -72,6 +76,25 @@ func HandleAudioChunk(evt AudioChunkEvent) {
 	if evt.IsEnd && bufLen > 0 {
 		go HandleUserUtteranceEnd(evt.SessionID, evt.Client)
 	}
+}
+
+
+// buildChatHistory converts session history to proto ChatMessage list
+func buildChatHistory(mgr *session.Manager) []*proto.ChatMessage {
+	turns := mgr.GetHistory()
+	if len(turns) == 0 {
+		return nil
+	}
+	msgs := make([]*proto.ChatMessage, 0, len(turns)*2)
+	for _, t := range turns {
+		if t.UserText != "" {
+			msgs = append(msgs, &proto.ChatMessage{Role: "user", Content: t.UserText})
+		}
+		if t.AssistantText != "" {
+			msgs = append(msgs, &proto.ChatMessage{Role: "assistant", Content: t.AssistantText})
+		}
+	}
+	return msgs
 }
 
 // HandleUserUtteranceEnd: ASR real audio → text → Chat → TTS
@@ -122,12 +145,25 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 
 	// Now call Chat with real text
 	startTime := time.Now()
-	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, userText)
+	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, userText, buildChatHistory(mgr))
 
 	go func() {
 		fullReply := ""
 		firstChunk := true
 		var turnCorrection *session.TurnCorrection
+		replySent := false
+
+		defer func() {
+			if !replySent {
+				client.SendJSON(WSMessage{
+					Type: MsgReplyEnd,
+					Data: map[string]interface{}{
+						"interrupted": false,
+						"elapsed_ms":  time.Since(startTime).Milliseconds(),
+					},
+				})
+			}
+		}()
 
 		for {
 			select {
@@ -208,9 +244,9 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 					client.SendJSON(WSMessage{
 						Type: MsgCorrection,
 						Data: CorrectionData{
-							OriginalText: correction.Original,
+							OriginalText:  correction.Original,
 							CorrectedText: correction.Corrected,
-							Errors:       frontendErrors,
+							Errors:        frontendErrors,
 						},
 					})
 				}
@@ -283,12 +319,25 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 
 	// Call Chat directly (no ASR needed)
 	startTime := time.Now()
-	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, text)
+	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, text, buildChatHistory(mgr))
 
 	go func() {
 		fullReply := ""
 		firstChunk := true
 		var turnCorrection *session.TurnCorrection
+		replySent := false
+
+		defer func() {
+			if !replySent {
+				client.SendJSON(WSMessage{
+					Type: MsgReplyEnd,
+					Data: map[string]interface{}{
+						"interrupted": false,
+						"elapsed_ms":  time.Since(startTime).Milliseconds(),
+					},
+				})
+			}
+		}()
 
 		for {
 			select {
@@ -367,9 +416,9 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 					client.SendJSON(WSMessage{
 						Type: MsgCorrection,
 						Data: CorrectionData{
-							OriginalText: correction.Original,
+							OriginalText:  correction.Original,
 							CorrectedText: correction.Corrected,
-							Errors:       frontendErrors,
+							Errors:        frontendErrors,
 						},
 					})
 				}
@@ -420,13 +469,13 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 
 // Error type → Chinese label mapping
 var errorLabelMap = map[string]string{
-	"grammar":      "语法错误",
-	"tense":        "时态错误",
-	"preposition":  "介词错误",
-	"article":      "冠词遗漏/误用",
-	"vocabulary":   "词汇使用",
-	"word_choice":  "用词选择",
-	"expression":   "表达问题",
+	"grammar":     "语法错误",
+	"tense":       "时态错误",
+	"preposition": "介词错误",
+	"article":     "冠词遗漏/误用",
+	"vocabulary":  "词汇使用",
+	"word_choice": "用词选择",
+	"expression":  "表达问题",
 }
 
 // Suggestion templates for top error types
@@ -564,44 +613,42 @@ func generateReport(mgr *session.Manager, sessionID string) SessionReportData {
 		"interview": "工作面试",
 		"meeting":   "商务会议",
 		"travel":    "旅行出行",
-		}
-		if name, ok := sceneNames[report.Scene]; ok {
-			report.Scene = fmt.Sprintf("%%s (%%s)", name, mgr.Scene)
-		}
+	}
+	if name, ok := sceneNames[report.Scene]; ok {
+		report.Scene = fmt.Sprintf("%s (%s)", name, mgr.Scene)
+	}
 
-		// Build per-turn trend data for frontend charts
-		report.TurnTrends = make([]TurnTrend, 0, len(history))
-		for i, turn := range history {
-			grammarErr := 0
-			vocabErr := 0
-			errCount := 0
-			if turn.Correction != nil {
-				errCount = len(turn.Correction.Errors)
-				for _, e := range turn.Correction.Errors {
-					switch e.Type {
-					case "grammar", "tense", "preposition", "article":
-						grammarErr++
-					case "vocabulary", "word_choice", "expression":
-						vocabErr++
-					default:
-						grammarErr++
-					}
-				}
-				if errCount == 0 && turn.Correction.ErrorType != "" {
-					errCount = 1
-					grammarErr = 1
+	// Build per-turn trend data for frontend charts
+	report.TurnTrends = make([]TurnTrend, 0, len(history))
+	for i, turn := range history {
+		grammarErr := 0
+		vocabErr := 0
+		errCount := 0
+		if turn.Correction != nil {
+			errCount = len(turn.Correction.Errors)
+			for _, e := range turn.Correction.Errors {
+				switch e.Type {
+				case "grammar", "tense", "preposition", "article":
+					grammarErr++
+				case "vocabulary", "word_choice", "expression":
+					vocabErr++
+				default:
+					grammarErr++
 				}
 			}
-			report.TurnTrends = append(report.TurnTrends, TurnTrend{
-				TurnIndex:      i,
-				ErrorCount:     errCount,
-				ResponseTimeMs: turn.ResponseTimeMs,
-				GrammarErrors:  grammarErr,
-				VocabErrors:    vocabErr,
-			})
+			if errCount == 0 && turn.Correction.ErrorType != "" {
+				errCount = 1
+				grammarErr = 1
+			}
 		}
-
-		return report
+		report.TurnTrends = append(report.TurnTrends, TurnTrend{
+			TurnIndex:      i,
+			ErrorCount:     errCount,
+			ResponseTimeMs: turn.ResponseTimeMs,
+			GrammarErrors:  grammarErr,
+			VocabErrors:    vocabErr,
+		})
+	}
 	if name, ok := sceneNames[report.Scene]; ok {
 		report.Scene = fmt.Sprintf("%s (%s)", name, mgr.Scene)
 	}
