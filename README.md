@@ -105,7 +105,7 @@
 
 ```bash
 # 1. 配置 API Key
-#    在 python-engine/ 下创建 .env，写入: LLM_API_KEY=sk-xxx
+#    在 python-engine/ 和主目录下创建 .env(复制.env.example并改名.env)，写入: LLM_API_KEY=sk-xxx
 
 # 2. 安装 Python 依赖
 cd python-engine
