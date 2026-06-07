@@ -12,7 +12,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // 3天限时赛，开发阶段允许所有来源
+		return true // 开发阶段允许所有来源
 	},
 }
 
@@ -35,40 +35,16 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client := NewClient(hub, conn)
 	hub.Register(client, sessionID)
 
-	// 从 URL 读取场景、难度、口音
-	scene := r.URL.Query().Get("scene")
-	if scene != "" {
+	// 如果 URL 指定了场景，设置为该场景
+	if scene := r.URL.Query().Get("scene"); scene != "" {
 		if s := hub.GetSession(sessionID); s != nil {
 			s.Scene = scene
-		}
-	}
-	if diff := r.URL.Query().Get("difficulty"); diff != "" {
-		if s := hub.GetSession(sessionID); s != nil {
-			s.Difficulty = diff
-		}
-	}
-	if acc := r.URL.Query().Get("accent"); acc != "" {
-		if s := hub.GetSession(sessionID); s != nil {
-			s.Accent = acc
 		}
 	}
 
 	// 启动读写协程
 	go client.writePump()
 	go client.readPump()
-
-	// —— Scene greeting: warm up + welcome the user ——
-	// Mirror Python fastapi_server.py lines 822-824
-	presetScenes := map[string]bool{
-		"ordering": true, "interview": true, "meeting": true,
-		"travel": true, "daily": true, "business": true,
-	}
-	if presetScenes[scene] {
-		go HandleGreeting(sessionID, scene, client, "")
-	} else if scene != "" {
-		// Custom topic — fire greeting with the topic as custom prompt
-		go HandleGreeting(sessionID, scene, client, scene)
-	}
 
 	log.Printf("[WS] New connection: session=%s scene=%s", sessionID,
 		hub.GetSession(sessionID).Scene)
@@ -92,18 +68,6 @@ func handleMessage(c *Client, msg *WSMessage) {
 		}
 		onAudioChunk(c, &data, msg.Seq)
 
-	case MsgTextMessage:
-		dataBytes, err := json.Marshal(msg.Data)
-		if err != nil {
-			return
-		}
-		var data TextMessageData
-		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			log.Printf("[Handler] Parse text_message error: %v", err)
-			return
-		}
-		onTextMessage(c, &data)
-
 	case MsgInterrupt:
 		onInterrupt(c, msg.Seq)
 
@@ -114,14 +78,6 @@ func handleMessage(c *Client, msg *WSMessage) {
 			return
 		}
 		onSceneSelect(c, &data)
-
-	case MsgCustomScene:
-		dataBytes, _ := json.Marshal(msg.Data)
-		var data CustomSceneData
-		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			return
-		}
-		onCustomScene(c, &data)
 
 	case MsgEndSession:
 		onEndSession(c)

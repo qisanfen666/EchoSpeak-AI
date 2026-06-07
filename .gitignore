@@ -10,8 +10,10 @@ __pycache__
 !go-gateway/gateway.exe
 *~
 
-# Generated audio / model files (downloaded at runtime)
+# Uploaded user audio recordings (not needed in repo)
 audio/
+
+# Whisper models tracked via Git LFS (audio/whisper_models/)
 !audio/.gitkeep
 # PyInstaller
 *.spec
