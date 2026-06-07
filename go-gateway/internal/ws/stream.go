@@ -252,6 +252,7 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 							OriginalText:  correction.Original,
 							CorrectedText: correction.Corrected,
 							Errors:        frontendErrors,
+							ExpressionTip: correction.ExpressionTip,
 						},
 					})
 				}
@@ -433,6 +434,7 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 							OriginalText:  correction.Original,
 							CorrectedText: correction.Corrected,
 							Errors:        frontendErrors,
+							ExpressionTip: correction.ExpressionTip,
 						},
 					})
 				}

@@ -79,6 +79,7 @@ type CorrectionData struct {
 	OriginalText  string      `json:"original_text"`
 	CorrectedText string      `json:"corrected_text"`
 	Errors        []ErrorItem `json:"errors"`
+	ExpressionTip string      `json:"expression_tip,omitempty"` // 更地道的表达建议
 }
 
 // ErrorItem 单个纠错详情 — matches frontend ErrorDetail

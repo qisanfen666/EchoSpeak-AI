@@ -94,6 +94,7 @@ message Correction {
   string corrected = 2;        // 纠正后句子
   string error_type = 3;       // grammar / vocabulary / pronunciation_hint
   repeated WordFix highlights = 4; // 逐词标记，用于前端高亮
+  string expression_tip = 6;   // 更地道的表达建议
 }
 
 message WordFix {
