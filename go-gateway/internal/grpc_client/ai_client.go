@@ -54,15 +54,16 @@ type ChatResult struct {
 	ReplyChunks chan string
 	Correction  chan *proto.Correction
 	AudioChunks chan []byte // TTS MP3 chunks
+	Translation chan string // Chinese translation of the reply
 	Done        chan struct{}
 	Err         chan error
 }
 
-// StreamASR sends audio to Python ASR and returns recognized text
-func StreamASR(ctx context.Context, sessionID string, audioData []byte) (string, error) {
+// StreamASR sends audio to Python ASR and returns recognized text + scores
+func StreamASR(ctx context.Context, sessionID string, audioData []byte) (string, int32, int32, error) {
 	stream, err := defaultClient.client.StreamASR(ctx)
 	if err != nil {
-		return "", err
+		return "", 0, 0, err
 	}
 
 	err = stream.Send(&proto.AudioChunk{
@@ -71,15 +72,15 @@ func StreamASR(ctx context.Context, sessionID string, audioData []byte) (string,
 		IsEnd:     true,
 	})
 	if err != nil {
-		return "", err
+		return "", 0, 0, err
 	}
 	stream.CloseSend()
 
 	resp, err := stream.Recv()
 	if err != nil {
-		return "", err
+		return "", 0, 0, err
 	}
-	return resp.Text, nil
+	return resp.Text, resp.Pronunciation, resp.Fluency, nil
 }
 
 // ChatStream calls Python Chat gRPC (server streaming)
@@ -88,6 +89,7 @@ func ChatStream(ctx context.Context, sessionID, scene, userMessage string, histo
 		ReplyChunks: make(chan string, 50),
 		Correction:  make(chan *proto.Correction, 1),
 		AudioChunks: make(chan []byte, 20),
+		Translation: make(chan string, 1),
 		Done:        make(chan struct{}, 1),
 		Err:         make(chan error, 1),
 	}
@@ -97,6 +99,7 @@ func ChatStream(ctx context.Context, sessionID, scene, userMessage string, histo
 			close(result.ReplyChunks)
 			close(result.Correction)
 			close(result.AudioChunks)
+			close(result.Translation)
 			close(result.Done)
 			close(result.Err)
 		}()
@@ -132,6 +135,8 @@ func ChatStream(ctx context.Context, sessionID, scene, userMessage string, histo
 				result.Correction <- payload.Correction
 			case *proto.ChatResponse_TtsAudio:
 				result.AudioChunks <- payload.TtsAudio
+			case *proto.ChatResponse_Translation:
+				result.Translation <- payload.Translation
 			case *proto.ChatResponse_Done:
 				result.Done <- struct{}{}
 				return

@@ -120,8 +120,10 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 
 	// Call real ASR via gRPC
 	userText := ""
+	pronScore := 0
+	fluScore := 0
 	if len(audio) > 0 {
-		text, err := grpc_client.StreamASR(turnCtx, sessionID, audio)
+		text, pron, flu, err := grpc_client.StreamASR(turnCtx, sessionID, audio)
 		if err != nil {
 			log.Printf("[Stream] ASR error: %v", err)
 			client.SendJSON(WSMessage{
@@ -131,6 +133,8 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 			return
 		}
 		userText = text
+		pronScore = int(pron)
+		fluScore = int(flu)
 	} else {
 		userText = "Hello"
 	}
@@ -140,7 +144,7 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 	// Send transcript to frontend
 	client.SendJSON(WSMessage{
 		Type: MsgTranscript,
-		Data: TranscriptData{Text: userText, IsFinal: true, IsUser: true},
+		Data: TranscriptData{Text: userText, IsFinal: true, IsUser: true, Pronunciation: pronScore, Fluency: fluScore},
 	})
 
 	// Now call Chat with real text
@@ -251,6 +255,14 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 					})
 				}
 
+			case translation, ok := <-result.Translation:
+				if ok && translation != "" {
+					client.SendJSON(WSMessage{
+						Type: "translation",
+						Data: map[string]string{"text": translation},
+					})
+				}
+
 			case <-result.Done:
 				elapsed := time.Since(startTime)
 				log.Printf("[Stream] Done: session=%s asr=\"%s\" reply=\"%s\" %v",
@@ -267,8 +279,8 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 				turn := session.ConversationTurn{
 					UserText:       userText,
 					AssistantText:  fullReply,
-					Pronunciation:  0,
-					Fluency:        0,
+					Pronunciation:  pronScore,
+					Fluency:        fluScore,
 					ResponseTimeMs: elapsed.Milliseconds(),
 				}
 				if turnCorrection != nil {
@@ -420,6 +432,14 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 							CorrectedText: correction.Corrected,
 							Errors:        frontendErrors,
 						},
+					})
+				}
+
+			case translation, ok := <-result.Translation:
+				if ok && translation != "" {
+					client.SendJSON(WSMessage{
+						Type: "translation",
+						Data: map[string]string{"text": translation},
 					})
 				}
 
