@@ -759,6 +759,68 @@ async def echo_speak_ws(websocket: WebSocket):
             except Exception as e:
                 logger.warning(f"[WS:{session_id}] TTS error: {e}")
 
+    # ── Scene greeting: warm up LLM connection + welcome the user ──
+    _greeting_prompts = {
+        "ordering": "You are a waiter. Greet the customer as they sit down. Ask what they'd like to order. 1-2 sentences only.",
+        "interview": "You are a hiring manager. Greet the candidate and ask them to introduce themselves. 1-2 sentences only.",
+        "meeting": "You are a team lead. Open the meeting and ask for a project update. 1-2 sentences only.",
+        "travel": "You are a hotel receptionist. Greet the guest and ask how you can help. 1-2 sentences only.",
+        "daily": "You are a friendly chat partner. Greet the user and ask how their day is going. 1-2 sentences only.",
+        "business": "You are a business partner. Greet your colleague and ask about their progress. 1-2 sentences only.",
+        "custom": "You are a friendly English conversation partner. Greet the user warmly and ask what they'd like to talk about today. 1-2 sentences only.",
+        "default": "You are a friendly English conversation partner. Greet the user warmly and ask what they'd like to practice today. 1-2 sentences only.",
+    }
+    _greeting_user_msg = _greeting_prompts.get(scene, _greeting_prompts["daily"])
+
+    async def _send_greeting():
+        try:
+            # Use a fresh one-shot conversation for the greeting (don't pollute main conv)
+            greet_conv = create_conversation(scene)
+            greet_conv.messages[0] = {"role": "system", "content": _greeting_user_msg}
+            greet_conv.add_user_message("Greet me to start the conversation.")
+
+            await send_json({"type": "reply_start"})
+            full_text = ""
+            queue: asyncio.Queue = asyncio.Queue()
+
+            def _run():
+                try:
+                    for token in llm.reply_stream(greet_conv):
+                        queue.put_nowait(("token", token))
+                    queue.put_nowait(("done", None))
+                except Exception as exc:
+                    queue.put_nowait(("error", exc))
+
+            loop = asyncio.get_event_loop()
+            loop.run_in_executor(None, _run)
+
+            while True:
+                try:
+                    kind, value = await asyncio.wait_for(queue.get(), timeout=15)
+                except asyncio.TimeoutError:
+                    break
+                if kind == "error" or kind == "done":
+                    break
+                full_text += value
+                await send_json({"type": "reply_chunk", "data": {"text": value}})
+
+            await send_json({"type": "reply_end", "data": {"interrupted": False}})
+
+            # TTS for greeting
+            if full_text.strip():
+                communicate = edge_tts.Communicate(full_text.strip(), config.TTS_VOICE)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        await websocket.send_bytes(chunk["data"])
+                logger.info(f"[WS:{session_id}] Greeting TTS done")
+
+            logger.info(f"[WS:{session_id}] Greeting sent: '{full_text[:50]}'")
+        except Exception as e:
+            logger.warning(f"[WS:{session_id}] Greeting failed (non-fatal): {e}")
+
+    # Fire-and-forget: don't block the main loop
+    asyncio.create_task(_send_greeting())
+
     try:
         while True:
             try:
