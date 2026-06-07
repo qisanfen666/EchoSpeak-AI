@@ -117,6 +117,24 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
         corr_engine = get_correction_engine()
         conversation = create_conversation(scene)
 
+        # Inject difficulty instructions into system prompt
+        difficulty = request.difficulty or "medium"
+        _diff_instructions = {
+            "easy": "Use simple vocabulary and short sentences. Speak slowly and clearly. Avoid idioms and complex grammar.",
+            "medium": "Use natural, everyday English. Mix simple and moderate sentences.",
+            "hard": "Use advanced vocabulary, complex sentences, idioms, and natural native-speaker speed. Challenge the user.",
+        }
+        _diff_hint = _diff_instructions.get(difficulty, _diff_instructions["medium"])
+        conversation.messages[0]["content"] += f"\n\nDifficulty level: {difficulty.upper()}. {_diff_hint}"
+
+        # TTS rate by difficulty
+        _tts_rate = {"easy": "-25%", "medium": "+0%", "hard": "+15%"}.get(difficulty, "+0%")
+
+        logger.info(
+            f"[gRPC:Chat] session={session_id} scene={scene} "
+            f"difficulty={difficulty} msg=\"{user_message[:50]}\""
+        )
+
         # Restore history from request (if any)
         for msg in request.history:
             if msg.role == "user":
@@ -206,7 +224,7 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
         # ── Phase 2: TTS audio (while correction may still be running) ──
         try:
             t0 = time.time()
-            audio_bytes = await tts.stream_speak(full_reply.strip())
+            audio_bytes = await tts.stream_speak(full_reply.strip(), rate=_tts_rate)
             elapsed = time.time() - t0
             logger.info(
                 f"[gRPC:Chat] TTS: {len(full_reply)} chars → "

@@ -15,10 +15,11 @@ type Hub struct {
 // Session 一个会话房间（一个用户一个 session）
 // 注意：3天限时赛，暂不考虑多用户进同一房间
 type Session struct {
-	ID      string
-	Clients map[*Client]bool
-	Scene   string // 当前场景
-	Active  bool   // 会话是否活跃
+	ID         string
+	Clients    map[*Client]bool
+	Scene      string // 当前场景
+	Difficulty string // easy / medium / hard
+	Active     bool   // 会话是否活跃
 }
 
 // NewHub 创建连接中心

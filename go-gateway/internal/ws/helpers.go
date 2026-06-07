@@ -7,3 +7,11 @@ func (c *Client) SessionScene() string {
 	}
 	return "ordering"
 }
+
+// SessionDifficulty 返回客户端的难度
+func (c *Client) SessionDifficulty() string {
+	if c.session != nil && c.session.Difficulty != "" {
+		return c.session.Difficulty
+	}
+	return "medium"
+}

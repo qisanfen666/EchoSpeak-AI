@@ -66,6 +66,7 @@ message ChatRequest {
   string scene = 2;            // 场景: interview / ordering / meeting
   string user_message = 3;     // 用户刚说的（ASR 最终结果）
   repeated ChatMessage history = 4; // 对话历史（服务端也可从 Redis 获取）
+  string difficulty = 5;       // 难度: easy / medium / hard
 }
 
 message ChatMessage {
