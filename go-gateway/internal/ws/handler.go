@@ -41,6 +41,12 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 			s.Scene = scene
 		}
 	}
+	// 读取难度
+	if diff := r.URL.Query().Get("difficulty"); diff != "" {
+		if s := hub.GetSession(sessionID); s != nil {
+			s.Difficulty = diff
+		}
+	}
 
 	// 启动读写协程
 	go client.writePump()

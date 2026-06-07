@@ -100,6 +100,7 @@ func buildChatHistory(mgr *session.Manager) []*proto.ChatMessage {
 // HandleUserUtteranceEnd: ASR real audio → text → Chat → TTS
 func HandleUserUtteranceEnd(sessionID string, client *Client) {
 	mgr := GetOrCreateSession(sessionID, client.SessionScene())
+	mgr.Difficulty = client.SessionDifficulty()
 	mgr.CancelCurrentTurn()
 
 	turnCtx, _ := mgr.NewTurn()
@@ -149,7 +150,7 @@ func HandleUserUtteranceEnd(sessionID string, client *Client) {
 
 	// Now call Chat with real text
 	startTime := time.Now()
-	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, userText, buildChatHistory(mgr))
+	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, userText, buildChatHistory(mgr), mgr.Difficulty)
 
 	go func() {
 		fullReply := ""
@@ -317,6 +318,7 @@ func HandleInterrupt(sessionID string) {
 // HandleTextInput processes typed text — skips ASR, goes directly to Chat
 func HandleTextInput(sessionID string, text string, client *Client) {
 	mgr := GetOrCreateSession(sessionID, client.SessionScene())
+	mgr.Difficulty = client.SessionDifficulty()
 	mgr.CancelCurrentTurn()
 
 	turnCtx, _ := mgr.NewTurn()
@@ -331,7 +333,7 @@ func HandleTextInput(sessionID string, text string, client *Client) {
 
 	// Call Chat directly (no ASR needed)
 	startTime := time.Now()
-	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, text, buildChatHistory(mgr))
+	result := grpc_client.ChatStream(turnCtx, sessionID, mgr.Scene, text, buildChatHistory(mgr), mgr.Difficulty)
 
 	go func() {
 		fullReply := ""

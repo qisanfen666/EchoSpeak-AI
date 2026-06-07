@@ -36,9 +36,10 @@ type ErrorItem struct {
 // Manager 单个会话的上下文管理器
 // 包装 context.Context，支持打断时级联取消
 type Manager struct {
-	ID       string
-	Scene    string
-	ctx      context.Context
+	ID         string
+	Scene      string
+	Difficulty string // easy / medium / hard
+	ctx        context.Context
 	cancel   context.CancelFunc
 	mu       sync.RWMutex
 

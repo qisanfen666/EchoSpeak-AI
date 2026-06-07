@@ -93,6 +93,16 @@
             自定义话题
         </button>
 
+        <!-- Difficulty selector -->
+        <div class="wx-diff-selector" id="diff-selector">
+            <span class="wx-diff-label">练习难度</span>
+            <div class="wx-diff-options">
+                <button class="wx-diff-btn" data-diff="easy" onclick="setDifficulty('easy')">🟢 简单</button>
+                <button class="wx-diff-btn active" data-diff="medium" onclick="setDifficulty('medium')">🟡 中等</button>
+                <button class="wx-diff-btn" data-diff="hard" onclick="setDifficulty('hard')">🔴 困难</button>
+            </div>
+        </div>
+
         <!-- Dashboard: cross-session trends -->
         <div id="home-dashboard" class="wx-dashboard" style="display:none">
             <div class="wx-section-label">学习趋势</div>
@@ -384,6 +394,14 @@ let _pendingAiAudioIdx = 0;
 
 // ── Current session ID ──
 let currentSessionId = null;
+let currentDifficulty = 'medium';
+
+function setDifficulty(diff) {
+    currentDifficulty = diff;
+    document.querySelectorAll('.wx-diff-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.diff === diff);
+    });
+}
 
 function log(t) { dbg.textContent = t; dbg.style.display = 'block'; }
 
@@ -738,7 +756,7 @@ function showCorrection(data) {
 // ═══════════════════════════════════════════════════════════════════
 function connect(scene) {
     scene = scene || 'ordering';
-    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene;
+    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene + '&difficulty=' + currentDifficulty;
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
@@ -1703,6 +1721,20 @@ body {
     color: var(--wx-green);
 }
 .wx-custom-icon svg { width: 18px; height: 18px; }
+
+/* ── Difficulty selector ── */
+.wx-diff-selector {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; margin-top: 8px;
+    background: #FFF; border-radius: 10px; border: 1px solid var(--wx-border);
+}
+.wx-diff-label { font-size: 13px; color: var(--wx-hint); font-weight: 500; }
+.wx-diff-options { display: flex; gap: 6px; }
+.wx-diff-btn {
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--wx-border);
+    background: #FFF; font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.wx-diff-btn.active { background: #07C160; color: #FFF; border-color: #07C160; font-weight: 600; }
 
 /* ── Dashboard on home page ── */
 .wx-dashboard {
