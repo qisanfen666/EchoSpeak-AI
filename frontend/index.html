@@ -376,6 +376,11 @@ let aiResponding = false;
 
 // Cross-session history (in-memory, resets on page reload)
 let sessionHistory = [];
+// Audio replay store: {idx: {pcm: Int16Array}} for user, {idx: {chunks: Uint8Array[]}} for AI
+let _audioStore = {};
+let _audioIdx = 0;
+let _pendingUserAudioIdx = 0;
+let _pendingAiAudioIdx = 0;
 
 // ── Current session ID ──
 let currentSessionId = null;
@@ -556,14 +561,20 @@ function addMsg(who, text) {
     row.className = 'msg-row msg-' + who;
 
     if (who === 'user') {
+        var replayBtn = '';
+        if (_pendingUserAudioIdx && _audioStore[_pendingUserAudioIdx]) {
+            replayBtn = '<button class="rpl-btn" data-idx="' + _pendingUserAudioIdx + '" title="重播录音">🔊</button>';
+        }
         row.innerHTML =
             '<div class="wx-msg-avatar me">' + SVG_USER + '</div>' +
             '<div class="wx-msg-content">' +
                 '<div class="wx-msg-nick">You</div>' +
-                '<div class="wx-msg-bubble"><span class="msg-text">' + escapeHTML(text) + '</span></div>' +
+                '<div class="wx-msg-bubble"><span class="msg-text">' + escapeHTML(text) + '</span>' + replayBtn + '</div>' +
             '</div>';
         _lastUserRow = row;
         row.dataset.msgRole = 'user';
+        row.dataset.audioIdx = _pendingUserAudioIdx;
+        _pendingUserAudioIdx = 0;
     } else if (who === 'ai') {
         row.innerHTML =
             '<div class="wx-msg-avatar ai">' + SVG_AI + '</div>' +
@@ -571,6 +582,7 @@ function addMsg(who, text) {
                 '<div class="wx-msg-nick">Tutor</div>' +
                 '<div class="wx-msg-bubble">' +
                     '<span class="msg-text ai-text">' + escapeHTML(text) + '</span>' +
+                    '<button class="rpl-btn rpl-btn-ai" data-idx="' + _pendingAiAudioIdx + '" style="display:none" title="重播AI语音">🔊</button>' +
                 '</div>' +
             '</div>';
         _lastAiRow = row;
@@ -589,7 +601,7 @@ function startAIBubble() {
         '<div class="wx-msg-avatar ai">' + SVG_AI + '</div>' +
         '<div class="wx-msg-content">' +
             '<div class="wx-msg-nick">Tutor</div>' +
-            '<div class="wx-msg-bubble"><span class="msg-text ai-text"></span></div>' +
+            '<div class="wx-msg-bubble"><span class="msg-text ai-text"></span><button class="rpl-btn rpl-btn-ai" style="display:none" title="重播AI语音">🔊</button></div>' +
         '</div>';
     chat.appendChild(row);
     _pendingAiRow = row;
@@ -745,8 +757,12 @@ function connect(scene) {
 
     ws.onmessage = (e) => {
         if (e.data instanceof ArrayBuffer) {
-            ttsChunks.push(new Uint8Array(e.data));
-            log('<- audio ' + new Uint8Array(e.data).length + 'B');
+            var chunk = new Uint8Array(e.data);
+            ttsChunks.push(chunk);
+            // Also save for replay
+            if (!window._aiTtsChunks) window._aiTtsChunks = [];
+            window._aiTtsChunks.push(chunk);
+            log('<- audio ' + chunk.length + 'B');
             if (!ttsPlaying) playNextTTS();
             return;
         }
@@ -791,6 +807,7 @@ function connect(scene) {
                     startAIBubble();
                     if (m.data && m.data.text) appendAIText(m.data.text);
                     aiResponding = true;
+                    window._aiTtsChunks = [];
                     // Safety timeout: auto-reset if reply_end lost
                     clearTimeout(window._aiRespondTimer);
                     window._aiRespondTimer = setTimeout(function() {
@@ -817,6 +834,15 @@ function connect(scene) {
                     think.classList.remove('active');
                     finalizeAI();
                     aiResponding = false;
+                    // Save AI TTS for replay
+                    if (window._aiTtsChunks && window._aiTtsChunks.length > 0 && _lastAiRow) {
+                        var aiIdx = ++_audioIdx;
+                        _audioStore[aiIdx] = { chunks: window._aiTtsChunks.slice() };
+                        _lastAiRow.dataset.audioIdx = aiIdx;
+                        var aiBtn = _lastAiRow.querySelector('.rpl-btn-ai');
+                        if (aiBtn) { aiBtn.dataset.idx = aiIdx; aiBtn.style.display = ''; }
+                    }
+                    window._aiTtsChunks = null;
                     inp.disabled = false;
                     btn.disabled = false;
                     updateRecordButton();
@@ -885,6 +911,9 @@ async function toggleMic() {
                     const bytes = new Uint8Array(pcm16.buffer);
                     let bin = '';
                     for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                    // Save PCM for replay
+                    _pendingUserAudioIdx = ++_audioIdx;
+                    _audioStore[_pendingUserAudioIdx] = { pcm: new Int16Array(pcm16) };
                     send({ type: 'audio_chunk', data: { data: btoa(bin), is_end: true, chunk_id: chunkId++ } });
                 }
             }
@@ -985,6 +1014,9 @@ async function toggleMic() {
                         const bytes = new Uint8Array(pcm16.buffer);
                         let bin = '';
                         for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                        // Save PCM for replay
+                        _pendingUserAudioIdx = ++_audioIdx;
+                        _audioStore[_pendingUserAudioIdx] = { pcm: new Int16Array(pcm16) };
                         send({ type: 'audio_chunk', data: { data: btoa(bin), is_end: true, chunk_id: chunkId++ } });
                     }
                 }
@@ -1023,6 +1055,42 @@ function stopMic() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// Audio replay
+// ═══════════════════════════════════════════════════════════════════
+function replayAudio(idx) {
+    var data = _audioStore[idx];
+    if (!data) return;
+    if (data.pcm) {
+        // User PCM → play via AudioContext
+        var ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        var buf = ctx.createBuffer(1, data.pcm.length, 16000);
+        var channel = buf.getChannelData(0);
+        for (var i = 0; i < data.pcm.length; i++) channel[i] = data.pcm[i] / 32768;
+        var src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start();
+        src.onended = function() { ctx.close(); };
+    } else if (data.chunks) {
+        // AI TTS MP3 → play via Blob
+        var blob = new Blob(data.chunks, { type: 'audio/mpeg' });
+        var url = URL.createObjectURL(blob);
+        var a = new Audio(url);
+        a.play();
+        a.onended = function() { URL.revokeObjectURL(url); };
+    }
+}
+
+// Delegate replay clicks from document
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.rpl-btn');
+    if (!btn) return;
+    var idx = parseInt(btn.dataset.idx);
+    if (idx) replayAudio(idx);
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // TTS streaming playback
 // ═══════════════════════════════════════════════════════════════════
 function playNextTTS() {
@@ -1056,6 +1124,7 @@ function interruptAI() {
     send({ type: 'interrupt', seq: Date.now() });
     if (ttsAudioEl) { ttsAudioEl.pause(); ttsAudioEl = null; }
     ttsChunks = [];
+    window._aiTtsChunks = null;
     ttsPlaying = false;
     think.classList.remove('active');
     finalizeAI();
@@ -1957,6 +2026,22 @@ body {
     padding: 6px 0;
     margin: 4px 0;
 }
+
+/* Replay button */
+.rpl-btn {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    vertical-align: middle;
+}
+.rpl-btn:hover { opacity: 1; }
+.msg-row.msg-ai .rpl-btn { margin-left: 8px; }
 
 /* ── Typing bar ── */
 .wx-typing-bar {
