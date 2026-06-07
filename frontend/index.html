@@ -93,6 +93,22 @@
             自定义话题
         </button>
 
+        <!-- Accent selector -->
+        <div class="wx-accent-selector" id="accent-selector">
+            <span class="wx-accent-label">AI 口音</span>
+            <div class="wx-accent-list">
+                <button class="wx-accent-btn active" data-accent="en-US-JennyNeural" onclick="setAccent('en-US-JennyNeural')"><span>🇺🇸</span> Jenny <em>美式·女</em></button>
+                <button class="wx-accent-btn" data-accent="en-US-GuyNeural" onclick="setAccent('en-US-GuyNeural')"><span>🇺🇸</span> Guy <em>美式·男</em></button>
+                <button class="wx-accent-btn" data-accent="en-US-AriaNeural" onclick="setAccent('en-US-AriaNeural')"><span>🇺🇸</span> Aria <em>美式·女</em></button>
+                <button class="wx-accent-btn" data-accent="en-US-DavisNeural" onclick="setAccent('en-US-DavisNeural')"><span>🇺🇸</span> Davis <em>美式·男</em></button>
+                <button class="wx-accent-btn" data-accent="en-GB-SoniaNeural" onclick="setAccent('en-GB-SoniaNeural')"><span>🇬🇧</span> Sonia <em>英式·女</em></button>
+                <button class="wx-accent-btn" data-accent="en-GB-RyanNeural" onclick="setAccent('en-GB-RyanNeural')"><span>🇬🇧</span> Ryan <em>英式·男</em></button>
+                <button class="wx-accent-btn" data-accent="en-AU-NatashaNeural" onclick="setAccent('en-AU-NatashaNeural')"><span>🇦🇺</span> Natasha <em>澳式·女</em></button>
+                <button class="wx-accent-btn" data-accent="en-AU-WilliamNeural" onclick="setAccent('en-AU-WilliamNeural')"><span>🇦🇺</span> William <em>澳式·男</em></button>
+                <button class="wx-accent-btn" data-accent="en-GB-LibbyNeural" onclick="setAccent('en-GB-LibbyNeural')"><span>🇬🇧</span> Libby <em>英式·女</em></button>
+            </div>
+        </div>
+
         <!-- Difficulty selector -->
         <div class="wx-diff-selector" id="diff-selector">
             <span class="wx-diff-label">练习难度</span>
@@ -401,6 +417,14 @@ let _pendingAiAudioIdx = 0;
 // ── Current session ID ──
 let currentSessionId = null;
 let currentDifficulty = 'medium';
+let currentAccent = 'en-US-JennyNeural';
+
+function setAccent(acc) {
+    currentAccent = acc;
+    document.querySelectorAll('#accent-selector .wx-accent-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.accent === acc);
+    });
+}
 
 function setDifficulty(diff) {
     currentDifficulty = diff;
@@ -769,7 +793,7 @@ function showCorrection(data) {
 // ═══════════════════════════════════════════════════════════════════
 function connect(scene) {
     scene = scene || 'ordering';
-    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene + '&difficulty=' + currentDifficulty;
+    const u = 'ws://' + location.host + '/ws?session_id=' + currentSessionId + '&scene=' + scene + '&difficulty=' + currentDifficulty + '&accent=' + currentAccent;
     ws = new WebSocket(u);
     ws.binaryType = 'arraybuffer';
 
@@ -1825,6 +1849,23 @@ body {
     background: #FFF; font-size: 12px; cursor: pointer; transition: all 0.15s;
 }
 .wx-diff-btn.active { background: #07C160; color: #FFF; border-color: #07C160; font-weight: 600; }
+
+/* ── Accent selector ── */
+.wx-accent-selector {
+    padding: 10px 14px; margin-top: 8px;
+    background: #FFF; border-radius: 10px; border: 1px solid var(--wx-border);
+}
+.wx-accent-label { font-size: 13px; color: var(--wx-hint); font-weight: 500; display: block; margin-bottom: 8px; }
+.wx-accent-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.wx-accent-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--wx-border);
+    background: #FFF; font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.wx-accent-btn span { font-size: 14px; }
+.wx-accent-btn em { font-style: normal; font-size: 10px; color: #999; }
+.wx-accent-btn.active { background: #07C160; color: #FFF; border-color: #07C160; }
+.wx-accent-btn.active em { color: rgba(255,255,255,.7); }
 
 /* ── Dashboard on home page ── */
 .wx-dashboard {

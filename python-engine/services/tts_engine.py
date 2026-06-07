@@ -59,13 +59,14 @@ class TTSEngine:
 
         return output_path.read_bytes()
 
-    async def stream_speak(self, text: str, rate: str = "+0%") -> bytes:
+    async def stream_speak(self, text: str, rate: str = "+0%", voice: str = "") -> bytes:
         """
         Synthesise and return MP3 bytes without saving to disk.
         Suitable for WebSocket / HTTP streaming responses.
         """
         t0 = time.time()
-        communicate = edge_tts.Communicate(text, self.voice, rate=rate)
+        v = voice or self.voice
+        communicate = edge_tts.Communicate(text, v, rate=rate)
         chunks = []
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":

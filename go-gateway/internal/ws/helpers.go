@@ -15,3 +15,11 @@ func (c *Client) SessionDifficulty() string {
 	}
 	return "medium"
 }
+
+// SessionAccent 返回客户端的口音
+func (c *Client) SessionAccent() string {
+	if c.session != nil && c.session.Accent != "" {
+		return c.session.Accent
+	}
+	return "en-US-JennyNeural"
+}

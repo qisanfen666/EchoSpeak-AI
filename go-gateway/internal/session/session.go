@@ -39,6 +39,7 @@ type Manager struct {
 	ID         string
 	Scene      string
 	Difficulty string // easy / medium / hard
+	Accent     string // TTS voice name e.g. en-US-JennyNeural
 	ctx        context.Context
 	cancel   context.CancelFunc
 	mu       sync.RWMutex

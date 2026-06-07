@@ -127,6 +127,9 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
         _diff_hint = _diff_instructions.get(difficulty, _diff_instructions["medium"])
         conversation.messages[0]["content"] += f"\n\nDifficulty level: {difficulty.upper()}. {_diff_hint}"
 
+        # TTS voice from accent (default US female)
+        _tts_voice = request.accent or "en-US-JennyNeural"
+
         # TTS rate by difficulty
         _tts_rate = {"easy": "-25%", "medium": "+0%", "hard": "+15%"}.get(difficulty, "+0%")
 
@@ -224,7 +227,7 @@ class AIServiceServicer(pb2_grpc.AIServiceServicer if PROTO_AVAILABLE else objec
         # ── Phase 2: TTS audio (while correction may still be running) ──
         try:
             t0 = time.time()
-            audio_bytes = await tts.stream_speak(full_reply.strip(), rate=_tts_rate)
+            audio_bytes = await tts.stream_speak(full_reply.strip(), rate=_tts_rate, voice=_tts_voice)
             elapsed = time.time() - t0
             logger.info(
                 f"[gRPC:Chat] TTS: {len(full_reply)} chars → "

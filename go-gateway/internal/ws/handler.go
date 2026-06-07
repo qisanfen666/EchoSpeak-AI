@@ -47,6 +47,12 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 			s.Difficulty = diff
 		}
 	}
+	// 读取口音
+	if acc := r.URL.Query().Get("accent"); acc != "" {
+		if s := hub.GetSession(sessionID); s != nil {
+			s.Accent = acc
+		}
+	}
 
 	// 启动读写协程
 	go client.writePump()
